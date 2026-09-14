@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Article } from '../../core/models/article.model';
 import { Family } from '../../core/models/family.model';
@@ -44,6 +45,10 @@ export class ArticleListComponent implements OnInit {
   private service = inject(ArticlesService);
   private familiesService = inject(FamiliesService);
   private unitsService = inject(UnitsOfMeasureService);
+  private auth = inject(AuthService);
+
+  /** Read-only users see the screen without its write actions. */
+  canWrite = computed(() => this.auth.can('referential.write'));
 
   articles = signal<Article[]>([]);
   pageInfo = signal<PageInfo | null>(null);

@@ -1,4 +1,4 @@
-<app-page-header heading="Articles" actionLabel="Nouvel article" (action)="openCreate()" />
+<app-page-header heading="Articles" [actionLabel]="canWrite() ? 'Nouvel article' : ''" (action)="openCreate()" />
 
 <app-search-bar placeholder="Code, désignation ou code-barres" (termChange)="onSearch($event)">
   <div class="filter">
@@ -72,6 +72,7 @@
       @if (selectedArticle(); as article) {
         <app-article-detail
           [article]="article"
+          [canEdit]="canWrite()"
           (edit)="openEdit()"
           (toggleActive)="toggleActive()"
           (delete)="askDelete()" />

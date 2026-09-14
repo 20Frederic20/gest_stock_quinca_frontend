@@ -32,8 +32,10 @@
   <dd>{{ formatDate(a.updatedAt) }}</dd>
 </dl>
 
-<div class="actions">
-  <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
-  <button type="button" class="btn" (click)="toggleActive.emit()">{{ a.active ? 'Désactiver' : 'Activer' }}</button>
-  <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
-</div>
+@if (canEdit()) {
+  <div class="actions">
+    <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+    <button type="button" class="btn" (click)="toggleActive.emit()">{{ a.active ? 'Désactiver' : 'Activer' }}</button>
+    <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+  </div>
+}

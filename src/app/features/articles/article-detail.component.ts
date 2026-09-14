@@ -12,6 +12,8 @@ import { formatDate, formatNumber, rateToPercent } from './article-format';
 })
 export class ArticleDetailComponent {
   article = input.required<Article>();
+  /** false = read-only user: the sheet shows no action. */
+  canEdit = input(true);
 
   edit = output<void>();
   toggleActive = output<void>();
