@@ -1,0 +1,14 @@
+@if (open()) {
+  <div class="backdrop" (click)="closed.emit()"></div>
+
+  <aside class="panel" role="dialog" [attr.aria-label]="heading()">
+    <header>
+      <h2>{{ heading() }}</h2>
+      <button type="button" class="btn btn-ghost" aria-label="Fermer" (click)="closed.emit()">✕</button>
+    </header>
+
+    <div class="content">
+      <ng-content />
+    </div>
+  </aside>
+}
