@@ -15,6 +15,10 @@ export function fieldErrorMessage(
   if (errors['maxlength']) return `Ce champ ne doit pas dépasser ${errors['maxlength'].requiredLength} caractères`;
   if (errors['min']) return `La valeur minimale est ${errors['min'].min}`;
   if (errors['max']) return `La valeur maximale est ${errors['max'].max}`;
+  if (errors['minDate']) {
+    const [year, month, day] = (errors['minDate'].min as string).split('-');
+    return `La date doit être le ${day}/${month}/${year} ou après`;
+  }
   return 'Valeur invalide';
 }
 

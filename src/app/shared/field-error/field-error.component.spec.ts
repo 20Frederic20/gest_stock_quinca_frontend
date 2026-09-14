@@ -84,6 +84,14 @@ describe('fieldErrorMessage', () => {
     expect(fieldErrorMessage(control, undefined)).toBe('La valeur maximale est 100');
   });
 
+  it('reports a date before the allowed one, in French format', () => {
+    const control = new FormControl('2026-09-13');
+    control.setErrors({ minDate: { min: '2026-09-15' } });
+    control.markAsTouched();
+
+    expect(fieldErrorMessage(control, undefined)).toBe('La date doit être le 15/09/2026 ou après');
+  });
+
   it('gives priority to the server message, even on an untouched field', () => {
     const control = new FormControl('ABC');
 
