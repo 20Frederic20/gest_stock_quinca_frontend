@@ -1,0 +1,30 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="privilegeLabel">Libellé</label>
+    <input id="privilegeLabel" formControlName="label" maxlength="100" autocomplete="off" />
+    <app-field-error [control]="form.controls.label" [serverError]="fieldErrors()['label']" />
+  </div>
+
+  <label class="checkbox">
+    <input type="checkbox" formControlName="isDefault" />
+    Privilège par défaut
+  </label>
+  <p class="hint">
+    @if (form.controls.isDefault.disabled) {
+      C’est le privilège par défaut : pour le changer, définissez-en un autre par défaut.
+    } @else {
+      Appliqué aux clients sans privilège. Le cocher le retire du privilège qui le portait.
+    }
+  </p>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

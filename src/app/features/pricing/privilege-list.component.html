@@ -1,0 +1,77 @@
+<div class="section-header">
+  <div>
+    <h2>Privilèges</h2>
+    <p class="subtitle text-muted">Les grilles tarifaires. Celle par défaut s’applique aux clients sans privilège.</p>
+  </div>
+  <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau privilège</button>
+</div>
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="privileges().length === 0"
+  emptyMessage="Aucun privilège enregistré."
+  (retry)="load()" />
+
+@if (!loading() && !error() && privileges().length > 0) {
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Libellé</th>
+        <th>Par défaut</th>
+        <th class="actions-column"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (privilege of privileges(); track privilege.id) {
+        <tr [class.selected]="selectedPrivilege()?.id === privilege.id" (click)="openEdit(privilege)">
+          <td>{{ privilege.label }}</td>
+          <td>
+            @if (privilege.isDefault) {
+              <app-badge text="Par défaut" tone="accent" />
+            } @else {
+              <span class="text-muted">—</span>
+            }
+          </td>
+          <td class="actions-column">
+            @if (!privilege.isDefault) {
+              <button type="button" class="btn btn-ghost" (click)="setDefault(privilege, $event)">Définir par défaut</button>
+            }
+            <button
+              type="button"
+              class="btn btn-ghost btn-danger"
+              [disabled]="privilege.isDefault"
+              [attr.title]="privilege.isDefault ? 'Définissez d’abord un autre privilège par défaut' : null"
+              (click)="askDelete(privilege, $event)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+<app-drawer
+  [open]="drawerOpen()"
+  [heading]="selectedPrivilege() ? 'Modifier le privilège' : 'Nouveau privilège'"
+  (closed)="closeDrawer()">
+  <!-- Created only while open, so a new privilege always starts with an empty form. -->
+  @if (drawerOpen()) {
+    <app-privilege-form [privilege]="selectedPrivilege()" (saved)="onSaved()" (cancelled)="closeDrawer()" />
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="privilegeToDelete() !== null"
+  heading="Supprimer ce privilège ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

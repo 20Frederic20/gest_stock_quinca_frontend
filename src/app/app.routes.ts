@@ -31,7 +31,11 @@ export const routes: Routes = [
           import('./features/units-of-measure/unit-of-measure-list.component')
             .then(m => m.UnitOfMeasureListComponent),
       },
-      { path: 'pricing',          component: ComingSoonComponent, data: { title: 'Tarifs et privilèges' } },
+      {
+        path: 'pricing',
+        loadComponent: () =>
+          import('./features/pricing/pricing-page.component').then(m => m.PricingPageComponent),
+      },
 
       // --- Not exposed by the backend yet ---
       { path: 'dashboard',       component: ComingSoonComponent, data: { title: 'Tableau de bord' } },
