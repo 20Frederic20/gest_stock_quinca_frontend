@@ -1,0 +1,10 @@
+@if (loading()) {
+  <p class="state text-muted">Chargement…</p>
+} @else if (error()) {
+  <div class="state error">
+    <p>{{ error() }}</p>
+    <button type="button" class="btn" (click)="retry.emit()">Réessayer</button>
+  </div>
+} @else if (empty()) {
+  <p class="state text-muted">{{ emptyMessage() }}</p>
+}
