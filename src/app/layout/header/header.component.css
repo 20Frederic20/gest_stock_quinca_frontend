@@ -21,6 +21,11 @@
   font-size: 12px;
 }
 
+.agency app-select-search {
+  width: 220px;
+  max-width: 60vw;
+}
+
 .rule-accent {
   height: 4px;
   background: var(--color-accent);

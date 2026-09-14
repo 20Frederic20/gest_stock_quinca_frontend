@@ -2,7 +2,12 @@
   <div class="context">{{ today }} · {{ userName }}</div>
   <div class="agency">
     <span class="text-muted">Agence</span>
-    <span class="tag">{{ agency }}</span>
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="current()?.id ?? null"
+      [label]="current()?.label ?? ''"
+      [placeholder]="loaded() ? 'Aucune agence' : 'Chargement…'"
+      (selected)="onAgencySelected($event)" />
   </div>
 </div>
 
