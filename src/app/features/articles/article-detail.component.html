@@ -1,0 +1,39 @@
+@let a = article();
+
+<dl class="sheet">
+  <dt>Code</dt>
+  <dd>{{ a.code }}</dd>
+
+  <dt>Désignation</dt>
+  <dd>{{ a.designation }}</dd>
+
+  <dt>Code-barres</dt>
+  <dd>{{ a.barcode || '—' }}</dd>
+
+  <dt>Famille</dt>
+  <dd>{{ a.familyLabel }}</dd>
+
+  <dt>Unité de stock</dt>
+  <dd>{{ a.stockUnitCode }}</dd>
+
+  <dt>Seuil d’alerte</dt>
+  <dd>{{ formatNumber(a.alertThreshold) }} {{ a.stockUnitCode }}</dd>
+
+  <dt>TVA</dt>
+  <dd>{{ formatNumber(rateToPercent(a.vatRate)) }} %</dd>
+
+  <dt>État</dt>
+  <dd><app-badge [text]="a.active ? 'Actif' : 'Inactif'" [tone]="a.active ? 'neutral' : 'muted'" /></dd>
+
+  <dt>Créé le</dt>
+  <dd>{{ formatDate(a.createdAt) }}</dd>
+
+  <dt>Modifié le</dt>
+  <dd>{{ formatDate(a.updatedAt) }}</dd>
+</dl>
+
+<div class="actions">
+  <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+  <button type="button" class="btn" (click)="toggleActive.emit()">{{ a.active ? 'Désactiver' : 'Activer' }}</button>
+  <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+</div>

@@ -1,0 +1,66 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="code">Code</label>
+    <input id="code" formControlName="code" maxlength="30" autocomplete="off" />
+    <app-field-error [control]="form.controls.code" [serverError]="fieldErrors()['code']" />
+  </div>
+
+  <div class="field">
+    <label for="designation">Désignation</label>
+    <input id="designation" formControlName="designation" maxlength="200" autocomplete="off" />
+    <app-field-error [control]="form.controls.designation" [serverError]="fieldErrors()['designation']" />
+  </div>
+
+  <div class="field">
+    <label for="barcode">Code-barres <span class="optional">(facultatif)</span></label>
+    <input id="barcode" formControlName="barcode" maxlength="50" autocomplete="off" />
+    <app-field-error [control]="form.controls.barcode" [serverError]="fieldErrors()['barcode']" />
+  </div>
+
+  <div class="field">
+    <label>Famille</label>
+    <app-select-search
+      [options]="familyOptions()"
+      [value]="form.controls.familyId.value || null"
+      [label]="familyLabel()"
+      placeholder="Choisir une famille"
+      (selected)="onFamilySelected($event)" />
+    <app-field-error [control]="form.controls.familyId" [serverError]="fieldErrors()['familyId']" />
+  </div>
+
+  <div class="field">
+    <label>Unité de stock</label>
+    <app-select-search
+      [options]="unitOptions()"
+      [value]="form.controls.stockUnitId.value || null"
+      [label]="unitLabel()"
+      placeholder="Choisir une unité"
+      (selected)="onUnitSelected($event)" />
+    <app-field-error [control]="form.controls.stockUnitId" [serverError]="fieldErrors()['stockUnitId']" />
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="alertThreshold">Seuil d’alerte</label>
+      <input id="alertThreshold" type="number" min="0" step="any" formControlName="alertThreshold" />
+      <app-field-error [control]="form.controls.alertThreshold" [serverError]="fieldErrors()['alertThreshold']" />
+    </div>
+
+    <div class="field">
+      <label for="vatRate">Taux de TVA (%)</label>
+      <input id="vatRate" type="number" min="0" max="100" step="0.01" formControlName="vatRate" />
+      <app-field-error [control]="form.controls.vatRate" [serverError]="fieldErrors()['vatRate']" />
+    </div>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>
