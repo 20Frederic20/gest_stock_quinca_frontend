@@ -19,11 +19,11 @@ describe('MENU', () => {
     }
   });
 
-  it('marks exactly the 5 referential screens as ready', () => {
+  it('marks exactly the 5 referential screens and the agencies as ready', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/articles', '/families', '/packagings', '/pricing', '/units-of-measure'],
+      ['/agencies', '/articles', '/families', '/packagings', '/pricing', '/units-of-measure'],
     );
   });
 });

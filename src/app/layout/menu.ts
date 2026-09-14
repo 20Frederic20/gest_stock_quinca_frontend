@@ -45,7 +45,7 @@ export const MENU: MenuGroup[] = [
     { label: 'Rapports et exports', route: '/reports', ready: false },
   ]},
   { title: 'Administration', items: [
-    { label: 'Agences',              route: '/agencies',  ready: false },
+    { label: 'Agences',              route: '/agencies',  ready: true },
     { label: 'Utilisateurs',         route: '/users',     ready: false },
     { label: 'Rôles et permissions', route: '/roles',     ready: false },
     { label: "Journal d'audit",      route: '/audit-log', ready: false },

@@ -19,6 +19,14 @@
   text-align: left;
 }
 
+/* A long label stays on one line: the full text is in the open list. */
+.trigger > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .trigger .placeholder {
   color: color-mix(in srgb, var(--color-text) 45%, transparent);
 }
