@@ -1,0 +1,39 @@
+<button type="button" class="trigger" [attr.aria-expanded]="isOpen()" (click)="toggle()">
+  <span [class.placeholder]="!value()">{{ value() ? label() : placeholder() }}</span>
+  <span class="arrow" aria-hidden="true">▾</span>
+</button>
+
+@if (isOpen()) {
+  <div class="list">
+    <input
+      #searchInput
+      class="search"
+      type="text"
+      placeholder="Rechercher…"
+      autocomplete="off"
+      [value]="term()"
+      (input)="onInput($event)"
+      (keydown)="onKeydown($event)" />
+
+    @if (allowEmpty()) {
+      <button type="button" class="option empty" (click)="select(null)">— Aucun —</button>
+    }
+
+    @if (loading()) {
+      <p class="info">Recherche…</p>
+    } @else if (visible().length === 0) {
+      <p class="info">Aucun résultat</p>
+    } @else {
+      @for (option of visible(); track option.id; let i = $index) {
+        <button
+          type="button"
+          class="option"
+          [class.highlighted]="i === highlighted()"
+          [class.current]="option.id === value()"
+          (click)="select(option)">
+          {{ option.label }}
+        </button>
+      }
+    }
+  </div>
+}
