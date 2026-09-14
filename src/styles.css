@@ -67,7 +67,7 @@ h2 { font: 600 20px/1.2 var(--font-heading); margin: 0; }
   border-bottom: 1px solid var(--color-divider);
 }
 .table tbody tr:hover { background: var(--color-accent-100); cursor: pointer; }
-.table tbody tr.selectionnee { background: var(--color-accent-200); }
+.table tbody tr.selected { background: var(--color-accent-200); }
 
 /* --- Boutons --- */
 .btn {
@@ -121,4 +121,4 @@ h2 { font: 600 20px/1.2 var(--font-heading); margin: 0; }
   color: var(--color-text);
 }
 .field input:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; }
-.field input.invalide { border-color: #a11; }
+.field input.invalid { border-color: #a11; }
