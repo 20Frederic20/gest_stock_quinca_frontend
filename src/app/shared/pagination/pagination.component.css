@@ -1,0 +1,19 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+}
+
+.current,
+.current:hover {
+  background: var(--color-accent);
+  color: #fff;
+  font-weight: 600;
+}
+
+.total {
+  margin-left: var(--space-3);
+  font-size: 12px;
+}
