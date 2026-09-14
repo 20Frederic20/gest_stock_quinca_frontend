@@ -1,0 +1,65 @@
+<app-page-header heading="Familles" actionLabel="Nouvelle famille" (action)="openCreate()" />
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="families().length === 0"
+  emptyMessage="Aucune famille enregistrée."
+  (retry)="load()" />
+
+@if (!loading() && !error() && families().length > 0) {
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Libellé</th>
+        <th>Ordre</th>
+        <th>Famille parente</th>
+        <th class="actions-column"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of rows(); track row.family.id) {
+        <tr [class.selected]="selectedFamily()?.id === row.family.id" (click)="openEdit(row.family)">
+          <td class="label-cell" [class.root]="row.depth === 0" [style.--depth]="row.depth">
+            {{ row.family.label }}
+          </td>
+          <td>{{ row.family.displayOrder }}</td>
+          <td class="text-muted">{{ row.family.parentLabel ?? '—' }}</td>
+          <td class="actions-column">
+            <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(row.family, $event)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+<app-drawer
+  [open]="drawerOpen()"
+  [heading]="selectedFamily() ? 'Modifier la famille' : 'Nouvelle famille'"
+  (closed)="closeDrawer()">
+  <!-- Created only while open, so a new family always starts with an empty form. -->
+  @if (drawerOpen()) {
+    <app-family-form
+      [family]="selectedFamily()"
+      [families]="families()"
+      (saved)="onSaved()"
+      (cancelled)="closeDrawer()" />
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="familyToDelete() !== null"
+  heading="Supprimer cette famille ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

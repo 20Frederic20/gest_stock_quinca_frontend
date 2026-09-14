@@ -11,7 +11,11 @@ export const routes: Routes = [
 
       // --- Referential: real screens, plugged in one by one in the next steps ---
       { path: 'articles',         component: ComingSoonComponent, data: { title: 'Articles' } },
-      { path: 'families',         component: ComingSoonComponent, data: { title: 'Familles' } },
+      {
+        path: 'families',
+        loadComponent: () =>
+          import('./features/families/family-list.component').then(m => m.FamilyListComponent),
+      },
       { path: 'packagings',       component: ComingSoonComponent, data: { title: 'Conditionnements' } },
       {
         path: 'units-of-measure',

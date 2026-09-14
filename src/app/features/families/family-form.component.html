@@ -1,0 +1,36 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="label">Libellé</label>
+    <input id="label" formControlName="label" maxlength="100" autocomplete="off" />
+    <app-field-error [control]="form.controls.label" [serverError]="fieldErrors()['label']" />
+  </div>
+
+  <div class="field">
+    <label for="displayOrder">Ordre d’affichage</label>
+    <input id="displayOrder" type="number" min="0" formControlName="displayOrder" />
+    <app-field-error [control]="form.controls.displayOrder" [serverError]="fieldErrors()['displayOrder']" />
+  </div>
+
+  <div class="field">
+    <label>Famille parente</label>
+    <app-select-search
+      [options]="parentOptions()"
+      [value]="form.controls.parentId.value"
+      [label]="parentLabel()"
+      placeholder="Aucune (famille racine)"
+      [allowEmpty]="true"
+      (selected)="onParentSelected($event)" />
+    <app-field-error [serverError]="fieldErrors()['parentId']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>
