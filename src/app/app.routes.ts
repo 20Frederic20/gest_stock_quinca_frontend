@@ -20,7 +20,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/families/family-list.component').then(m => m.FamilyListComponent),
       },
-      { path: 'packagings',       component: ComingSoonComponent, data: { title: 'Conditionnements' } },
+      {
+        path: 'packagings',
+        loadComponent: () =>
+          import('./features/packagings/packaging-list.component').then(m => m.PackagingListComponent),
+      },
       {
         path: 'units-of-measure',
         loadComponent: () =>

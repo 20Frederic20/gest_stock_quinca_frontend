@@ -1,0 +1,99 @@
+<app-page-header
+  heading="Conditionnements"
+  subtitle="Les conditionnements sont rattachés à un article : choisissez-en un pour commencer."
+  [actionLabel]="selectedArticle() ? 'Nouveau conditionnement' : ''"
+  (action)="openCreate()" />
+
+<div class="article-choice">
+  <span class="choice-label">Article</span>
+  <app-select-search
+    [remoteSearch]="searchArticles"
+    [value]="selectedArticle()?.id ?? null"
+    [label]="selectedArticle()?.label ?? ''"
+    placeholder="Rechercher un article…"
+    (selected)="onArticleSelected($event)" />
+</div>
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+@if (!selectedArticle()) {
+  <p class="prompt text-muted">Choisissez un article pour voir ses conditionnements.</p>
+} @else {
+  <app-state-view
+    [loading]="loading()"
+    [error]="error()"
+    [empty]="packagings().length === 0"
+    emptyMessage="Cet article n’a encore aucun conditionnement."
+    (retry)="load()" />
+
+  @if (!loading() && !error() && packagings().length > 0) {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Unité</th>
+          <th class="number">Contenance</th>
+          <th>Achat</th>
+          <th>Vente</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (packaging of packagings(); track packaging.id) {
+          <tr [class.selected]="selectedPackaging()?.id === packaging.id" (click)="openDetail(packaging)">
+            <td>{{ packaging.unitCode }} — {{ packaging.unitLabel }}</td>
+            <td class="number">{{ formatNumber(packaging.quantity) }} {{ stockUnitCode() }}</td>
+            <td>
+              @if (packaging.defaultPurchase) {
+                <app-badge text="Par défaut" tone="accent" />
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </td>
+            <td>
+              @if (packaging.defaultSale) {
+                <app-badge text="Par défaut" tone="accent" />
+              } @else {
+                <span class="text-muted">—</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedPackaging(); as packaging) {
+        <app-packaging-detail
+          [packaging]="packaging"
+          [stockUnitCode]="stockUnitCode()"
+          (edit)="openEdit()"
+          (setDefaultPurchase)="setDefaultPurchase()"
+          (setDefaultSale)="setDefaultSale()"
+          (delete)="askDelete()" />
+      }
+    } @else if (selectedArticle(); as article) {
+      <app-packaging-form
+        [packaging]="selectedPackaging()"
+        [articleId]="article.id"
+        [units]="units()"
+        [stockUnitCode]="stockUnitCode()"
+        (saved)="onSaved()"
+        (cancelled)="onFormCancelled()" />
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="packagingToDelete() !== null"
+  heading="Supprimer ce conditionnement ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

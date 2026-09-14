@@ -1,0 +1,42 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label>Unité</label>
+    <app-select-search
+      [options]="unitOptions()"
+      [value]="form.controls.unitId.value || null"
+      [label]="unitLabel()"
+      placeholder="Choisir une unité"
+      (selected)="onUnitSelected($event)" />
+    <app-field-error [control]="form.controls.unitId" [serverError]="fieldErrors()['unitId']" />
+  </div>
+
+  <div class="field">
+    <label for="quantity">Contenance{{ stockUnitCode() ? ' (en ' + stockUnitCode() + ')' : '' }}</label>
+    <input id="quantity" type="number" min="0.0001" step="any" formControlName="quantity" />
+    <app-field-error [control]="form.controls.quantity" [serverError]="fieldErrors()['quantity']" />
+  </div>
+
+  <fieldset class="defaults">
+    <legend>Par défaut</legend>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="defaultPurchase" />
+      Conditionnement utilisé à l’achat
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" formControlName="defaultSale" />
+      Conditionnement utilisé à la vente
+    </label>
+    <p class="hint">Cocher une case la retire du conditionnement qui la portait.</p>
+  </fieldset>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

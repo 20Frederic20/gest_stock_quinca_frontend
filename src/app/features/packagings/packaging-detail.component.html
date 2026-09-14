@@ -1,0 +1,43 @@
+@let p = packaging();
+
+<dl class="sheet">
+  <dt>Article</dt>
+  <dd>{{ p.articleDesignation }}</dd>
+
+  <dt>Unité</dt>
+  <dd>{{ p.unitCode }} — {{ p.unitLabel }}</dd>
+
+  <dt>Contenance</dt>
+  <dd>{{ formatNumber(p.quantity) }} {{ stockUnitCode() }}</dd>
+
+  <dt>Achat</dt>
+  <dd>
+    @if (p.defaultPurchase) {
+      <app-badge text="Par défaut" tone="accent" />
+    } @else {
+      <span class="text-muted">—</span>
+    }
+  </dd>
+
+  <dt>Vente</dt>
+  <dd>
+    @if (p.defaultSale) {
+      <app-badge text="Par défaut" tone="accent" />
+    } @else {
+      <span class="text-muted">—</span>
+    }
+  </dd>
+
+  <dt>Créé le</dt>
+  <dd>{{ formatDate(p.createdAt) }}</dd>
+
+  <dt>Modifié le</dt>
+  <dd>{{ formatDate(p.updatedAt) }}</dd>
+</dl>
+
+<div class="actions">
+  <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+  <button type="button" class="btn" [disabled]="p.defaultPurchase" (click)="setDefaultPurchase.emit()">Définir pour l’achat</button>
+  <button type="button" class="btn" [disabled]="p.defaultSale" (click)="setDefaultSale.emit()">Définir pour la vente</button>
+  <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+</div>
