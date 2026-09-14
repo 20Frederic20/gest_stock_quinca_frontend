@@ -1,0 +1,95 @@
+<app-page-header heading="Articles" actionLabel="Nouvel article" (action)="openCreate()" />
+
+<app-search-bar placeholder="Code, désignation ou code-barres" (termChange)="onSearch($event)">
+  <div class="filter">
+    <span class="filter-label">Famille</span>
+    <app-select-search
+      [options]="familyOptions()"
+      [value]="familyFilter()?.id ?? null"
+      [label]="familyFilter()?.label ?? ''"
+      placeholder="Toutes"
+      [allowEmpty]="true"
+      (selected)="onFamilyFilter($event)" />
+  </div>
+  @if (searchIgnoresFamily()) {
+    <span class="hint text-muted">La recherche porte sur toutes les familles.</span>
+  }
+</app-search-bar>
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="articles().length === 0"
+  [emptyMessage]="emptyMessage()"
+  (retry)="reload()" />
+
+@if (!loading() && !error() && articles().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Désignation</th>
+          <th>Famille</th>
+          <th>Unité</th>
+          <th class="number">Seuil</th>
+          <th class="number">TVA</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (article of articles(); track article.id) {
+          <tr [class.selected]="selectedArticle()?.id === article.id" (click)="openDetail(article)">
+            <td class="code">{{ article.code }}</td>
+            <td>{{ article.designation }}</td>
+            <td class="text-muted">{{ article.familyLabel }}</td>
+            <td class="text-muted">{{ article.stockUnitCode }}</td>
+            <td class="number">{{ formatNumber(article.alertThreshold) }}</td>
+            <td class="number">{{ formatNumber(rateToPercent(article.vatRate)) }} %</td>
+            <td>
+              <app-badge [text]="article.active ? 'Actif' : 'Inactif'" [tone]="article.active ? 'neutral' : 'muted'" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="articles" (pageChange)="load($event)" />
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedArticle(); as article) {
+        <app-article-detail
+          [article]="article"
+          (edit)="openEdit()"
+          (toggleActive)="toggleActive()"
+          (delete)="askDelete()" />
+      }
+    } @else {
+      <app-article-form
+        [article]="selectedArticle()"
+        [families]="families()"
+        [units]="units()"
+        (saved)="onSaved()"
+        (cancelled)="onFormCancelled()" />
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="articleToDelete() !== null"
+  heading="Supprimer cet article ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

@@ -10,7 +10,11 @@ export const routes: Routes = [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 
       // --- Referential: real screens, plugged in one by one in the next steps ---
-      { path: 'articles',         component: ComingSoonComponent, data: { title: 'Articles' } },
+      {
+        path: 'articles',
+        loadComponent: () =>
+          import('./features/articles/article-list.component').then(m => m.ArticleListComponent),
+      },
       {
         path: 'families',
         loadComponent: () =>

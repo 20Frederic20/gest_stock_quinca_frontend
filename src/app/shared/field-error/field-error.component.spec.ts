@@ -1,5 +1,46 @@
+import { Component } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
-import { fieldErrorMessage } from './field-error.component';
+import { FieldErrorComponent, fieldErrorMessage } from './field-error.component';
+
+@Component({
+  imports: [FieldErrorComponent],
+  template: `<app-field-error [control]="control" />`,
+})
+class HostComponent {
+  control = new FormControl('', Validators.required);
+}
+
+describe('FieldErrorComponent', () => {
+  function setup() {
+    const fixture = TestBed.createComponent(HostComponent);
+    fixture.detectChanges();
+    const text = () => (fixture.nativeElement as HTMLElement).textContent?.trim();
+    return { fixture, control: fixture.componentInstance.control, text };
+  }
+
+  it('shows the message once the form is submitted, although its input has not changed', async () => {
+    const { fixture, control, text } = setup();
+    expect(text()).toBe('');
+
+    // What submit() does: `touched` is not a signal, and the control reference stays the same.
+    control.markAsTouched();
+    await fixture.whenStable();
+
+    expect(text()).toBe('Ce champ est obligatoire');
+  });
+
+  it('hides the message as soon as the field becomes valid', async () => {
+    const { fixture, control, text } = setup();
+    control.markAsTouched();
+    await fixture.whenStable();
+
+    control.setValue('SAC');
+    await fixture.whenStable();
+
+    expect(text()).toBe('');
+  });
+});
 
 describe('fieldErrorMessage', () => {
   it('stays silent while the field has not been touched', () => {

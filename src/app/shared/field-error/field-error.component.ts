@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, effect, input, signal } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 
 /** Turns the first error of a form control into a readable message. */
@@ -27,8 +27,21 @@ export class FieldErrorComponent {
   control = input<AbstractControl | null>(null);
   serverError = input<string | undefined>(undefined);
 
-  /** A getter rather than computed(): `touched` and `errors` are not signals. */
-  get message(): string | null {
+  /**
+   * Bumped on every event of the control. `touched` and `errors` are not signals, and the
+   * component is OnPush: without this, markAllAsTouched() on submit would show nothing.
+   */
+  private controlChanges = signal(0);
+
+  message = computed(() => {
+    this.controlChanges();
     return fieldErrorMessage(this.control(), this.serverError());
+  });
+
+  constructor() {
+    effect(onCleanup => {
+      const subscription = this.control()?.events.subscribe(() => this.controlChanges.update(n => n + 1));
+      onCleanup(() => subscription?.unsubscribe());
+    });
   }
 }
