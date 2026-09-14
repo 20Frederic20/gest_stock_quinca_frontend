@@ -1,0 +1,108 @@
+<div class="section-header">
+  <div>
+    <h2>Prix</h2>
+    <p class="subtitle text-muted">Un prix par grille tarifaire et par conditionnement, avec sa date de prise d’effet.</p>
+  </div>
+  @if (selectedPackaging()) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau prix</button>
+  }
+</div>
+
+<div class="choices">
+  <div class="choice">
+    <span class="choice-label">Article</span>
+    <app-select-search
+      [remoteSearch]="searchArticles"
+      [value]="selectedArticle()?.id ?? null"
+      [label]="selectedArticle()?.label ?? ''"
+      placeholder="Rechercher un article…"
+      (selected)="onArticleSelected($event)" />
+  </div>
+
+  @if (selectedArticle()) {
+    <div class="choice">
+      <span class="choice-label">Conditionnement</span>
+      <app-select-search
+        [options]="packagingOptions()"
+        [value]="selectedPackaging()?.id ?? null"
+        [label]="selectedPackaging() ? packagingOptions()[packagings().indexOf(selectedPackaging()!)]?.label ?? '' : ''"
+        placeholder="Choisir un conditionnement"
+        (selected)="onPackagingSelected($event)" />
+    </div>
+  }
+</div>
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+@if (!selectedArticle()) {
+  <p class="prompt text-muted">Choisissez un article, puis un de ses conditionnements, pour voir ses prix.</p>
+} @else if (!selectedPackaging()) {
+  @if (error()) {
+    <p class="prompt error">{{ error() }}</p>
+  } @else {
+    <p class="prompt text-muted">Choisissez un conditionnement pour voir ses prix.</p>
+  }
+} @else {
+  <app-state-view
+    [loading]="loading()"
+    [error]="error()"
+    [empty]="prices().length === 0"
+    emptyMessage="Aucun prix défini pour ce conditionnement."
+    (retry)="load()" />
+
+  @if (!loading() && !error() && prices().length > 0) {
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Grille</th>
+          <th class="number">Prix unitaire</th>
+          <th>À partir du</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows(); track row.price.id) {
+          <tr
+            [class.selected]="selectedPrice()?.id === row.price.id"
+            [class.past]="row.status === 'past'"
+            (click)="openDetail(row.price)">
+            <td>{{ row.price.privilegeLabel }}</td>
+            <td class="number">{{ formatMoney(row.price.unitPrice) }}</td>
+            <td>{{ formatDate(row.price.startDate) }}</td>
+            <td><app-badge [text]="statusLabels[row.status]" [tone]="statusTones[row.status]" /></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+}
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedPrice(); as price) {
+        <app-price-detail [price]="price" [today]="today()" (edit)="openEdit()" (delete)="askDelete()" />
+      }
+    } @else if (selectedPackaging(); as packaging) {
+      <app-price-form
+        [price]="selectedPrice()"
+        [packagingId]="packaging.id"
+        [privileges]="privileges()"
+        [today]="today()"
+        (saved)="onSaved()"
+        (cancelled)="onFormCancelled()" />
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="priceToDelete() !== null"
+  heading="Supprimer ce prix ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

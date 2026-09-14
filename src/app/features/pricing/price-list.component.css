@@ -1,0 +1,70 @@
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.subtitle {
+  margin: var(--space-1) 0 0;
+  font-size: 13px;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 1 420px;
+  min-width: 0;
+}
+
+.choice-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.choice app-select-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.prompt {
+  margin-top: var(--space-4);
+}
+
+.prompt.error {
+  color: #a11;
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* A replaced price is kept for the record: dimmed so that the current ones stand out. */
+tr.past td {
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.action-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: #a11;
+  background: #fdecec;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}

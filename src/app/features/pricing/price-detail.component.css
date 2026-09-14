@@ -1,0 +1,58 @@
+.sheet {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: var(--space-2) var(--space-3);
+  margin: 0;
+}
+
+.sheet dt {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  padding-top: 2px;
+}
+
+.sheet dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.locked {
+  margin: var(--space-4) 0 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.history-title {
+  font: 600 14px var(--font-heading);
+  margin: var(--space-6) 0 var(--space-2);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-divider);
+}
+
+/* The history is read-only: no pointer, no hover highlight. */
+.history tbody tr:hover {
+  background: transparent;
+  cursor: default;
+}
+
+.history tbody tr.selected {
+  background: var(--color-accent-100);
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.history-error {
+  color: #a11;
+}

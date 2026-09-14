@@ -10,7 +10,10 @@ export interface ArticlePrice {
   unitPrice: number;
   /** ISO format, e.g. "2026-09-14". */
   startDate: string;
-  /** true when this is the price in force today for this privilege. */
+  /**
+   * true once the start date is reached: the price is then locked (no edit, no deletion).
+   * It is not "the price applied today": an older price replaced by a newer one is effective too.
+   */
   effective: boolean;
   createdAt: string;
   updatedAt: string;

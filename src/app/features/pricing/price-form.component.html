@@ -1,0 +1,41 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label>Grille tarifaire</label>
+    <app-select-search
+      [options]="privilegeOptions()"
+      [value]="form.controls.privilegeId.value || null"
+      [label]="privilegeLabel()"
+      placeholder="Choisir un privilège"
+      (selected)="onPrivilegeSelected($event)" />
+    <app-field-error [control]="form.controls.privilegeId" [serverError]="fieldErrors()['privilegeId']" />
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="unitPrice">Prix unitaire (F CFA)</label>
+      <input id="unitPrice" type="number" min="0" step="any" formControlName="unitPrice" />
+      <app-field-error [control]="form.controls.unitPrice" [serverError]="fieldErrors()['unitPrice']" />
+    </div>
+
+    <div class="field">
+      <label for="startDate">À partir du</label>
+      <input id="startDate" type="date" [min]="minStartDate()" formControlName="startDate" />
+      <app-field-error [control]="form.controls.startDate" [serverError]="fieldErrors()['startDate']" />
+    </div>
+  </div>
+
+  <p class="hint">
+    Une fois sa date de début atteinte, un prix ne peut plus être modifié ni supprimé.
+  </p>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

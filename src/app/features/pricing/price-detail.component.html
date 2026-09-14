@@ -1,0 +1,57 @@
+@let p = price();
+
+<dl class="sheet">
+  <dt>Grille</dt>
+  <dd>{{ p.privilegeLabel }}</dd>
+
+  <dt>Conditionnement</dt>
+  <dd>{{ p.packagingUnitCode }} — {{ p.articleDesignation }}</dd>
+
+  <dt>Prix unitaire</dt>
+  <dd>{{ formatMoney(p.unitPrice) }}</dd>
+
+  <dt>À partir du</dt>
+  <dd>{{ formatDate(p.startDate) }}</dd>
+
+  <dt>Statut</dt>
+  <dd><app-badge [text]="statusLabels[status()]" [tone]="statusTones[status()]" /></dd>
+</dl>
+
+@if (status() === 'scheduled') {
+  <div class="actions">
+    <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+    <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+  </div>
+} @else {
+  <p class="locked">
+    Ce prix a pris effet : il ne peut plus être modifié ni supprimé. Pour le changer,
+    créez un nouveau prix avec une date de début future.
+  </p>
+}
+
+<h3 class="history-title">Historique — {{ p.privilegeLabel }}</h3>
+
+@if (historyLoading()) {
+  <p class="text-muted">Chargement…</p>
+} @else if (historyError()) {
+  <p class="history-error">{{ historyError() }}</p>
+} @else {
+  <table class="table history">
+    <thead>
+      <tr>
+        <th>À partir du</th>
+        <th class="number">Prix</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (row of historyRows(); track row.price.id) {
+        <tr [class.selected]="row.price.id === p.id">
+          <td>{{ formatDate(row.price.startDate) }}</td>
+          <td class="number">{{ formatMoney(row.price.unitPrice) }}</td>
+          <td><app-badge [text]="statusLabels[row.status]" [tone]="statusTones[row.status]" /></td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
