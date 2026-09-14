@@ -1,0 +1,13 @@
+@if (open()) {
+  <div class="backdrop" (click)="cancelled.emit()"></div>
+
+  <div class="box" role="alertdialog" [attr.aria-label]="heading()">
+    <h2>{{ heading() }}</h2>
+    <p>{{ message() }}</p>
+
+    <div class="actions">
+      <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+      <button type="button" class="btn btn-danger" (click)="confirmed.emit()">{{ confirmLabel() }}</button>
+    </div>
+  </div>
+}
