@@ -13,7 +13,12 @@ export const routes: Routes = [
       { path: 'articles',         component: ComingSoonComponent, data: { title: 'Articles' } },
       { path: 'families',         component: ComingSoonComponent, data: { title: 'Familles' } },
       { path: 'packagings',       component: ComingSoonComponent, data: { title: 'Conditionnements' } },
-      { path: 'units-of-measure', component: ComingSoonComponent, data: { title: 'Unités de mesure' } },
+      {
+        path: 'units-of-measure',
+        loadComponent: () =>
+          import('./features/units-of-measure/unit-of-measure-list.component')
+            .then(m => m.UnitOfMeasureListComponent),
+      },
       { path: 'pricing',          component: ComingSoonComponent, data: { title: 'Tarifs et privilèges' } },
 
       // --- Not exposed by the backend yet ---

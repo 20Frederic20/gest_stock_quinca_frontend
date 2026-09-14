@@ -1,0 +1,57 @@
+<app-page-header heading="Unités de mesure" actionLabel="Nouvelle unité" (action)="openCreate()" />
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="units().length === 0"
+  emptyMessage="Aucune unité de mesure enregistrée."
+  (retry)="load()" />
+
+@if (!loading() && !error() && units().length > 0) {
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Libellé</th>
+        <th class="actions-column"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (unit of units(); track unit.id) {
+        <tr [class.selected]="selectedUnit()?.id === unit.id" (click)="openEdit(unit)">
+          <td>{{ unit.code }}</td>
+          <td>{{ unit.label }}</td>
+          <td class="actions-column">
+            <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(unit, $event)">
+              Supprimer
+            </button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+<app-drawer
+  [open]="drawerOpen()"
+  [heading]="selectedUnit() ? 'Modifier l’unité' : 'Nouvelle unité'"
+  (closed)="closeDrawer()">
+  <!-- Created only while open, so a new unit always starts with an empty form. -->
+  @if (drawerOpen()) {
+    <app-unit-of-measure-form [unit]="selectedUnit()" (saved)="onSaved()" (cancelled)="closeDrawer()" />
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="unitToDelete() !== null"
+  heading="Supprimer cette unité ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />
