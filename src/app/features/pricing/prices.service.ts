@@ -2,14 +2,11 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ArticlePrice, ArticlePriceRequest } from '../../core/models/article-price.model';
 
-/**
- * Calls to the backend ArticlePriceController.
- * Its URLs have no /v1: the controller is mapped on /api, unlike the others.
- */
+/** Calls to the backend ArticlePriceController. */
 @Injectable({ providedIn: 'root' })
 export class PricesService {
   private http = inject(HttpClient);
-  private url = '/api';
+  private url = '/api/v1';
 
   /** Newest start date first. */
   getByPackaging(packagingId: string) {

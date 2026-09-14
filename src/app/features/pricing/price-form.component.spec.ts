@@ -121,7 +121,7 @@ describe('PriceFormComponent', () => {
 
     component.submit();
 
-    httpTesting.expectNone('/api/packagings/k1/prices');
+    httpTesting.expectNone('/api/v1/packagings/k1/prices');
     expect(component.form.controls.unitPrice.touched).toBe(true);
     expect(saved).not.toHaveBeenCalled();
   });
@@ -132,7 +132,7 @@ describe('PriceFormComponent', () => {
 
     component.submit();
 
-    const req = httpTesting.expectOne('/api/packagings/k1/prices');
+    const req = httpTesting.expectOne('/api/v1/packagings/k1/prices');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ privilegeId: 'p1', unitPrice: 5200, startDate: '2027-01-01' });
     req.flush(scheduled);
@@ -145,7 +145,7 @@ describe('PriceFormComponent', () => {
 
     component.submit();
 
-    const req = httpTesting.expectOne('/api/prices/x1');
+    const req = httpTesting.expectOne('/api/v1/prices/x1');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ privilegeId: 'p2', unitPrice: 4900, startDate: '2026-12-01' });
     req.flush(scheduled);
@@ -158,7 +158,7 @@ describe('PriceFormComponent', () => {
 
     component.submit();
 
-    httpTesting.expectOne('/api/packagings/k1/prices').flush(
+    httpTesting.expectOne('/api/v1/packagings/k1/prices').flush(
       { status: 400, message: 'Un prix existe déjà pour cette grille tarifaire à partir du 2026-09-14', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );

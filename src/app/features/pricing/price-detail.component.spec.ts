@@ -7,7 +7,7 @@ import { PriceDetailComponent } from './price-detail.component';
 
 const at = '2026-09-13T11:29:08.779306';
 const TODAY = '2026-09-14';
-const HISTORY = '/api/packagings/k1/prices/history';
+const HISTORY = '/api/v1/packagings/k1/prices/history';
 
 const base: ArticlePrice = {
   id: 'x2', packagingId: 'k1', articleId: 'a1', articleDesignation: 'Ciment CIM II 32.5R',

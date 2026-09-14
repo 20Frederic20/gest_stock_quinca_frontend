@@ -68,7 +68,7 @@ describe('PriceListComponent', () => {
   function selectBag(component: PriceListComponent, prices: ArticlePrice[]) {
     selectCement(component, [bag, pallet]);
     component.onPackagingSelected({ id: 'k1', label: '' });
-    httpTesting.expectOne('/api/packagings/k1/prices').flush(prices);
+    httpTesting.expectOne('/api/v1/packagings/k1/prices').flush(prices);
   }
 
   afterEach(() => httpTesting.verify());
@@ -92,7 +92,7 @@ describe('PriceListComponent', () => {
     selectCement(component, [bag]);
 
     expect(component.selectedPackaging()).toBe(bag);
-    httpTesting.expectOne('/api/packagings/k1/prices').flush([]);
+    httpTesting.expectOne('/api/v1/packagings/k1/prices').flush([]);
   });
 
   it('loads the prices of the chosen packaging, grouped by privilege with their status', () => {
@@ -125,11 +125,11 @@ describe('PriceListComponent', () => {
     selectCement(component, [bag, pallet]);
 
     component.onPackagingSelected({ id: 'k1', label: '' });
-    const old = httpTesting.expectOne('/api/packagings/k1/prices');
+    const old = httpTesting.expectOne('/api/v1/packagings/k1/prices');
     component.onPackagingSelected({ id: 'k2', label: '' });
 
     expect(old.cancelled).toBe(true);
-    httpTesting.expectOne('/api/packagings/k2/prices').flush([]);
+    httpTesting.expectOne('/api/v1/packagings/k2/prices').flush([]);
   });
 
   it('shows the error message when the prices cannot be loaded', () => {
@@ -137,7 +137,7 @@ describe('PriceListComponent', () => {
     selectCement(component, [bag, pallet]);
 
     component.onPackagingSelected({ id: 'k1', label: '' });
-    httpTesting.expectOne('/api/packagings/k1/prices').flush(
+    httpTesting.expectOne('/api/v1/packagings/k1/prices').flush(
       { status: 404, message: 'Conditionnement introuvable', fieldErrors: null },
       { status: 404, statusText: 'Not Found' },
     );
@@ -179,7 +179,7 @@ describe('PriceListComponent', () => {
     component.onSaved();
 
     expect(component.drawerOpen()).toBe(false);
-    httpTesting.expectOne('/api/packagings/k1/prices').flush([retailNext, retailCurrent]);
+    httpTesting.expectOne('/api/v1/packagings/k1/prices').flush([retailNext, retailCurrent]);
     expect(component.prices()).toEqual([retailNext, retailCurrent]);
   });
 
@@ -189,17 +189,17 @@ describe('PriceListComponent', () => {
     component.openDetail(retailNext);
 
     component.askDelete();
-    httpTesting.expectNone('/api/prices/x3');
+    httpTesting.expectNone('/api/v1/prices/x3');
     expect(component.deleteMessage().replace(/\s+/g, ' ')).toContain('5 000 F CFA');
     expect(component.deleteMessage()).toContain('Détail');
 
     component.confirmDelete();
-    const req = httpTesting.expectOne('/api/prices/x3');
+    const req = httpTesting.expectOne('/api/v1/prices/x3');
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
 
     expect(component.drawerOpen()).toBe(false);
-    httpTesting.expectOne('/api/packagings/k1/prices').flush([retailCurrent]);
+    httpTesting.expectOne('/api/v1/packagings/k1/prices').flush([retailCurrent]);
     expect(component.prices()).toEqual([retailCurrent]);
   });
 
@@ -210,7 +210,7 @@ describe('PriceListComponent', () => {
 
     component.askDelete();
     component.confirmDelete();
-    httpTesting.expectOne('/api/prices/x3').flush(
+    httpTesting.expectOne('/api/v1/prices/x3').flush(
       { status: 400, message: 'Impossible de supprimer un prix déjà en vigueur', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );
