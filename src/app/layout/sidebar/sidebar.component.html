@@ -1,0 +1,21 @@
+<div class="brand">
+  <div class="brand-bar"></div>
+  <div class="brand-name">Quincaillerie<br />Le Chantier</div>
+  <div class="brand-subtitle">Gestion de stock · XOF</div>
+</div>
+
+<nav>
+  @for (group of menu; track group.title) {
+    <div class="group">
+      <div class="group-title">{{ group.title }}</div>
+      @for (item of group.items; track item.route) {
+        <a class="item" [routerLink]="item.route" routerLinkActive="active">
+          {{ item.label }}
+          @if (!item.ready) {
+            <span class="note">à venir</span>
+          }
+        </a>
+      }
+    </div>
+  }
+</nav>
