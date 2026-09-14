@@ -1,0 +1,12 @@
+<div class="header">
+  <div>
+    <h1>{{ heading() }}</h1>
+    @if (subtitle()) {
+      <p class="subtitle text-muted">{{ subtitle() }}</p>
+    }
+  </div>
+
+  @if (actionLabel()) {
+    <button type="button" class="btn btn-primary" (click)="action.emit()">{{ actionLabel() }}</button>
+  }
+</div>
