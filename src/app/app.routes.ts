@@ -51,7 +51,11 @@ export const routes: Routes = [
       { path: 'transfers',       component: ComingSoonComponent, data: { title: 'Transferts entre agences' } },
       { path: 'day-closing',     component: ComingSoonComponent, data: { title: 'Clôture de journée' } },
       { path: 'reports',         component: ComingSoonComponent, data: { title: 'Rapports et exports' } },
-      { path: 'agencies',        component: ComingSoonComponent, data: { title: 'Agences' } },
+      {
+        path: 'agencies',
+        loadComponent: () =>
+          import('./features/agencies/agency-list.component').then(m => m.AgencyListComponent),
+      },
       { path: 'users',           component: ComingSoonComponent, data: { title: 'Utilisateurs' } },
       { path: 'roles',           component: ComingSoonComponent, data: { title: 'Rôles et permissions' } },
       { path: 'audit-log',       component: ComingSoonComponent, data: { title: "Journal d'audit" } },

@@ -1,0 +1,33 @@
+@let a = agency();
+
+<dl class="sheet">
+  <dt>Code</dt>
+  <dd>{{ a.code }}</dd>
+
+  <dt>Libellé</dt>
+  <dd>{{ a.label }}</dd>
+
+  <dt>Adresse</dt>
+  <dd>{{ a.address || '—' }}</dd>
+
+  <dt>Téléphone</dt>
+  <dd>{{ a.phone || '—' }}</dd>
+
+  <dt>IFU</dt>
+  <dd>{{ a.taxId || '—' }}</dd>
+
+  <dt>État</dt>
+  <dd><app-badge [text]="a.active ? 'Active' : 'Inactive'" [tone]="a.active ? 'neutral' : 'muted'" /></dd>
+
+  <dt>Créée le</dt>
+  <dd>{{ formatDate(a.createdAt) }}</dd>
+
+  <dt>Modifiée le</dt>
+  <dd>{{ formatDate(a.updatedAt) }}</dd>
+</dl>
+
+<div class="actions">
+  <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+  <button type="button" class="btn" (click)="toggleActive.emit()">{{ a.active ? 'Désactiver' : 'Activer' }}</button>
+  <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+</div>

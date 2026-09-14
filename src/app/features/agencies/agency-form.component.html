@@ -1,0 +1,44 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="row">
+    <div class="field">
+      <label for="agencyCode">Code</label>
+      <input id="agencyCode" formControlName="code" maxlength="20" autocomplete="off" />
+      <app-field-error [control]="form.controls.code" [serverError]="fieldErrors()['code']" />
+    </div>
+
+    <div class="field">
+      <label for="agencyTaxId">IFU <span class="optional">(facultatif)</span></label>
+      <input id="agencyTaxId" formControlName="taxId" maxlength="30" autocomplete="off" />
+      <app-field-error [control]="form.controls.taxId" [serverError]="fieldErrors()['taxId']" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="agencyLabel">Libellé</label>
+    <input id="agencyLabel" formControlName="label" maxlength="150" autocomplete="off" />
+    <app-field-error [control]="form.controls.label" [serverError]="fieldErrors()['label']" />
+  </div>
+
+  <div class="field">
+    <label for="agencyAddress">Adresse <span class="optional">(facultatif)</span></label>
+    <input id="agencyAddress" formControlName="address" maxlength="255" autocomplete="off" />
+    <app-field-error [control]="form.controls.address" [serverError]="fieldErrors()['address']" />
+  </div>
+
+  <div class="field">
+    <label for="agencyPhone">Téléphone <span class="optional">(facultatif)</span></label>
+    <input id="agencyPhone" type="tel" formControlName="phone" maxlength="30" autocomplete="off" />
+    <app-field-error [control]="form.controls.phone" [serverError]="fieldErrors()['phone']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

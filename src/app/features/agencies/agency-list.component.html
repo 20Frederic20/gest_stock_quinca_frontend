@@ -1,0 +1,67 @@
+<app-page-header heading="Agences" actionLabel="Nouvelle agence" (action)="openCreate()" />
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="agencies().length === 0"
+  emptyMessage="Aucune agence enregistrée."
+  (retry)="load()" />
+
+@if (!loading() && !error() && agencies().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Libellé</th>
+          <th>Téléphone</th>
+          <th>IFU</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (agency of agencies(); track agency.id) {
+          <tr [class.selected]="selectedAgency()?.id === agency.id" (click)="openDetail(agency)">
+            <td class="nowrap">{{ agency.code }}</td>
+            <td>{{ agency.label }}</td>
+            <td class="nowrap text-muted">{{ agency.phone || '—' }}</td>
+            <td class="nowrap text-muted">{{ agency.taxId || '—' }}</td>
+            <td>
+              <app-badge [text]="agency.active ? 'Active' : 'Inactive'" [tone]="agency.active ? 'neutral' : 'muted'" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedAgency(); as agency) {
+        <app-agency-detail
+          [agency]="agency"
+          (edit)="openEdit()"
+          (toggleActive)="toggleActive()"
+          (delete)="askDelete()" />
+      }
+    } @else {
+      <app-agency-form [agency]="selectedAgency()" (saved)="onSaved()" (cancelled)="onFormCancelled()" />
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="agencyToDelete() !== null"
+  heading="Supprimer cette agence ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

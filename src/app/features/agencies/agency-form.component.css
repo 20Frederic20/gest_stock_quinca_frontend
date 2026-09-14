@@ -1,0 +1,25 @@
+.form-error {
+  color: #a11;
+  background: #fdecec;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--space-3);
+}
+
+.optional {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
