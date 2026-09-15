@@ -22,6 +22,8 @@ export class PriceDetailComponent {
   price = input.required<ArticlePrice>();
   /** Injected so that tests do not depend on the day they run. */
   today = input(todayIso());
+  /** false = read-only user: not even a scheduled price offers its actions. */
+  canEdit = input(true);
 
   edit = output<void>();
   delete = output<void>();

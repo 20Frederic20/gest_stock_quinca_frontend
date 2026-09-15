@@ -1,7 +1,7 @@
 <app-page-header
   heading="Conditionnements"
   subtitle="Les conditionnements sont rattachés à un article : choisissez-en un pour commencer."
-  [actionLabel]="selectedArticle() ? 'Nouveau conditionnement' : ''"
+  [actionLabel]="selectedArticle() && canWrite() ? 'Nouveau conditionnement' : ''"
   (action)="openCreate()" />
 
 <div class="article-choice">
@@ -74,6 +74,7 @@
         <app-packaging-detail
           [packaging]="packaging"
           [stockUnitCode]="stockUnitCode()"
+          [canEdit]="canWrite()"
           (edit)="openEdit()"
           (setDefaultPurchase)="setDefaultPurchase()"
           (setDefaultSale)="setDefaultSale()"

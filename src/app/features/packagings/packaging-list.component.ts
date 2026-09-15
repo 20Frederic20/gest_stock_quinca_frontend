@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Article } from '../../core/models/article.model';
 import { Packaging } from '../../core/models/packaging.model';
@@ -42,6 +43,10 @@ export class PackagingListComponent implements OnInit {
   private service = inject(PackagingsService);
   private articlesService = inject(ArticlesService);
   private unitsService = inject(UnitsOfMeasureService);
+  private auth = inject(AuthService);
+
+  /** Read-only users see the screen without its write actions. */
+  canWrite = computed(() => this.auth.can('referential.write'));
 
   /** The option picked in the article select; null until the user chooses. */
   selectedArticle = signal<SelectOption | null>(null);

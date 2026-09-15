@@ -1,4 +1,4 @@
-<app-page-header heading="Unités de mesure" actionLabel="Nouvelle unité" (action)="openCreate()" />
+<app-page-header heading="Unités de mesure" [actionLabel]="canWrite() ? 'Nouvelle unité' : ''" (action)="openCreate()" />
 
 @if (actionError()) {
   <div class="action-error" role="alert">
@@ -25,13 +25,15 @@
     </thead>
     <tbody>
       @for (unit of units(); track unit.id) {
-        <tr [class.selected]="selectedUnit()?.id === unit.id" (click)="openEdit(unit)">
+        <tr [class.selected]="selectedUnit()?.id === unit.id" (click)="canWrite() && openEdit(unit)">
           <td>{{ unit.code }}</td>
           <td>{{ unit.label }}</td>
           <td class="actions-column">
-            <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(unit, $event)">
-              Supprimer
-            </button>
+            @if (canWrite()) {
+              <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(unit, $event)">
+                Supprimer
+              </button>
+            }
           </td>
         </tr>
       }

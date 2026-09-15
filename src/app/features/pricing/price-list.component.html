@@ -3,7 +3,7 @@
     <h2>Prix</h2>
     <p class="subtitle text-muted">Un prix par grille tarifaire et par conditionnement, avec sa date de prise d’effet.</p>
   </div>
-  @if (selectedPackaging()) {
+  @if (selectedPackaging() && canWrite()) {
     <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau prix</button>
   }
 </div>
@@ -86,7 +86,7 @@
   @if (drawerOpen()) {
     @if (drawerMode() === 'detail') {
       @if (selectedPrice(); as price) {
-        <app-price-detail [price]="price" [today]="today()" (edit)="openEdit()" (delete)="askDelete()" />
+        <app-price-detail [price]="price" [today]="today()" [canEdit]="canWrite()" (edit)="openEdit()" (delete)="askDelete()" />
       }
     } @else if (selectedPackaging(); as packaging) {
       <app-price-form

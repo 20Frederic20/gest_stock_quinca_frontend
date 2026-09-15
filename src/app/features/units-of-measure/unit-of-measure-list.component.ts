@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { UnitOfMeasure } from '../../core/models/unit-of-measure.model';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -22,6 +23,10 @@ import { UnitsOfMeasureService } from './units-of-measure.service';
 })
 export class UnitOfMeasureListComponent implements OnInit {
   private service = inject(UnitsOfMeasureService);
+  private auth = inject(AuthService);
+
+  /** Read-only users see the screen without its write actions. */
+  canWrite = computed(() => this.auth.can('referential.write'));
 
   units = signal<UnitOfMeasure[]>([]);
   loading = signal(false);

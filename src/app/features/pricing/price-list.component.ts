@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Article } from '../../core/models/article.model';
 import { ArticlePrice } from '../../core/models/article-price.model';
@@ -45,6 +46,10 @@ export class PriceListComponent implements OnInit {
   private articlesService = inject(ArticlesService);
   private packagingsService = inject(PackagingsService);
   private privilegesService = inject(PrivilegesService);
+  private auth = inject(AuthService);
+
+  /** Read-only users see the section without its write actions. */
+  canWrite = computed(() => this.auth.can('referential.write'));
 
   today = signal(todayIso());
   privileges = signal<Privilege[]>([]);

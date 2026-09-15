@@ -14,6 +14,8 @@ export class PackagingDetailComponent {
   packaging = input.required<Packaging>();
   /** Unit the quantity is expressed in, e.g. "KG". */
   stockUnitCode = input('');
+  /** false = read-only user: the sheet shows no action. */
+  canEdit = input(true);
 
   edit = output<void>();
   setDefaultPurchase = output<void>();

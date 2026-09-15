@@ -18,10 +18,12 @@
 </dl>
 
 @if (status() === 'scheduled') {
-  <div class="actions">
-    <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
-    <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
-  </div>
+  @if (canEdit()) {
+    <div class="actions">
+      <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+      <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+    </div>
+  }
 } @else {
   <p class="locked">
     Ce prix a pris effet : il ne peut plus être modifié ni supprimé. Pour le changer,
