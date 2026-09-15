@@ -51,7 +51,7 @@ describe('InvoiceListComponent', () => {
   it('lists the documents of the user’s own agency', () => {
     const { component } = setup();
 
-    const req = httpTesting.expectOne(r => r.url === '/api/agencies/g1/invoices');
+    const req = httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices');
     expect(req.request.params.get('page')).toBe('0');
     req.flush(page([draft]));
 
@@ -61,26 +61,26 @@ describe('InvoiceListComponent', () => {
 
   it('lets a manager look at another agency, not a seller', () => {
     const seller = setup('SELLER');
-    httpTesting.expectOne(r => r.url === '/api/agencies/g1/invoices').flush(page([]));
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([]));
     expect(seller.component.canChooseAgency()).toBe(false);
     expect(seller.component.canCreate()).toBe(true);
   });
 
   it('switches agency and starts again from the first page', () => {
     const { component } = setup('MANAGER');
-    httpTesting.expectOne(r => r.url === '/api/agencies/g1/invoices').flush(page([draft]));
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
     expect(component.canChooseAgency()).toBe(true);
 
     component.onAgencySelected({ id: 'g2', label: 'Parakou' });
 
-    httpTesting.expectOne(r => r.url === '/api/agencies/g2/invoices' && r.params.get('page') === '0').flush(page([]));
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g2/invoices' && r.params.get('page') === '0').flush(page([]));
     expect(component.agencyLabel()).toBe('Parakou');
     expect(component.invoices()).toEqual([]);
   });
 
   it('opens a document and starts a new sale on their own page', () => {
     const { component, navigate } = setup();
-    httpTesting.expectOne(r => r.url === '/api/agencies/g1/invoices').flush(page([draft]));
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
 
     component.open(draft);
     component.newSale();
@@ -92,7 +92,7 @@ describe('InvoiceListComponent', () => {
   it('shows the error message when loading fails', () => {
     const { component } = setup();
 
-    httpTesting.expectOne(r => r.url === '/api/agencies/g1/invoices').flush(
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(
       { status: 500, message: 'Erreur interne du serveur', fieldErrors: null },
       { status: 500, statusText: 'Server Error' },
     );

@@ -177,12 +177,12 @@ describe('read-only access', () => {
   it('customers: a seller registers them, but the sheet has no action', () => {
     const { component, element, refresh, buttons } = render(CustomerListComponent, 'SELLER');
     httpTesting.expectOne('/api/v1/privileges').flush([privilege]);
-    httpTesting.expectOne(r => r.url === '/api/customers').flush({ content: [customer], totalElements: 1, totalPages: 1, number: 0, size: 20 });
+    httpTesting.expectOne(r => r.url === '/api/v1/customers').flush({ content: [customer], totalElements: 1, totalPages: 1, number: 0, size: 20 });
     refresh();
 
     expect(buttons('app-page-header button')).toEqual(['Nouveau client']);
     component.openDetail(customer);
-    httpTesting.expectOne('/api/customers/c1/credit').flush({
+    httpTesting.expectOne('/api/v1/customers/c1/credit').flush({
       customerId: 'c1', customerName: 'Bâtiments Houngbo', creditLimit: 500000, currentBalance: 0,
       remainingCredit: 500000, paymentTermDays: 30, creditAllowed: true,
     });
@@ -194,7 +194,7 @@ describe('read-only access', () => {
   it('customers: a cashier cannot even register one', () => {
     const { component, refresh, buttons } = render(CustomerListComponent, 'CASHIER');
     httpTesting.expectOne('/api/v1/privileges').flush([]);
-    httpTesting.expectOne(r => r.url === '/api/customers').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    httpTesting.expectOne(r => r.url === '/api/v1/customers').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
     refresh();
 
     expect(buttons('app-page-header button')).toEqual([]);
@@ -204,7 +204,7 @@ describe('read-only access', () => {
   it('customers: a manager edits them but does not delete them', () => {
     const { component } = render(CustomerListComponent, 'MANAGER');
     httpTesting.expectOne('/api/v1/privileges').flush([]);
-    httpTesting.expectOne(r => r.url === '/api/customers').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    httpTesting.expectOne(r => r.url === '/api/v1/customers').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
 
     expect(component.canEdit()).toBe(true);
     expect(component.canDelete()).toBe(false);

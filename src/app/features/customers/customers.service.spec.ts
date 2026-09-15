@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { CustomerRequest } from '../../core/models/customer.model';
 import { CustomersService } from './customers.service';
 
-const URL = '/api/customers';
+const URL = '/api/v1/customers';
 
 const body: CustomerRequest = {
   code: 'CLI-001', name: 'Bâtiments Houngbo', type: 'COMPANY', phone: null, address: null, taxId: null,

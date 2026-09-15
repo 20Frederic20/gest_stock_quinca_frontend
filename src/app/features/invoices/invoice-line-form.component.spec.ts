@@ -133,7 +133,7 @@ describe('InvoiceLineFormComponent', () => {
 
     component.submit();
 
-    const req = httpTesting.expectOne('/api/invoices/i1/lines');
+    const req = httpTesting.expectOne('/api/v1/invoices/i1/lines');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ packagingId: 'k1', quantity: 2, discountRate: 0 });
     req.flush(updated);
@@ -151,7 +151,7 @@ describe('InvoiceLineFormComponent', () => {
 
     component.submit();
 
-    httpTesting.expectNone('/api/invoices/i1/lines');
+    httpTesting.expectNone('/api/v1/invoices/i1/lines');
     expect(component.formError()).toContain('quantité');
     expect(added).not.toHaveBeenCalled();
   });
@@ -163,7 +163,7 @@ describe('InvoiceLineFormComponent', () => {
 
     component.submit();
 
-    httpTesting.expectOne('/api/invoices/i1/lines').flush(
+    httpTesting.expectOne('/api/v1/invoices/i1/lines').flush(
       { status: 400, message: 'Remise de 30 % refusée : votre plafond est de 5 %', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );

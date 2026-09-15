@@ -57,7 +57,7 @@ describe('InvoiceLinesComponent', () => {
 
     component.save(line);
 
-    const req = httpTesting.expectOne('/api/invoices/i1/lines/l1');
+    const req = httpTesting.expectOne('/api/v1/invoices/i1/lines/l1');
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({ packagingId: 'k1', quantity: 12, discountRate: 5 });
     req.flush(updated);
@@ -72,7 +72,7 @@ describe('InvoiceLinesComponent', () => {
 
     component.save(line);
 
-    httpTesting.expectNone('/api/invoices/i1/lines/l1');
+    httpTesting.expectNone('/api/v1/invoices/i1/lines/l1');
     expect(failed).toHaveBeenCalledTimes(1);
   });
 
@@ -81,7 +81,7 @@ describe('InvoiceLinesComponent', () => {
 
     component.remove(line);
 
-    const req = httpTesting.expectOne('/api/invoices/i1/lines/l1');
+    const req = httpTesting.expectOne('/api/v1/invoices/i1/lines/l1');
     expect(req.request.method).toBe('DELETE');
     req.flush({ id: 'i1', lines: [] });
     expect(changed).toHaveBeenCalledTimes(1);
@@ -94,7 +94,7 @@ describe('InvoiceLinesComponent', () => {
 
     component.save(line);
 
-    httpTesting.expectOne('/api/invoices/i1/lines/l1').flush(
+    httpTesting.expectOne('/api/v1/invoices/i1/lines/l1').flush(
       { status: 400, message: 'Remise de 30 % refusée : votre plafond est de 5 %', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );

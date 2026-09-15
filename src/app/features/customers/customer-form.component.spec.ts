@@ -6,7 +6,7 @@ import { Customer, CustomerRequest } from '../../core/models/customer.model';
 import { Privilege } from '../../core/models/privilege.model';
 import { CustomerFormComponent } from './customer-form.component';
 
-const URL = '/api/customers';
+const URL = '/api/v1/customers';
 const at = '2026-09-15T08:00:00';
 
 const privileges: Privilege[] = [

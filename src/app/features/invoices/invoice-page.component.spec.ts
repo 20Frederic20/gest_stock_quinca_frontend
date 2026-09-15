@@ -49,8 +49,8 @@ describe('InvoicePageComponent', () => {
     const fixture = TestBed.createComponent(InvoicePageComponent);
     fixture.componentRef.setInput('id', invoice.id);
     fixture.detectChanges();
-    httpTesting.expectOne('/api/invoices/i1').flush(invoice);
-    httpTesting.expectOne('/api/customers/c1').flush(customer);
+    httpTesting.expectOne('/api/v1/invoices/i1').flush(invoice);
+    httpTesting.expectOne('/api/v1/customers/c1').flush(customer);
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -80,7 +80,7 @@ describe('InvoicePageComponent', () => {
     fixture.componentRef.setInput('id', 'i404');
     fixture.detectChanges();
 
-    httpTesting.expectOne('/api/invoices/i404').flush(
+    httpTesting.expectOne('/api/v1/invoices/i404').flush(
       { status: 404, message: 'Document introuvable', fieldErrors: null },
       { status: 404, statusText: 'Not Found' },
     );
@@ -92,11 +92,11 @@ describe('InvoicePageComponent', () => {
     const { component, refresh, buttons, element } = setup();
 
     component.askValidation();
-    httpTesting.expectNone('/api/invoices/i1/validation');
+    httpTesting.expectNone('/api/v1/invoices/i1/validation');
     expect(component.validationMessage()).toContain('stock');
 
     component.validate();
-    const req = httpTesting.expectOne('/api/invoices/i1/validation');
+    const req = httpTesting.expectOne('/api/v1/invoices/i1/validation');
     expect(req.request.method).toBe('POST');
     req.flush(validated);
     refresh();
@@ -111,7 +111,7 @@ describe('InvoicePageComponent', () => {
     const { component } = setup();
 
     component.validate();
-    httpTesting.expectOne('/api/invoices/i1/validation').flush(
+    httpTesting.expectOne('/api/v1/invoices/i1/validation').flush(
       { status: 400, message: 'Stock insuffisant pour « Ciment CIM II 32.5R »', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );
@@ -134,11 +134,11 @@ describe('InvoicePageComponent', () => {
     const { component, navigate } = setup();
 
     component.askDelete();
-    httpTesting.expectNone('/api/invoices/i1');
+    httpTesting.expectNone('/api/v1/invoices/i1');
     expect(component.deleteMessage()).toContain('FAC-COT-2026-00001');
 
     component.deleteDraft();
-    const req = httpTesting.expectOne('/api/invoices/i1');
+    const req = httpTesting.expectOne('/api/v1/invoices/i1');
     expect(req.request.method).toBe('DELETE');
     req.flush(null);
 

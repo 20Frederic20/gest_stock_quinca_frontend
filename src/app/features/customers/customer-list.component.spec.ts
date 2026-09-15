@@ -7,7 +7,7 @@ import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Privilege } from '../../core/models/privilege.model';
 import { CustomerListComponent } from './customer-list.component';
 
-const URL = '/api/customers';
+const URL = '/api/v1/customers';
 const at = '2026-09-15T08:00:00';
 
 const privilege: Privilege = { id: 'p1', label: 'Standard', isDefault: true, createdAt: at, updatedAt: at };

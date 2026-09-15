@@ -5,12 +5,11 @@ import { PageResponse } from '../../core/models/page.model';
 
 /**
  * Calls to the backend CustomerController. Lists are paginated: 20 per page, sorted by name.
- * Unlike the other controllers, it is mounted on /api/customers, without /v1.
  */
 @Injectable({ providedIn: 'root' })
 export class CustomersService {
   private http = inject(HttpClient);
-  private url = '/api/customers';
+  private url = '/api/v1/customers';
 
   getAll(page = 0) {
     return this.http.get<PageResponse<Customer>>(this.url, { params: { page } });

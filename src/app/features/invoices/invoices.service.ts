@@ -5,12 +5,12 @@ import { PageResponse } from '../../core/models/page.model';
 
 /**
  * Calls to the backend InvoiceController. Every change to a document answers with the whole document,
- * lines and totals recomputed. Mounted on /api, without /v1, unlike most controllers.
+ * lines and totals recomputed.
  */
 @Injectable({ providedIn: 'root' })
 export class InvoicesService {
   private http = inject(HttpClient);
-  private url = '/api';
+  private url = '/api/v1';
 
   /** Newest document date first, 20 per page. */
   getByAgency(agencyId: string, page = 0) {

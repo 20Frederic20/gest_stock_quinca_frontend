@@ -39,9 +39,9 @@ describe('InvoicePrintComponent', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     const load = () => {
-      httpTesting.expectOne('/api/invoices/i1').flush(document);
+      httpTesting.expectOne('/api/v1/invoices/i1').flush(document);
       httpTesting.expectOne('/api/v1/agencies/g1').flush(agency);
-      httpTesting.expectOne('/api/customers/c1').flush(customer);
+      httpTesting.expectOne('/api/v1/customers/c1').flush(customer);
       fixture.detectChanges();
     };
 
@@ -83,7 +83,7 @@ describe('InvoicePrintComponent', () => {
   it('shows the error when the document cannot be loaded', () => {
     const { component } = setup();
 
-    httpTesting.expectOne('/api/invoices/i1').flush(
+    httpTesting.expectOne('/api/v1/invoices/i1').flush(
       { status: 404, message: 'Document introuvable', fieldErrors: null },
       { status: 404, statusText: 'Not Found' },
     );

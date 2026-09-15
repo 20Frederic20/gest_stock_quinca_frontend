@@ -46,13 +46,13 @@ describe('SaleStartComponent', () => {
     const { creditMode } = component.form.controls;
 
     component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
-    httpTesting.expectOne('/api/customers/c1/credit').flush(credit(true));
+    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(true));
     expect(creditMode.enabled).toBe(true);
     creditMode.setValue(true);
 
     component.onCustomerSelected({ id: 'c2', label: 'CLI-002 — Awa Dossou' });
     expect(creditMode.value).toBe(false);
-    httpTesting.expectOne('/api/customers/c2/credit').flush(credit(false));
+    httpTesting.expectOne('/api/v1/customers/c2/credit').flush(credit(false));
     expect(creditMode.disabled).toBe(true);
   });
 
@@ -63,7 +63,7 @@ describe('SaleStartComponent', () => {
 
     component.searchCustomers(' bat ').subscribe(result => (options = result));
 
-    const req = httpTesting.expectOne(r => r.url === '/api/customers/search');
+    const req = httpTesting.expectOne(r => r.url === '/api/v1/customers/search');
     expect(req.request.params.get('term')).toBe('bat');
     req.flush({ content: [customer('1', true), customer('2', false)], totalElements: 2, totalPages: 1, number: 0, size: 20 });
     expect(options).toEqual([{ id: '1', label: 'CLI-1 — Client 1' }]);
@@ -74,20 +74,20 @@ describe('SaleStartComponent', () => {
 
     component.submit();
 
-    httpTesting.expectNone('/api/invoices');
+    httpTesting.expectNone('/api/v1/invoices');
     expect(component.form.controls.customerId.touched).toBe(true);
   });
 
   it('creates the draft, then opens it in place of this step', () => {
     const { component, navigate } = setup();
     component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
-    httpTesting.expectOne('/api/customers/c1/credit').flush(credit(true));
+    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(true));
     component.form.controls.creditMode.setValue(true);
     component.onTypeSelected({ id: 'PROFORMA', label: 'Proforma' });
 
     component.submit();
 
-    const req = httpTesting.expectOne('/api/invoices');
+    const req = httpTesting.expectOne('/api/v1/invoices');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ customerId: 'c1', type: 'PROFORMA', creditMode: true });
     req.flush({ id: 'i1' });
@@ -97,11 +97,11 @@ describe('SaleStartComponent', () => {
   it('shows the backend message when the draft is refused', () => {
     const { component, navigate } = setup();
     component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
-    httpTesting.expectOne('/api/customers/c1/credit').flush(credit(false));
+    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(false));
 
     component.submit();
 
-    httpTesting.expectOne('/api/invoices').flush(
+    httpTesting.expectOne('/api/v1/invoices').flush(
       { status: 400, message: 'Le client « Bâtiments Houngbo » est désactivé', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );

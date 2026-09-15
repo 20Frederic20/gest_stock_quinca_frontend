@@ -5,7 +5,7 @@ import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Invoice } from '../../core/models/invoice.model';
 import { CancelInvoiceFormComponent } from './cancel-invoice-form.component';
 
-const URL = '/api/invoices/i1/cancellation';
+const URL = '/api/v1/invoices/i1/cancellation';
 
 describe('CancelInvoiceFormComponent', () => {
   let httpTesting: HttpTestingController;
