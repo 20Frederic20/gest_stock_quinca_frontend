@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Family } from '../../core/models/family.model';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -23,6 +24,10 @@ import { buildFamilyTree } from './family-tree';
 })
 export class FamilyListComponent implements OnInit {
   private service = inject(FamiliesService);
+  private auth = inject(AuthService);
+
+  /** Read-only users see the screen without its write actions. */
+  canWrite = computed(() => this.auth.can('referential.write'));
 
   families = signal<Family[]>([]);
   rows = computed(() => buildFamilyTree(this.families()));

@@ -1,11 +1,19 @@
 import { Routes } from '@angular/router';
+import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
 import { ComingSoonComponent } from './features/coming-soon/coming-soon.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
+  // Outside the frame: no sidebar nor header before logging in.
+  {
+    path: 'login',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent),
+  },
   {
     path: '',
     component: MainLayoutComponent,
+    canActivate: [authGuard],
     children: [
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 
@@ -56,7 +64,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/agencies/agency-list.component').then(m => m.AgencyListComponent),
       },
-      { path: 'users',           component: ComingSoonComponent, data: { title: 'Utilisateurs' } },
+      {
+        path: 'users',
+        canActivate: [permissionGuard('users.manage')],
+        loadComponent: () => import('./features/users/user-list.component').then(m => m.UserListComponent),
+      },
       { path: 'roles',           component: ComingSoonComponent, data: { title: 'Rôles et permissions' } },
       { path: 'audit-log',       component: ComingSoonComponent, data: { title: "Journal d'audit" } },
 

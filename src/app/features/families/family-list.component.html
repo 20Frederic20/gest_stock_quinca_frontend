@@ -1,4 +1,4 @@
-<app-page-header heading="Familles" actionLabel="Nouvelle famille" (action)="openCreate()" />
+<app-page-header heading="Familles" [actionLabel]="canWrite() ? 'Nouvelle famille' : ''" (action)="openCreate()" />
 
 @if (actionError()) {
   <div class="action-error" role="alert">
@@ -26,16 +26,18 @@
     </thead>
     <tbody>
       @for (row of rows(); track row.family.id) {
-        <tr [class.selected]="selectedFamily()?.id === row.family.id" (click)="openEdit(row.family)">
+        <tr [class.selected]="selectedFamily()?.id === row.family.id" (click)="canWrite() && openEdit(row.family)">
           <td class="label-cell" [class.root]="row.depth === 0" [style.--depth]="row.depth">
             {{ row.family.label }}
           </td>
           <td>{{ row.family.displayOrder }}</td>
           <td class="text-muted">{{ row.family.parentLabel ?? '—' }}</td>
           <td class="actions-column">
-            <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(row.family, $event)">
-              Supprimer
-            </button>
+            @if (canWrite()) {
+              <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(row.family, $event)">
+                Supprimer
+              </button>
+            }
           </td>
         </tr>
       }
