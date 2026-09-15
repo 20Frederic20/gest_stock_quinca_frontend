@@ -1,19 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { CurrentAgencyService } from '../../core/agency/current-agency.service';
+import { Router, provideRouter } from '@angular/router';
+import { AuthService } from '../../core/auth/auth.service';
 import { errorInterceptor } from '../../core/http/error.interceptor';
-import { Agency } from '../../core/models/agency.model';
 import { HeaderComponent } from './header.component';
-
-const URL = '/api/v1/agencies/active';
-const at = '2026-09-14T19:00:00';
-
-const headOffice: Agency = {
-  id: 'g1', code: 'COT-SIEGE', label: 'Cotonou — Siège', address: null, phone: null, taxId: null,
-  active: true, createdAt: at, updatedAt: at,
-};
-const parakou: Agency = { ...headOffice, id: 'g2', code: 'PKO', label: 'Parakou' };
 
 describe('HeaderComponent', () => {
   let httpTesting: HttpTestingController;
@@ -21,55 +12,43 @@ describe('HeaderComponent', () => {
   function setup() {
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
       ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
+    const auth = TestBed.inject(AuthService);
+    auth.setUser({
+      id: 'u1', name: 'Awa Dossou', username: 'awa.dossou', role: 'MANAGER',
+      agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
+    });
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
 
     const fixture = TestBed.createComponent(HeaderComponent);
     fixture.detectChanges();
-    const element = fixture.nativeElement as HTMLElement;
-    const trigger = () => element.querySelector('.agency .trigger')?.textContent?.trim();
 
-    return { fixture, component: fixture.componentInstance, element, trigger };
+    return { fixture, auth, navigate, element: fixture.nativeElement as HTMLElement };
   }
 
-  beforeEach(() => localStorage.clear());
   afterEach(() => httpTesting.verify());
 
-  it('loads the active agencies and shows the current one', async () => {
-    const { fixture, trigger } = setup();
+  it('shows who is logged in, their role and their agency', () => {
+    const { element } = setup();
 
-    httpTesting.expectOne(URL).flush([headOffice, parakou]);
-    await fixture.whenStable();
-
-    expect(trigger()).toContain('Cotonou — Siège');
+    expect(element.querySelector('.context')?.textContent).toContain('Awa Dossou');
+    expect(element.querySelector('.context')?.textContent).toContain('Responsable d’agence');
+    expect(element.querySelector('.agency')?.textContent).toContain('Cotonou — Siège');
   });
 
-  it('offers every active agency and switches to the chosen one', async () => {
-    const { fixture, component, trigger } = setup();
-    httpTesting.expectOne(URL).flush([headOffice, parakou]);
+  it('logs out and returns to the login page', async () => {
+    const { fixture, auth, navigate, element } = setup();
+
+    element.querySelector<HTMLButtonElement>('button.logout')!.click();
+    httpTesting.expectOne('/api/v1/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
     await fixture.whenStable();
 
-    expect(component.agencyOptions()).toEqual([
-      { id: 'g1', label: 'Cotonou — Siège' },
-      { id: 'g2', label: 'Parakou' },
-    ]);
-
-    component.onAgencySelected({ id: 'g2', label: 'Parakou' });
-    await fixture.whenStable();
-
-    expect(TestBed.inject(CurrentAgencyService).current()).toEqual(parakou);
-    expect(trigger()).toContain('Parakou');
-  });
-
-  it('says so when no agency is active', async () => {
-    const { fixture, trigger } = setup();
-
-    httpTesting.expectOne(URL).flush([]);
-    await fixture.whenStable();
-
-    expect(trigger()).toContain('Aucune agence');
+    expect(auth.user()).toBeNull();
+    expect(navigate).toHaveBeenCalledWith('/login');
   });
 });

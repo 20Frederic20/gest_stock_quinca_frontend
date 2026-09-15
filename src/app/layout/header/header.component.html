@@ -1,13 +1,13 @@
 <div class="bar">
-  <div class="context">{{ today }} · {{ userName }}</div>
+  <div class="context">
+    {{ today }} · {{ user()?.name }} <span class="role">— {{ roleLabel() }}</span>
+  </div>
   <div class="agency">
     <span class="text-muted">Agence</span>
-    <app-select-search
-      [options]="agencyOptions()"
-      [value]="current()?.id ?? null"
-      [label]="current()?.label ?? ''"
-      [placeholder]="loaded() ? 'Aucune agence' : 'Chargement…'"
-      (selected)="onAgencySelected($event)" />
+    <span class="tag">{{ user()?.agencyLabel }}</span>
+    <button type="button" class="btn btn-ghost logout" [disabled]="loggingOut()" (click)="logout()">
+      Se déconnecter
+    </button>
   </div>
 </div>
 

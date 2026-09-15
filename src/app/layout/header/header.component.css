@@ -14,6 +14,11 @@
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
+.role {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .agency {
   display: flex;
   align-items: center;
@@ -21,9 +26,9 @@
   font-size: 12px;
 }
 
-.agency app-select-search {
-  width: 220px;
-  max-width: 60vw;
+.logout {
+  font-size: 12px;
+  padding-inline: var(--space-2);
 }
 
 .rule-accent {
