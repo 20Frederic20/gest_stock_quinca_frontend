@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Privilege } from '../../core/models/privilege.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
@@ -17,6 +18,10 @@ import { PrivilegesService } from './privileges.service';
 })
 export class PrivilegeListComponent implements OnInit {
   private service = inject(PrivilegesService);
+  private auth = inject(AuthService);
+
+  /** Read-only users see the section without its write actions. */
+  canWrite = computed(() => this.auth.can('referential.write'));
 
   privileges = signal<Privilege[]>([]);
   loading = signal(false);

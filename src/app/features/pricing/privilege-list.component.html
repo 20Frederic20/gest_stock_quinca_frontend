@@ -3,7 +3,9 @@
     <h2>Privilèges</h2>
     <p class="subtitle text-muted">Les grilles tarifaires. Celle par défaut s’applique aux clients sans privilège.</p>
   </div>
-  <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau privilège</button>
+  @if (canWrite()) {
+    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau privilège</button>
+  }
 </div>
 
 @if (actionError()) {
@@ -31,7 +33,7 @@
     </thead>
     <tbody>
       @for (privilege of privileges(); track privilege.id) {
-        <tr [class.selected]="selectedPrivilege()?.id === privilege.id" (click)="openEdit(privilege)">
+        <tr [class.selected]="selectedPrivilege()?.id === privilege.id" (click)="canWrite() && openEdit(privilege)">
           <td>{{ privilege.label }}</td>
           <td>
             @if (privilege.isDefault) {
@@ -41,6 +43,7 @@
             }
           </td>
           <td class="actions-column">
+            @if (canWrite()) {
             @if (!privilege.isDefault) {
               <button type="button" class="btn btn-ghost" (click)="setDefault(privilege, $event)">Définir par défaut</button>
             }
@@ -52,6 +55,7 @@
               (click)="askDelete(privilege, $event)">
               Supprimer
             </button>
+            }
           </td>
         </tr>
       }

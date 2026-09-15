@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { AuthService } from '../../core/auth/auth.service';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Privilege } from '../../core/models/privilege.model';
 import { PrivilegeListComponent } from './privilege-list.component';
@@ -22,6 +23,10 @@ describe('PrivilegeListComponent', () => {
       ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
+    // Write actions are only shown to users allowed to edit the referential.
+    TestBed.inject(AuthService).setUser({
+      id: 'u1', name: 'Responsable', username: 'responsable', role: 'MANAGER', agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
+    });
 
     const fixture = TestBed.createComponent(PrivilegeListComponent);
     fixture.detectChanges();
