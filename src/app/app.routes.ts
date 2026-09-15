@@ -58,7 +58,11 @@ export const routes: Routes = [
         path: 'stock',
         loadComponent: () => import('./features/stock/stock-list.component').then(m => m.StockListComponent),
       },
-      { path: 'stock-movements', component: ComingSoonComponent, data: { title: 'Mouvements de stock' } },
+      {
+        path: 'stock-movements',
+        loadComponent: () =>
+          import('./features/stock-movements/movement-list.component').then(m => m.MovementListComponent),
+      },
       { path: 'transfers',       component: ComingSoonComponent, data: { title: 'Transferts entre agences' } },
       { path: 'day-closing',     component: ComingSoonComponent, data: { title: 'Clôture de journée' } },
       { path: 'reports',         component: ComingSoonComponent, data: { title: 'Rapports et exports' } },

@@ -11,7 +11,8 @@ export function fieldErrorMessage(
   if (!control || !control.touched || !control.errors) return null;
 
   const errors = control.errors;
-  if (errors['required']) return 'Ce champ est obligatoire';
+  // Spaces only count as empty for the user, like @NotBlank on the backend.
+  if (errors['required'] || errors['blank']) return 'Ce champ est obligatoire';
   if (errors['maxlength']) return `Ce champ ne doit pas dépasser ${errors['maxlength'].requiredLength} caractères`;
   if (errors['minlength']) return `Ce champ doit contenir au moins ${errors['minlength'].requiredLength} caractères`;
   if (errors['pattern']) return 'Format invalide';

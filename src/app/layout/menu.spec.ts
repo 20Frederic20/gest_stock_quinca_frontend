@@ -53,7 +53,7 @@ describe('MENU', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/agencies', '/articles', '/families', '/packagings', '/pricing', '/stock', '/units-of-measure', '/users'],
+      ['/agencies', '/articles', '/families', '/packagings', '/pricing', '/stock', '/stock-movements', '/units-of-measure', '/users'],
     );
   });
 });

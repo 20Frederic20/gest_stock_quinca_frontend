@@ -39,7 +39,7 @@ export const MENU: MenuGroup[] = [
   ]},
   { title: 'Stock', items: [
     { label: 'État du stock', route: '/stock',           ready: true },
-    { label: 'Mouvements',    route: '/stock-movements', ready: false },
+    { label: 'Mouvements',    route: '/stock-movements', ready: true },
     { label: 'Transferts',    route: '/transfers',       ready: false },
   ]},
   { title: 'Référentiel', items: [

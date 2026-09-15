@@ -1,0 +1,42 @@
+@let m = movement();
+
+<dl class="sheet">
+  <dt>Date</dt>
+  <dd>{{ formatDateTime(m.movementDate) }}</dd>
+
+  <dt>Type</dt>
+  <dd>{{ typeLabels[m.type] }}</dd>
+
+  <dt>Article</dt>
+  <dd>{{ m.articleDesignation }}</dd>
+
+  <dt>Agence</dt>
+  <dd>{{ m.agencyLabel }}</dd>
+
+  <dt>Quantité</dt>
+  <dd [class.negative]="m.quantity < 0"><strong>{{ formatSignedQuantity(m.quantity, unitCode()) }}</strong></dd>
+
+  <dt>Stock après</dt>
+  <dd>{{ formatQuantity(m.resultingQuantity, unitCode()) }}</dd>
+
+  <dt>Par</dt>
+  <dd>{{ m.userName }}</dd>
+
+  <dt>Motif</dt>
+  <dd>{{ m.reason || '—' }}</dd>
+
+  <dt>Pièce</dt>
+  <dd>{{ m.documentType ? m.documentType + ' ' + m.documentId : '—' }}</dd>
+</dl>
+
+@if (m.type === 'REVERSAL') {
+  <p class="note">Ce mouvement annule un mouvement précédent : il ne peut pas être annulé à son tour.</p>
+} @else if (alreadyReversed()) {
+  <p class="note">Ce mouvement a déjà été annulé.</p>
+}
+
+@if (reversible()) {
+  <div class="actions">
+    <button type="button" class="btn btn-danger" (click)="reverse.emit()">Annuler ce mouvement</button>
+  </div>
+}

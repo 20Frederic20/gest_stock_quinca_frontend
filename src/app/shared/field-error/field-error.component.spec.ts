@@ -84,6 +84,14 @@ describe('fieldErrorMessage', () => {
     expect(fieldErrorMessage(control, undefined)).toBe('La valeur maximale est 100');
   });
 
+  it('reports a field holding only spaces as empty', () => {
+    const control = new FormControl('   ');
+    control.setErrors({ blank: true });
+    control.markAsTouched();
+
+    expect(fieldErrorMessage(control, undefined)).toBe('Ce champ est obligatoire');
+  });
+
   it('reports a value that is too short', () => {
     const control = new FormControl('ab', Validators.minLength(3));
     control.markAsTouched();
