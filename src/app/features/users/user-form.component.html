@@ -1,0 +1,62 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="userName">Nom</label>
+    <input id="userName" formControlName="name" maxlength="150" autocomplete="off" />
+    <app-field-error [control]="form.controls.name" [serverError]="fieldErrors()['name']" />
+  </div>
+
+  <div class="field">
+    <label for="userUsername">Identifiant de connexion</label>
+    <input id="userUsername" formControlName="username" maxlength="50" autocomplete="off" autocapitalize="none" spellcheck="false" />
+    <p class="hint">Lettres, chiffres, point, tiret ou underscore. Enregistré en minuscules.</p>
+    <app-field-error [control]="form.controls.username" [serverError]="fieldErrors()['username']" />
+  </div>
+
+  @if (!user()) {
+    <div class="field">
+      <label for="userPassword">Mot de passe</label>
+      <input id="userPassword" type="password" formControlName="password" maxlength="100" autocomplete="new-password" />
+      <p class="hint">Au moins 8 caractères. À transmettre à l’utilisateur.</p>
+      <app-field-error [control]="form.controls.password" [serverError]="fieldErrors()['password']" />
+    </div>
+  }
+
+  <div class="field">
+    <label>Rôle</label>
+    <app-select-search
+      [options]="roleOptions()"
+      [value]="form.controls.role.value"
+      [label]="roleLabel()"
+      placeholder="Choisir un rôle"
+      (selected)="onRoleSelected($event)" />
+    <app-field-error [control]="form.controls.role" [serverError]="fieldErrors()['role']" />
+  </div>
+
+  <div class="field">
+    <label>Agence</label>
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="form.controls.agencyId.value || null"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+    <app-field-error [control]="form.controls.agencyId" [serverError]="fieldErrors()['agencyId']" />
+  </div>
+
+  <div class="field">
+    <label for="userDiscountLimit">Remise maximale (%)</label>
+    <input id="userDiscountLimit" type="number" min="0" max="100" step="0.01" formControlName="discountLimit" />
+    <app-field-error [control]="form.controls.discountLimit" [serverError]="fieldErrors()['discountLimit']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

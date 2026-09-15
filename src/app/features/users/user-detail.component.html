@@ -1,0 +1,40 @@
+@let u = user();
+
+<dl class="sheet">
+  <dt>Nom</dt>
+  <dd>{{ u.name }}</dd>
+
+  <dt>Identifiant</dt>
+  <dd>{{ u.username }}</dd>
+
+  <dt>Rôle</dt>
+  <dd>{{ roleLabels[u.role] }}</dd>
+
+  <dt>Agence</dt>
+  <dd>{{ u.agencyLabel }}</dd>
+
+  <dt>Remise maximale</dt>
+  <dd>{{ formatNumber(u.discountLimit) }} %</dd>
+
+  <dt>État</dt>
+  <dd><app-badge [text]="u.active ? 'Actif' : 'Inactif'" [tone]="u.active ? 'neutral' : 'muted'" /></dd>
+
+  <dt>Créé le</dt>
+  <dd>{{ formatDate(u.createdAt) }}</dd>
+
+  <dt>Modifié le</dt>
+  <dd>{{ formatDate(u.updatedAt) }}</dd>
+</dl>
+
+<div class="actions">
+  <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+  <button type="button" class="btn" (click)="resetPassword.emit()">Réinitialiser le mot de passe</button>
+  @if (!isSelf()) {
+    <button type="button" class="btn" (click)="toggleActive.emit()">{{ u.active ? 'Désactiver' : 'Activer' }}</button>
+    <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+  }
+</div>
+
+@if (isSelf()) {
+  <p class="self">C’est votre compte : il ne peut être ni désactivé ni supprimé depuis cet écran.</p>
+}
