@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { errorInterceptor } from '../../core/http/error.interceptor';
-import { CurrentAgencyService } from '../../core/agency/current-agency.service';
 import { Agency } from '../../core/models/agency.model';
 import { AgencyListComponent } from './agency-list.component';
 
@@ -17,15 +16,12 @@ const parakou: Agency = { ...headOffice, id: 'g2', code: 'PKO', label: 'Parakou'
 
 describe('AgencyListComponent', () => {
   let httpTesting: HttpTestingController;
-  let refresh: ReturnType<typeof vi.fn>;
 
   function setup() {
-    refresh = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
-        { provide: CurrentAgencyService, useValue: { refresh } },
       ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
@@ -73,7 +69,7 @@ describe('AgencyListComponent', () => {
     expect(component.selectedAgency()).toBe(parakou);
   });
 
-  it('closes the drawer, reloads and refreshes the header after saving', () => {
+  it('closes the drawer and reloads after saving', () => {
     const component = setup();
     httpTesting.expectOne(URL).flush([headOffice]);
     component.openCreate();
@@ -83,10 +79,9 @@ describe('AgencyListComponent', () => {
 
     expect(component.drawerOpen()).toBe(false);
     httpTesting.expectOne(URL).flush([headOffice, parakou]);
-    expect(refresh).toHaveBeenCalledTimes(1);
   });
 
-  it('deactivates the agency, updates the sheet and the row, and refreshes the header', () => {
+  it('deactivates the agency and updates the sheet and the row', () => {
     const component = setup();
     httpTesting.expectOne(URL).flush([headOffice, parakou]);
     component.openDetail(parakou);
@@ -99,7 +94,6 @@ describe('AgencyListComponent', () => {
 
     expect(component.selectedAgency()?.active).toBe(false);
     expect(component.agencies()[1].active).toBe(false);
-    expect(refresh).toHaveBeenCalledTimes(1);
   });
 
   it('activates an inactive agency', () => {
@@ -127,10 +121,9 @@ describe('AgencyListComponent', () => {
 
     expect(component.actionError()).toBe('Agence introuvable');
     expect(component.error()).toBeNull();
-    expect(refresh).not.toHaveBeenCalled();
   });
 
-  it('deletes only after confirmation, then closes, reloads and refreshes the header', () => {
+  it('deletes only after confirmation, then closes and reloads', () => {
     const component = setup();
     httpTesting.expectOne(URL).flush([headOffice, parakou]);
     component.openDetail(parakou);
@@ -146,7 +139,6 @@ describe('AgencyListComponent', () => {
 
     expect(component.drawerOpen()).toBe(false);
     httpTesting.expectOne(URL).flush([headOffice]);
-    expect(refresh).toHaveBeenCalledTimes(1);
   });
 
   it('does nothing when deletion is cancelled', () => {

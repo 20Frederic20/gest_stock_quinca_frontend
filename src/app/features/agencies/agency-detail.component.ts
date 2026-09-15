@@ -12,6 +12,8 @@ import { formatDate } from '../articles/article-format';
 })
 export class AgencyDetailComponent {
   agency = input.required<Agency>();
+  /** false = read-only user: the sheet shows no action. */
+  canEdit = input(true);
 
   edit = output<void>();
   toggleActive = output<void>();

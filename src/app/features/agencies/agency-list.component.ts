@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { CurrentAgencyService } from '../../core/agency/current-agency.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Agency } from '../../core/models/agency.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
@@ -29,7 +29,10 @@ type DrawerMode = 'detail' | 'form';
 })
 export class AgencyListComponent implements OnInit {
   private service = inject(AgenciesService);
-  private currentAgency = inject(CurrentAgencyService);
+  private auth = inject(AuthService);
+
+  /** Only administrators edit agencies; everybody else reads them. */
+  canWrite = computed(() => this.auth.can('agencies.write'));
 
   agencies = signal<Agency[]>([]);
   loading = signal(false);
@@ -104,8 +107,6 @@ export class AgencyListComponent implements OnInit {
   onSaved(): void {
     this.closeDrawer();
     this.load();
-    // A new or renamed agency must show up in the header selector.
-    this.currentAgency.refresh();
   }
 
   /** No confirmation: the action is reversible. */
@@ -120,8 +121,6 @@ export class AgencyListComponent implements OnInit {
       next: updated => {
         this.selectedAgency.set(updated);
         this.agencies.update(list => list.map(a => (a.id === updated.id ? updated : a)));
-        // The header only offers active agencies.
-        this.currentAgency.refresh();
       },
       error: (error: ApiError) => this.actionError.set(error.message),
     });
@@ -146,7 +145,6 @@ export class AgencyListComponent implements OnInit {
       next: () => {
         this.closeDrawer();
         this.load();
-        this.currentAgency.refresh();
       },
       error: (error: ApiError) => this.actionError.set(error.message),
     });

@@ -1,4 +1,4 @@
-<app-page-header heading="Agences" actionLabel="Nouvelle agence" (action)="openCreate()" />
+<app-page-header heading="Agences" [actionLabel]="canWrite() ? 'Nouvelle agence' : ''" (action)="openCreate()" />
 
 @if (actionError()) {
   <div class="action-error" role="alert">
@@ -49,6 +49,7 @@
       @if (selectedAgency(); as agency) {
         <app-agency-detail
           [agency]="agency"
+          [canEdit]="canWrite()"
           (edit)="openEdit()"
           (toggleActive)="toggleActive()"
           (delete)="askDelete()" />
