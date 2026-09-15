@@ -1,0 +1,60 @@
+<app-page-header
+  heading="Nouvelle vente"
+  subtitle="Choisissez le client et le type de document. Les articles se saisissent à l’étape suivante." />
+
+@if (!canCreate()) {
+  <p class="text-muted">Votre rôle ne permet pas de saisir une vente.</p>
+} @else {
+  <form class="start" [formGroup]="form" (ngSubmit)="submit()">
+    @if (formError()) {
+      <p class="form-error">{{ formError() }}</p>
+    }
+
+    <div class="field">
+      <label>Client</label>
+      <app-select-search
+        [remoteSearch]="searchCustomers"
+        [value]="customer()?.id ?? null"
+        [label]="customer()?.label ?? ''"
+        placeholder="Rechercher un client…"
+        (selected)="onCustomerSelected($event)" />
+      <app-field-error [control]="form.controls.customerId" />
+
+      @if (credit(); as c) {
+        <p class="hint">
+          @if (c.creditAllowed) {
+            Crédit disponible : {{ formatMoney(c.remainingCredit) }} · délai {{ paymentTermLabel(c.paymentTermDays) }}
+          } @else {
+            Ce client paie comptant uniquement.
+          }
+        </p>
+      }
+      @if (creditError()) {
+        <p class="hint warning">{{ creditError() }}</p>
+      }
+    </div>
+
+    <div class="field">
+      <label>Type de document</label>
+      <app-select-search
+        [options]="typeOptions()"
+        [value]="form.controls.type.value"
+        [label]="typeLabel()"
+        placeholder="Choisir un type"
+        (selected)="onTypeSelected($event)" />
+      <p class="hint">Seule une facture réserve le stock. Un devis ou une proforma n’engagent rien.</p>
+    </div>
+
+    <label class="checkbox" [class.disabled]="form.controls.creditMode.disabled">
+      <input type="checkbox" formControlName="creditMode" />
+      Vente à crédit
+    </label>
+
+    <div class="actions">
+      <button type="button" class="btn" (click)="cancel()">Annuler</button>
+      <button type="submit" class="btn btn-primary" [disabled]="saving()">
+        {{ saving() ? 'Création…' : 'Créer le brouillon' }}
+      </button>
+    </div>
+  </form>
+}

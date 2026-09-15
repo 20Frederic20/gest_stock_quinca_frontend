@@ -1,0 +1,64 @@
+<form class="line-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h3>Ajouter un article</h3>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="grid">
+    <div class="field">
+      <label>Article</label>
+      <app-select-search
+        [remoteSearch]="searchArticles"
+        [value]="article()?.id ?? null"
+        [label]="article()?.label ?? ''"
+        placeholder="Rechercher un article…"
+        (selected)="onArticleSelected($event)" />
+    </div>
+
+    <div class="field">
+      <label>Conditionnement</label>
+      <app-select-search
+        [options]="packagingOptions()"
+        [value]="packaging()?.id ?? null"
+        [label]="packaging() ? packagingLabel(packaging()!) : ''"
+        placeholder="Choisir"
+        (selected)="onPackagingSelected($event)" />
+    </div>
+
+    <div class="field">
+      <label for="lineQuantity">Quantité</label>
+      <input id="lineQuantity" type="number" min="0.0001" step="any" formControlName="quantity" />
+    </div>
+
+    <div class="field">
+      <label for="lineDiscount">Remise (%)</label>
+      <input id="lineDiscount" type="number" min="0" max="100" step="0.01" formControlName="discountRate" />
+    </div>
+  </div>
+
+  <div class="footer">
+    <p class="info">
+      @if (priceMessage()) {
+        <span class="warning">{{ priceMessage() }}</span>
+      } @else if (unitPrice() !== null) {
+        Prix unitaire : <strong>{{ formatMoney(unitPrice()!) }}</strong>
+        @if (estimate() !== null) {
+          · Total HT : <strong>{{ formatMoney(estimate()!) }}</strong>
+        }
+      }
+      @if (checkStock() && article() && available() !== null) {
+        <span class="stock" [class.warning]="shortage()">
+          Disponible : {{ formatQuantity(available()!, stockUnitCode()) }}
+          @if (shortage()) {
+            — insuffisant pour {{ formatQuantity(needed(), stockUnitCode()) }}
+          }
+        </span>
+      }
+    </p>
+
+    <button type="submit" class="btn btn-primary" [disabled]="!canAdd()">
+      {{ saving() ? 'Ajout…' : 'Ajouter la ligne' }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,151 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  padding: var(--space-6) var(--space-4);
+  background: color-mix(in srgb, var(--color-text) 4%, #fff);
+}
+
+.toolbar,
+.sheet,
+.error,
+.loading {
+  max-width: 210mm;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+a.btn {
+  text-decoration: none;
+}
+
+.error {
+  color: #a11;
+}
+
+.sheet {
+  padding: 15mm;
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+}
+
+p {
+  margin: 0;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.seller h1 {
+  font-size: 22px;
+  margin-bottom: var(--space-1);
+}
+
+.doc {
+  text-align: right;
+}
+
+.doc h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--space-1);
+}
+
+.number {
+  font-weight: 600;
+}
+
+.banner {
+  margin-top: var(--space-4);
+  padding: var(--space-2);
+  border: 2px solid #a11;
+  color: #a11;
+  text-align: center;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.buyer {
+  width: 50%;
+  margin: var(--space-6) 0 var(--space-6) auto;
+  padding: var(--space-3);
+  border: 1px solid var(--color-divider);
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.lines tbody tr:hover {
+  background: transparent;
+  cursor: default;
+}
+
+.lines .number {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 400;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-1) var(--space-3);
+  width: 50%;
+  margin: var(--space-4) 0 0 auto;
+}
+
+.totals dd {
+  margin: 0;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.totals .grand {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.foot {
+  margin-top: var(--space-8);
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
+@media print {
+  :host {
+    min-height: 0;
+    padding: 0;
+    background: #fff;
+  }
+
+  .toolbar {
+    display: none;
+  }
+
+  .sheet {
+    max-width: none;
+    padding: 0;
+    box-shadow: none;
+  }
+}

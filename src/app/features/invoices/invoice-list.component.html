@@ -1,0 +1,60 @@
+<app-page-header
+  heading="Factures"
+  subtitle="Devis, proformas et factures de l’agence, du plus récent au plus ancien."
+  [actionLabel]="canCreate() ? 'Nouvelle vente' : ''"
+  (action)="newSale()" />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="invoices().length === 0"
+  emptyMessage="Aucun document dans cette agence."
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && invoices().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Client</th>
+          <th>Règlement</th>
+          <th class="number">Total TTC</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (invoice of invoices(); track invoice.id) {
+          <tr (click)="open(invoice)">
+            <td class="nowrap">{{ invoice.number }}</td>
+            <td class="nowrap">{{ formatDate(invoice.documentDate) }}</td>
+            <td>{{ typeLabels[invoice.type] }}</td>
+            <td>{{ invoice.customerName }}</td>
+            <td class="text-muted">{{ invoice.creditMode ? 'Crédit' : 'Comptant' }}</td>
+            <td class="number">{{ formatMoney(invoice.totalAmount) }}</td>
+            <td><app-badge [text]="statusLabels[invoice.status]" [tone]="statusTones[invoice.status]" /></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="documents" (pageChange)="load($event)" />

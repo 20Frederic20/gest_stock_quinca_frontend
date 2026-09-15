@@ -10,6 +10,13 @@ export const routes: Routes = [
     canActivate: [guestGuard],
     loadComponent: () => import('./features/login/login.component').then(m => m.LoginComponent),
   },
+  // Outside the frame too: the printed document must not carry the sidebar.
+  {
+    path: 'invoices/:id/print',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/invoices/invoice-print.component').then(m => m.InvoicePrintComponent),
+  },
   {
     path: '',
     component: MainLayoutComponent,
@@ -47,8 +54,21 @@ export const routes: Routes = [
 
       // --- Not exposed by the backend yet ---
       { path: 'dashboard',       component: ComingSoonComponent, data: { title: 'Tableau de bord' } },
-      { path: 'new-sale',        component: ComingSoonComponent, data: { title: 'Nouvelle vente' } },
-      { path: 'invoices',        component: ComingSoonComponent, data: { title: 'Factures' } },
+      {
+        path: 'new-sale',
+        loadComponent: () =>
+          import('./features/invoices/sale-start.component').then(m => m.SaleStartComponent),
+      },
+      {
+        path: 'invoices',
+        loadComponent: () =>
+          import('./features/invoices/invoice-list.component').then(m => m.InvoiceListComponent),
+      },
+      {
+        path: 'invoices/:id',
+        loadComponent: () =>
+          import('./features/invoices/invoice-page.component').then(m => m.InvoicePageComponent),
+      },
       {
         path: 'customers',
         loadComponent: () =>

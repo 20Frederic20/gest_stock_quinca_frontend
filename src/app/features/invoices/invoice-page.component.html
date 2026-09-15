@@ -1,0 +1,146 @@
+<a routerLink="/invoices" class="back">← Factures</a>
+
+<app-state-view [loading]="loading() && !invoice()" [error]="error()" (retry)="load()" />
+
+@if (invoice(); as inv) {
+  <div class="head">
+    <div>
+      <h1>{{ heading() }}</h1>
+      <p class="meta text-muted">{{ formatDate(inv.documentDate) }} · {{ inv.agencyLabel }} · saisi par {{ inv.userName }}</p>
+    </div>
+    <div class="head-tags">
+      <app-badge [text]="statusLabels[inv.status]" [tone]="statusTones[inv.status]" />
+      <app-badge [text]="inv.creditMode ? 'Crédit' : 'Comptant'" tone="muted" />
+    </div>
+  </div>
+
+  @if (notice()) {
+    <div class="notice" role="status">
+      <span>{{ notice() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="notice.set(null)">✕</button>
+    </div>
+  }
+
+  @if (actionError()) {
+    <div class="action-error" role="alert">
+      <span>{{ actionError() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+    </div>
+  }
+
+  @if (inv.status === 'CANCELLED') {
+    <p class="cancelled">Document annulé{{ inv.cancellationReason ? ' : ' + inv.cancellationReason : '.' }}</p>
+  }
+
+  <div class="layout">
+    <section class="main">
+      <dl class="customer">
+        <dt>Client</dt>
+        <dd>{{ inv.customerName }}</dd>
+
+        <dt>Téléphone</dt>
+        <dd>{{ customer()?.phone || '—' }}</dd>
+
+        <dt>Grille tarifaire</dt>
+        <dd>{{ customer()?.privilegeLabel ?? '…' }}</dd>
+
+        @if (inv.dueDate) {
+          <dt>Échéance</dt>
+          <dd>{{ formatDate(inv.dueDate) }}</dd>
+        }
+      </dl>
+
+      <app-invoice-lines
+        [invoiceId]="inv.id"
+        [lines]="inv.lines"
+        [editable]="editable()"
+        (changed)="onInvoiceChanged($event)"
+        (failed)="onActionFailed($event)" />
+
+      @if (editable()) {
+        @if (customer(); as c) {
+          <app-invoice-line-form
+            [invoiceId]="inv.id"
+            [privilegeId]="c.privilegeId"
+            [agencyId]="inv.agencyId"
+            [checkStock]="inv.type === 'INVOICE'"
+            (added)="onInvoiceChanged($event)" />
+        }
+      }
+    </section>
+
+    <aside class="totals">
+      <dl>
+        <dt>Total brut</dt>
+        <dd>{{ formatMoney(inv.grossAmount) }}</dd>
+
+        <dt>Remise</dt>
+        <dd>{{ inv.discountAmount > 0 ? '− ' + formatMoney(inv.discountAmount) : '—' }}</dd>
+
+        <dt>Total HT</dt>
+        <dd>{{ formatMoney(inv.netAmount) }}</dd>
+
+        <dt>TVA</dt>
+        <dd>{{ formatMoney(inv.vatAmount) }}</dd>
+
+        <dt class="grand">Total TTC</dt>
+        <dd class="grand">{{ formatMoney(inv.totalAmount) }}</dd>
+
+        @if (inv.status === 'VALIDATED' && inv.type === 'INVOICE') {
+          <dt>Déjà réglé</dt>
+          <dd>{{ formatMoney(inv.paidAmount) }}</dd>
+
+          <dt>Reste à payer</dt>
+          <dd>{{ formatMoney(inv.remainingToPay) }}</dd>
+
+          <dt>Retrait</dt>
+          <dd>{{ withdrawalLabels[inv.withdrawalStatus] }}</dd>
+        }
+      </dl>
+
+      <div class="actions">
+        @if (editable()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="inv.lines.length === 0 || validating()"
+            (click)="askValidation()">
+            {{ validating() ? 'Validation…' : 'Valider' }}
+          </button>
+        }
+        <a class="btn" [routerLink]="['/invoices', inv.id, 'print']">Imprimer</a>
+        @if (isDraft() && canCancel()) {
+          <button type="button" class="btn btn-danger" (click)="askDelete()">Supprimer le brouillon</button>
+        }
+        @if (cancellable()) {
+          <button type="button" class="btn btn-danger" (click)="openCancel()">Annuler le document</button>
+        }
+      </div>
+    </aside>
+  </div>
+
+  <app-drawer [open]="cancelOpen()" heading="Annuler le document" (closed)="closeCancel()">
+    @if (cancelOpen()) {
+      <app-cancel-invoice-form
+        [invoiceId]="inv.id"
+        [summary]="heading() + ' — ' + formatMoney(inv.totalAmount)"
+        (saved)="onCancelled($event)"
+        (cancelled)="closeCancel()" />
+    }
+  </app-drawer>
+}
+
+<app-confirm-dialog
+  [open]="askingValidation()"
+  heading="Valider ce document ?"
+  [message]="validationMessage()"
+  confirmLabel="Valider"
+  (confirmed)="validate()"
+  (cancelled)="askingValidation.set(false)" />
+
+<app-confirm-dialog
+  [open]="askingDelete()"
+  heading="Supprimer ce brouillon ?"
+  [message]="deleteMessage()"
+  (confirmed)="deleteDraft()"
+  (cancelled)="askingDelete.set(false)" />

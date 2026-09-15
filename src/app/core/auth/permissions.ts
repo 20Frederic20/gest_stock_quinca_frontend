@@ -24,6 +24,12 @@ export type Permission =
   /** Edit, activate or deactivate a customer. */
   | 'customers.write'
   | 'customers.delete'
+  /** Draft a sale and edit its lines. */
+  | 'sales.write'
+  /** Cancel a validated document or delete a draft. */
+  | 'sales.cancel'
+  /** Documents of any agency. */
+  | 'sales.viewAll'
   /** Stock of the agency given as `agencyId`. */
   | 'stock.view'
   /** Stock of any agency, e.g. to offer an agency filter. */
@@ -47,9 +53,12 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
   switch (permission) {
     case 'referential.write':
     case 'customers.write':
+    case 'sales.cancel':
+    case 'sales.viewAll':
     case 'stock.viewAll':
       return isManager;
     case 'customers.create':
+    case 'sales.write':
       return isManager || user.role === 'SELLER';
     case 'agencies.write':
     case 'users.manage':
