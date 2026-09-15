@@ -1,0 +1,94 @@
+<app-page-header
+  heading="État du stock"
+  [actionLabel]="canAct() ? 'Saisir un inventaire' : ''"
+  (action)="openNewInventory()" />
+
+<div class="toolbar">
+  <div class="agency">
+    <span class="toolbar-label">Agence</span>
+    @if (canChooseAgency()) {
+      <app-select-search
+        [options]="agencyOptions()"
+        [value]="agencyId()"
+        [label]="agencyLabel()"
+        placeholder="Choisir une agence"
+        (selected)="onAgencySelected($event)" />
+    } @else {
+      <span class="tag">{{ agencyLabel() }}</span>
+    }
+  </div>
+
+  <label class="alerts">
+    <input type="checkbox" [checked]="alertsOnly()" (change)="setAlertsOnly($any($event.target).checked)" />
+    Sous le seuil d’alerte seulement
+  </label>
+</div>
+
+@if (notice()) {
+  <div class="notice" role="status">
+    <span>{{ notice() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="notice.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="lines().length === 0"
+  [emptyMessage]="emptyMessage()"
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && lines().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Désignation</th>
+          <th class="number">Physique</th>
+          <th class="number">Réservé</th>
+          <th class="number">Disponible</th>
+          <th class="number">Seuil</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines(); track line.id) {
+          <tr [class.selected]="selectedLine()?.id === line.id" (click)="openDetail(line)">
+            <td class="nowrap">{{ line.articleCode }}</td>
+            <td>{{ line.articleDesignation }}</td>
+            <td class="number">{{ formatQuantity(line.quantity, line.stockUnitCode) }}</td>
+            <td class="number text-muted">{{ formatQuantity(line.reservedQuantity, line.stockUnitCode) }}</td>
+            <td class="number"><strong>{{ formatQuantity(line.availableQuantity, line.stockUnitCode) }}</strong></td>
+            <td class="number text-muted">{{ formatQuantity(line.alertThreshold, line.stockUnitCode) }}</td>
+            <td>
+              @if (line.belowThreshold) {
+                <app-badge text="Sous le seuil" tone="accent" />
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (!alertsOnly()) {
+  <app-pagination [info]="pageInfo()" itemsLabel="articles" (pageChange)="load($event)" />
+}
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedLine(); as line) {
+        <app-stock-detail [stock]="line" [canAct]="canAct()" (count)="openInventory()" />
+      }
+    } @else {
+      <app-inventory-form
+        [agencyId]="agencyId()"
+        [stock]="selectedLine()"
+        (saved)="onInventorySaved()"
+        (cancelled)="onInventoryCancelled()" />
+    }
+  }
+</app-drawer>

@@ -1,0 +1,84 @@
+@let s = stock();
+
+<dl class="sheet">
+  <dt>Article</dt>
+  <dd>{{ s.articleCode }} — {{ s.articleDesignation }}</dd>
+
+  <dt>Agence</dt>
+  <dd>{{ s.agencyLabel }}</dd>
+
+  <dt>Physique</dt>
+  <dd>{{ formatQuantity(s.quantity, s.stockUnitCode) }}</dd>
+
+  <dt>Réservé</dt>
+  <dd>{{ formatQuantity(s.reservedQuantity, s.stockUnitCode) }}</dd>
+
+  <dt>Disponible</dt>
+  <dd><strong>{{ formatQuantity(s.availableQuantity, s.stockUnitCode) }}</strong></dd>
+
+  <dt>Seuil d’alerte</dt>
+  <dd>{{ formatQuantity(s.alertThreshold, s.stockUnitCode) }}</dd>
+
+  <dt>État</dt>
+  <dd>
+    <app-badge [text]="s.belowThreshold ? 'Sous le seuil' : 'Suffisant'" [tone]="s.belowThreshold ? 'accent' : 'neutral'" />
+  </dd>
+</dl>
+
+@if (canAct()) {
+  <div class="actions">
+    <button type="button" class="btn btn-primary" (click)="count.emit()">Saisir un inventaire</button>
+  </div>
+}
+
+<h3 class="section-title">Disponible par agence</h3>
+@if (spreadError()) {
+  <p class="load-error">{{ spreadError() }}</p>
+} @else if (spread().length === 0) {
+  <p class="text-muted empty">Aucune agence ne détient cet article.</p>
+} @else {
+  <table class="table spread">
+    <tbody>
+      @for (line of spread(); track line.id) {
+        <tr [class.current]="line.agencyId === s.agencyId">
+          <td>{{ line.agencyLabel }}</td>
+          <td class="number">{{ formatQuantity(line.availableQuantity, line.stockUnitCode) }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+<h3 class="section-title">Derniers mouvements</h3>
+@if (movementsError()) {
+  <p class="load-error">{{ movementsError() }}</p>
+} @else if (movements().length === 0) {
+  <p class="text-muted empty">Aucun mouvement.</p>
+} @else {
+  <div class="table-scroll">
+    <table class="table movements">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th class="number">Quantité</th>
+          <th class="number">Stock après</th>
+          <th>Par</th>
+          <th>Motif</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (movement of movements(); track movement.id) {
+          <tr>
+            <td class="nowrap">{{ formatDateTime(movement.movementDate) }}</td>
+            <td class="nowrap">{{ typeLabels[movement.type] }}</td>
+            <td class="number" [class.negative]="movement.quantity < 0">{{ formatSignedQuantity(movement.quantity, s.stockUnitCode) }}</td>
+            <td class="number">{{ formatQuantity(movement.resultingQuantity, s.stockUnitCode) }}</td>
+            <td class="nowrap">{{ movement.userName }}</td>
+            <td>{{ movement.reason || '—' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

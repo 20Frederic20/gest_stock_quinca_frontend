@@ -38,7 +38,7 @@ export const MENU: MenuGroup[] = [
     { label: 'Fournisseurs',           route: '/suppliers',       ready: false },
   ]},
   { title: 'Stock', items: [
-    { label: 'État du stock', route: '/stock',           ready: false },
+    { label: 'État du stock', route: '/stock',           ready: true },
     { label: 'Mouvements',    route: '/stock-movements', ready: false },
     { label: 'Transferts',    route: '/transfers',       ready: false },
   ]},

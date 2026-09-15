@@ -1,0 +1,50 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label>Article</label>
+    @if (stock()) {
+      <p class="fixed">{{ articleLabel() }}</p>
+    } @else {
+      <app-select-search
+        [remoteSearch]="searchArticles"
+        [value]="form.controls.articleId.value || null"
+        [label]="articleLabel()"
+        placeholder="Rechercher un article…"
+        (selected)="onArticleSelected($event)" />
+      <app-field-error [control]="form.controls.articleId" [serverError]="fieldErrors()['articleId']" />
+    }
+  </div>
+
+  @if (currentLabel(); as current) {
+    <p class="current">Stock actuel : <strong>{{ current }}</strong></p>
+  }
+
+  <div class="field">
+    <label for="countedQuantity">Quantité comptée{{ unitCode() ? ' (en ' + unitCode() + ')' : '' }}</label>
+    <input id="countedQuantity" type="number" min="0" step="any" formControlName="countedQuantity" />
+    <app-field-error [control]="form.controls.countedQuantity" [serverError]="fieldErrors()['countedQuantity']" />
+    @if (differenceLabel(); as label) {
+      <p class="difference" [class.positive]="difference()! > 0" [class.negative]="difference()! < 0">
+        Écart : {{ label }}
+      </p>
+    }
+  </div>
+
+  <div class="field">
+    <label for="reason">Motif</label>
+    <input id="reason" formControlName="reason" maxlength="255" autocomplete="off" placeholder="Inventaire de fin de mois, casse constatée…" />
+    <app-field-error [control]="form.controls.reason" [serverError]="fieldErrors()['reason']" />
+  </div>
+
+  <p class="hint">Le mouvement enregistré ne pourra pas être supprimé, seulement annulé depuis l’historique.</p>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer l’inventaire' }}
+    </button>
+  </div>
+</form>

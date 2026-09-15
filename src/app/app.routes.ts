@@ -54,7 +54,10 @@ export const routes: Routes = [
       { path: 'purchase-orders', component: ComingSoonComponent, data: { title: 'Commandes fournisseurs' } },
       { path: 'receptions',      component: ComingSoonComponent, data: { title: 'Réceptions' } },
       { path: 'suppliers',       component: ComingSoonComponent, data: { title: 'Fournisseurs' } },
-      { path: 'stock',           component: ComingSoonComponent, data: { title: 'État du stock' } },
+      {
+        path: 'stock',
+        loadComponent: () => import('./features/stock/stock-list.component').then(m => m.StockListComponent),
+      },
       { path: 'stock-movements', component: ComingSoonComponent, data: { title: 'Mouvements de stock' } },
       { path: 'transfers',       component: ComingSoonComponent, data: { title: 'Transferts entre agences' } },
       { path: 'day-closing',     component: ComingSoonComponent, data: { title: 'Clôture de journée' } },
