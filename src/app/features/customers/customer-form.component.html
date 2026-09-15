@@ -1,0 +1,89 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="row">
+    <div class="field">
+      <label for="customerCode">Code</label>
+      <input id="customerCode" formControlName="code" maxlength="30" autocomplete="off" />
+      <app-field-error [control]="form.controls.code" [serverError]="fieldErrors()['code']" />
+    </div>
+
+    <div class="field">
+      <label>Type</label>
+      <app-select-search
+        [options]="typeOptions()"
+        [value]="form.controls.type.value"
+        [label]="typeLabel()"
+        placeholder="Choisir un type"
+        (selected)="onTypeSelected($event)" />
+      <app-field-error [control]="form.controls.type" [serverError]="fieldErrors()['type']" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="customerName">Nom ou raison sociale</label>
+    <input id="customerName" formControlName="name" maxlength="200" autocomplete="off" />
+    <app-field-error [control]="form.controls.name" [serverError]="fieldErrors()['name']" />
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="customerPhone">Téléphone <span class="optional">(facultatif)</span></label>
+      <input id="customerPhone" type="tel" formControlName="phone" maxlength="30" autocomplete="off" />
+      <app-field-error [control]="form.controls.phone" [serverError]="fieldErrors()['phone']" />
+    </div>
+
+    <div class="field">
+      <label for="customerTaxId">IFU <span class="optional">(facultatif)</span></label>
+      <input id="customerTaxId" formControlName="taxId" maxlength="30" autocomplete="off" />
+      <app-field-error [control]="form.controls.taxId" [serverError]="fieldErrors()['taxId']" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="customerAddress">Adresse <span class="optional">(facultatif)</span></label>
+    <input id="customerAddress" formControlName="address" maxlength="255" autocomplete="off" />
+    <app-field-error [control]="form.controls.address" [serverError]="fieldErrors()['address']" />
+  </div>
+
+  <div class="field">
+    <label>Grille tarifaire</label>
+    <app-select-search
+      [options]="privilegeOptions()"
+      [value]="form.controls.privilegeId.value || null"
+      [label]="privilegeLabel()"
+      placeholder="Choisir une grille"
+      (selected)="onPrivilegeSelected($event)" />
+    <app-field-error [control]="form.controls.privilegeId" [serverError]="fieldErrors()['privilegeId']" />
+  </div>
+
+  <div class="row">
+    <div class="field">
+      <label for="customerCreditLimit">Plafond de crédit (F CFA)</label>
+      <input id="customerCreditLimit" type="number" min="0" step="1" formControlName="creditLimit" />
+      <p class="hint">0 = paiement comptant uniquement.</p>
+      <app-field-error [control]="form.controls.creditLimit" [serverError]="fieldErrors()['creditLimit']" />
+    </div>
+
+    <div class="field">
+      <label for="customerPaymentTerm">Délai de règlement (jours)</label>
+      <input id="customerPaymentTerm" type="number" min="0" max="365" step="1" formControlName="paymentTermDays" />
+      <app-field-error [control]="form.controls.paymentTermDays" [serverError]="fieldErrors()['paymentTermDays']" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="customerComment">Commentaire <span class="optional">(facultatif)</span></label>
+    <textarea id="customerComment" formControlName="comment" maxlength="500" rows="3"></textarea>
+    <app-field-error [control]="form.controls.comment" [serverError]="fieldErrors()['comment']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

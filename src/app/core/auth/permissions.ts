@@ -19,6 +19,11 @@ export type Permission =
   | 'referential.write'
   | 'agencies.write'
   | 'users.manage'
+  /** Register a new customer. */
+  | 'customers.create'
+  /** Edit, activate or deactivate a customer. */
+  | 'customers.write'
+  | 'customers.delete'
   /** Stock of the agency given as `agencyId`. */
   | 'stock.view'
   /** Stock of any agency, e.g. to offer an agency filter. */
@@ -41,10 +46,14 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
 
   switch (permission) {
     case 'referential.write':
+    case 'customers.write':
     case 'stock.viewAll':
       return isManager;
+    case 'customers.create':
+      return isManager || user.role === 'SELLER';
     case 'agencies.write':
     case 'users.manage':
+    case 'customers.delete':
       return false;
     case 'stock.view':
       return isManager || isOwnAgency;

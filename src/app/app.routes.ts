@@ -49,7 +49,11 @@ export const routes: Routes = [
       { path: 'dashboard',       component: ComingSoonComponent, data: { title: 'Tableau de bord' } },
       { path: 'new-sale',        component: ComingSoonComponent, data: { title: 'Nouvelle vente' } },
       { path: 'invoices',        component: ComingSoonComponent, data: { title: 'Factures' } },
-      { path: 'customers',       component: ComingSoonComponent, data: { title: 'Clients et créances' } },
+      {
+        path: 'customers',
+        loadComponent: () =>
+          import('./features/customers/customer-list.component').then(m => m.CustomerListComponent),
+      },
       { path: 'sales-history',   component: ComingSoonComponent, data: { title: 'Historique des ventes' } },
       { path: 'purchase-orders', component: ComingSoonComponent, data: { title: 'Commandes fournisseurs' } },
       { path: 'receptions',      component: ComingSoonComponent, data: { title: 'Réceptions' } },

@@ -39,6 +39,18 @@ describe('can', () => {
     }
   });
 
+  it('lets sellers register customers, managers change them, and only administrators delete them', () => {
+    expect(can(seller, 'customers.create')).toBe(true);
+    expect(can(manager, 'customers.create')).toBe(true);
+    expect(can(cashier, 'customers.create')).toBe(false);
+
+    expect(can(manager, 'customers.write')).toBe(true);
+    expect(can(seller, 'customers.write')).toBe(false);
+
+    expect(can(manager, 'customers.delete')).toBe(false);
+    expect(can(admin, 'customers.delete')).toBe(true);
+  });
+
   it('shows the stock of every agency to a manager, and only their own to sellers and cashiers', () => {
     expect(can(manager, 'stock.view', OTHER)).toBe(true);
     expect(can(manager, 'stock.viewAll')).toBe(true);

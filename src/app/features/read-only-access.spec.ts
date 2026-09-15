@@ -8,6 +8,7 @@ import { errorInterceptor } from '../core/http/error.interceptor';
 import { Agency } from '../core/models/agency.model';
 import { Article } from '../core/models/article.model';
 import { ArticlePrice } from '../core/models/article-price.model';
+import { Customer } from '../core/models/customer.model';
 import { Family } from '../core/models/family.model';
 import { Packaging } from '../core/models/packaging.model';
 import { Privilege } from '../core/models/privilege.model';
@@ -15,6 +16,7 @@ import { UnitOfMeasure } from '../core/models/unit-of-measure.model';
 import { Role } from '../core/models/user.model';
 import { AgencyListComponent } from './agencies/agency-list.component';
 import { ArticleListComponent } from './articles/article-list.component';
+import { CustomerListComponent } from './customers/customer-list.component';
 import { FamilyListComponent } from './families/family-list.component';
 import { PackagingListComponent } from './packagings/packaging-list.component';
 import { PriceListComponent } from './pricing/price-list.component';
@@ -46,6 +48,11 @@ const scheduledPrice: ArticlePrice = {
 const agency: Agency = {
   id: 'g1', code: 'COT-SIEGE', label: 'Cotonou — Siège', address: null, phone: null, taxId: null,
   active: true, createdAt: at, updatedAt: at,
+};
+const customer: Customer = {
+  id: 'c1', code: 'CLI-001', name: 'Bâtiments Houngbo', type: 'COMPANY', phone: null, address: null, taxId: null,
+  creditLimit: 500000, paymentTermDays: 30, comment: null, active: true, privilegeId: 'p1', privilegeLabel: 'Détail',
+  createdAt: at, updatedAt: at,
 };
 
 describe('read-only access', () => {
@@ -165,6 +172,42 @@ describe('read-only access', () => {
     refresh();
     expect(element.querySelector('aside dl')).not.toBeNull();
     expect(buttons('aside .actions button')).toEqual([]);
+  });
+
+  it('customers: a seller registers them, but the sheet has no action', () => {
+    const { component, element, refresh, buttons } = render(CustomerListComponent, 'SELLER');
+    httpTesting.expectOne('/api/v1/privileges').flush([privilege]);
+    httpTesting.expectOne(r => r.url === '/api/customers').flush({ content: [customer], totalElements: 1, totalPages: 1, number: 0, size: 20 });
+    refresh();
+
+    expect(buttons('app-page-header button')).toEqual(['Nouveau client']);
+    component.openDetail(customer);
+    httpTesting.expectOne('/api/customers/c1/credit').flush({
+      customerId: 'c1', customerName: 'Bâtiments Houngbo', creditLimit: 500000, currentBalance: 0,
+      remainingCredit: 500000, paymentTermDays: 30, creditAllowed: true,
+    });
+    refresh();
+    expect(element.querySelector('aside dl')).not.toBeNull();
+    expect(buttons('aside .actions button')).toEqual([]);
+  });
+
+  it('customers: a cashier cannot even register one', () => {
+    const { component, refresh, buttons } = render(CustomerListComponent, 'CASHIER');
+    httpTesting.expectOne('/api/v1/privileges').flush([]);
+    httpTesting.expectOne(r => r.url === '/api/customers').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    refresh();
+
+    expect(buttons('app-page-header button')).toEqual([]);
+    expect(component.canEdit()).toBe(false);
+  });
+
+  it('customers: a manager edits them but does not delete them', () => {
+    const { component } = render(CustomerListComponent, 'MANAGER');
+    httpTesting.expectOne('/api/v1/privileges').flush([]);
+    httpTesting.expectOne(r => r.url === '/api/customers').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+
+    expect(component.canEdit()).toBe(true);
+    expect(component.canDelete()).toBe(false);
   });
 
   it('shows every action to a seller while permissions are disabled', () => {

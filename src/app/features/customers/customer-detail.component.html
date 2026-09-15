@@ -1,0 +1,78 @@
+@let c = customer();
+
+<dl class="sheet">
+  <dt>Code</dt>
+  <dd>{{ c.code }}</dd>
+
+  <dt>Nom</dt>
+  <dd>{{ c.name }}</dd>
+
+  <dt>Type</dt>
+  <dd>{{ typeLabels[c.type] }}</dd>
+
+  <dt>Téléphone</dt>
+  <dd>{{ c.phone || '—' }}</dd>
+
+  <dt>Adresse</dt>
+  <dd>{{ c.address || '—' }}</dd>
+
+  <dt>IFU</dt>
+  <dd>{{ c.taxId || '—' }}</dd>
+
+  <dt>Grille tarifaire</dt>
+  <dd>{{ c.privilegeLabel }}</dd>
+
+  <dt>Commentaire</dt>
+  <dd>{{ c.comment || '—' }}</dd>
+
+  <dt>État</dt>
+  <dd><app-badge [text]="c.active ? 'Actif' : 'Inactif'" [tone]="c.active ? 'neutral' : 'muted'" /></dd>
+
+  <dt>Créé le</dt>
+  <dd>{{ formatDate(c.createdAt) }}</dd>
+
+  <dt>Modifié le</dt>
+  <dd>{{ formatDate(c.updatedAt) }}</dd>
+</dl>
+
+<h3 class="section-title">Crédit</h3>
+
+@if (creditLoading()) {
+  <p class="text-muted">Chargement…</p>
+} @else if (creditError()) {
+  <p class="credit-error">{{ creditError() }}</p>
+} @else if (credit(); as cr) {
+  <dl class="sheet">
+    <dt>Plafond</dt>
+    <dd>{{ formatMoney(cr.creditLimit) }}</dd>
+
+    <dt>Encours</dt>
+    <dd>{{ formatMoney(cr.currentBalance) }}</dd>
+
+    <dt>Disponible</dt>
+    <dd>{{ formatMoney(cr.remainingCredit) }}</dd>
+
+    <dt>Délai de règlement</dt>
+    <dd>{{ paymentTermLabel(cr.paymentTermDays) }}</dd>
+
+    <dt>Vente à crédit</dt>
+    <dd>
+      <app-badge [text]="cr.creditAllowed ? 'Autorisée' : 'Non autorisée'" [tone]="cr.creditAllowed ? 'accent' : 'muted'" />
+      @if (!cr.creditAllowed) {
+        <span class="text-muted">{{ cr.creditLimit > 0 ? '(client inactif)' : '(plafond à zéro)' }}</span>
+      }
+    </dd>
+  </dl>
+}
+
+@if (canEdit() || canDelete()) {
+  <div class="actions">
+    @if (canEdit()) {
+      <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+      <button type="button" class="btn" (click)="toggleActive.emit()">{{ c.active ? 'Désactiver' : 'Activer' }}</button>
+    }
+    @if (canDelete()) {
+      <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+    }
+  </div>
+}
