@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { MENU } from '../menu';
+import { AuthService } from '../../core/auth/auth.service';
+import { MENU, visibleMenu } from '../menu';
 
 @Component({
   selector: 'app-sidebar',
@@ -9,5 +10,8 @@ import { MENU } from '../menu';
   styleUrl: './sidebar.component.css',
 })
 export class SidebarComponent {
-  menu = MENU;
+  private auth = inject(AuthService);
+
+  /** Recomputed when the user changes, e.g. after logging in as someone else. */
+  menu = computed(() => visibleMenu(MENU, permission => this.auth.can(permission)));
 }

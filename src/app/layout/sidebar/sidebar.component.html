@@ -5,7 +5,7 @@
 </div>
 
 <nav>
-  @for (group of menu; track group.title) {
+  @for (group of menu(); track group.title) {
     <div class="group">
       <div class="group-title">{{ group.title }}</div>
       @for (item of group.items; track item.route) {
