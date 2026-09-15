@@ -1,14 +1,25 @@
+import { Permission } from '../core/auth/permissions';
+
 export interface MenuItem {
   /** Text shown to the user. */
   label: string;
   route: string;
   /** true = working screen, false = "coming soon" page. */
   ready: boolean;
+  /** Only shown to the users holding it. No permission = every logged-in user. */
+  permission?: Permission;
 }
 
 export interface MenuGroup {
   title: string;
   items: MenuItem[];
+}
+
+/** The menu a user sees: entries they may not open are removed, then the groups left empty. */
+export function visibleMenu(menu: MenuGroup[], can: (permission: Permission) => boolean): MenuGroup[] {
+  return menu
+    .map(group => ({ ...group, items: group.items.filter(item => !item.permission || can(item.permission)) }))
+    .filter(group => group.items.length > 0);
 }
 
 export const MENU: MenuGroup[] = [
@@ -46,7 +57,7 @@ export const MENU: MenuGroup[] = [
   ]},
   { title: 'Administration', items: [
     { label: 'Agences',              route: '/agencies',  ready: true },
-    { label: 'Utilisateurs',         route: '/users',     ready: false },
+    { label: 'Utilisateurs',         route: '/users',     ready: true, permission: 'users.manage' },
     { label: 'Rôles et permissions', route: '/roles',     ready: false },
     { label: "Journal d'audit",      route: '/audit-log', ready: false },
   ]},

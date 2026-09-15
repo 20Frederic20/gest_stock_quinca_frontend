@@ -12,8 +12,10 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) =>
   );
 
 function toApiError(response: HttpErrorResponse): ApiError {
-  if (response.status === 0) {
-    return { message: "Le serveur est injoignable. Vérifiez qu'il est démarré.", fieldErrors: {} };
+  const status = response.status;
+
+  if (status === 0) {
+    return { status, message: "Le serveur est injoignable. Vérifiez qu'il est démarré.", fieldErrors: {} };
   }
 
   // Body sent by the backend GlobalExceptionHandler.
@@ -21,12 +23,12 @@ function toApiError(response: HttpErrorResponse): ApiError {
 
   if (body?.fieldErrors) {
     // The backend writes "Donnees invalides" without accents: generic label, rewritten here.
-    return { message: 'Données invalides', fieldErrors: body.fieldErrors };
+    return { status, message: 'Données invalides', fieldErrors: body.fieldErrors };
   }
 
   if (body?.message) {
-    return { message: body.message, fieldErrors: {} };
+    return { status, message: body.message, fieldErrors: {} };
   }
 
-  return { message: `Une erreur est survenue (code ${response.status}).`, fieldErrors: {} };
+  return { status, message: `Une erreur est survenue (code ${status}).`, fieldErrors: {} };
 }

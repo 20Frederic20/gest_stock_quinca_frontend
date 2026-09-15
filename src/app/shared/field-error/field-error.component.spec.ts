@@ -84,6 +84,20 @@ describe('fieldErrorMessage', () => {
     expect(fieldErrorMessage(control, undefined)).toBe('La valeur maximale est 100');
   });
 
+  it('reports a value that is too short', () => {
+    const control = new FormControl('ab', Validators.minLength(3));
+    control.markAsTouched();
+
+    expect(fieldErrorMessage(control, undefined)).toBe('Ce champ doit contenir au moins 3 caractères');
+  });
+
+  it('reports a value in the wrong format', () => {
+    const control = new FormControl('awa dossou', Validators.pattern(/^[a-z.]+$/));
+    control.markAsTouched();
+
+    expect(fieldErrorMessage(control, undefined)).toBe('Format invalide');
+  });
+
   it('reports a date before the allowed one, in French format', () => {
     const control = new FormControl('2026-09-13');
     control.setErrors({ minDate: { min: '2026-09-15' } });

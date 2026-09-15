@@ -13,6 +13,8 @@ export function fieldErrorMessage(
   const errors = control.errors;
   if (errors['required']) return 'Ce champ est obligatoire';
   if (errors['maxlength']) return `Ce champ ne doit pas dépasser ${errors['maxlength'].requiredLength} caractères`;
+  if (errors['minlength']) return `Ce champ doit contenir au moins ${errors['minlength'].requiredLength} caractères`;
+  if (errors['pattern']) return 'Format invalide';
   if (errors['min']) return `La valeur minimale est ${errors['min'].min}`;
   if (errors['max']) return `La valeur maximale est ${errors['max'].max}`;
   if (errors['minDate']) {

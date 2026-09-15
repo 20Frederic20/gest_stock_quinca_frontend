@@ -30,6 +30,7 @@ describe('errorInterceptor', () => {
     );
 
     await expect(result).rejects.toEqual({
+      status: 400,
       message: 'Données invalides',
       fieldErrors: { code: 'Le code est obligatoire' },
     });
@@ -43,7 +44,7 @@ describe('errorInterceptor', () => {
       { status: 404, statusText: 'Not Found' },
     );
 
-    await expect(result).rejects.toEqual({ message: 'Article introuvable', fieldErrors: {} });
+    await expect(result).rejects.toEqual({ status: 404, message: 'Article introuvable', fieldErrors: {} });
   });
 
   it('gives a clear message when the server is unreachable', async () => {
@@ -52,6 +53,7 @@ describe('errorInterceptor', () => {
     httpTesting.expectOne('/api/v1/articles').error(new ProgressEvent('error'), { status: 0 });
 
     await expect(result).rejects.toEqual({
+      status: 0,
       message: "Le serveur est injoignable. Vérifiez qu'il est démarré.",
       fieldErrors: {},
     });
@@ -63,6 +65,7 @@ describe('errorInterceptor', () => {
     httpTesting.expectOne('/api/v1/articles').flush(null, { status: 500, statusText: 'Server Error' });
 
     await expect(result).rejects.toEqual({
+      status: 500,
       message: 'Une erreur est survenue (code 500).',
       fieldErrors: {},
     });
