@@ -1,0 +1,61 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <p class="intro">
+    Bon de livraison sur <strong>{{ invoiceNumber() }}</strong><br />
+    Les quantités proposées sont ce qu’il reste à livrer. Mettez 0 sur ce qui ne part pas aujourd’hui.
+  </p>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="table-scroll" [formGroup]="quantities">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Article</th>
+          <th class="number">Facturé</th>
+          <th class="number">Déjà livré</th>
+          <th class="number">À livrer</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of pending(); track line.id) {
+          <tr>
+            <td>{{ line.designation }} <span class="unit">({{ line.unitLabel }})</span></td>
+            <td class="number">{{ formatNumber(line.quantity) }}</td>
+            <td class="number">{{ formatNumber(line.deliveredQuantity) }}</td>
+            <td class="number">
+              <input
+                class="cell-input"
+                type="number"
+                min="0"
+                [max]="line.remainingToDeliver"
+                step="any"
+                [attr.aria-label]="'Quantité livrée pour ' + line.designation"
+                [formControlName]="line.id" />
+              <app-field-error [control]="quantities.controls[line.id]" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="field">
+    <label for="deliveryComment">Commentaire</label>
+    <input
+      id="deliveryComment"
+      formControlName="comment"
+      maxlength="500"
+      autocomplete="off"
+      placeholder="Livré au chantier, retiré par le client…" />
+    <app-field-error [control]="form.controls.comment" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Retour</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer le bon' }}
+    </button>
+  </div>
+</form>

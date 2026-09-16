@@ -1,0 +1,68 @@
+<section class="deliveries">
+  <div class="head">
+    <h2>Livraisons</h2>
+    @if (deliverable()) {
+      <button type="button" class="btn btn-primary" (click)="openForm()">Livrer</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (!error() && deliveries().length === 0 && !loading()) {
+    <p class="empty text-muted">Aucune livraison enregistrée sur cette facture.</p>
+  }
+
+  @for (delivery of deliveries(); track delivery.id) {
+    <article class="note" [class.cancelled]="delivery.cancelled">
+      <div class="note-head">
+        <span class="number">{{ delivery.number }}</span>
+        <span class="text-muted">{{ formatDate(delivery.deliveryDate) }} · établi par {{ delivery.createdByName }}</span>
+        @if (canCancelDelivery() && !delivery.cancelled) {
+          <button type="button" class="btn btn-ghost" (click)="openCancel(delivery)">Annuler</button>
+        }
+      </div>
+
+      <ul class="note-lines">
+        @for (line of delivery.lines; track line.id) {
+          <li>
+            {{ formatNumber(line.quantity) }} {{ line.unitLabel }} — {{ line.designation }}
+            <span class="text-muted">(reste {{ formatNumber(line.remainingToDeliver) }})</span>
+          </li>
+        }
+      </ul>
+
+      @if (delivery.comment) {
+        <p class="comment text-muted">{{ delivery.comment }}</p>
+      }
+
+      @if (delivery.cancelled) {
+        <p class="cancelled-reason">
+          Annulé{{ delivery.cancellationReason ? ' : ' + delivery.cancellationReason : '.' }}
+        </p>
+      }
+    </article>
+  }
+</section>
+
+<app-drawer [open]="formOpen()" heading="Nouveau bon de livraison" (closed)="closeForm()">
+  @if (formOpen()) {
+    <app-delivery-form
+      [invoiceId]="invoice().id"
+      [invoiceNumber]="invoice().number"
+      [lines]="invoice().lines"
+      (delivered)="onDelivered($event)"
+      (cancelled)="closeForm()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler un bon de livraison" (closed)="closeCancel()">
+  @if (cancelling(); as delivery) {
+    <app-cancel-delivery-form
+      [deliveryId]="delivery.id"
+      [summary]="summaryOf(delivery)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>

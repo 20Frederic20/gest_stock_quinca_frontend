@@ -67,8 +67,14 @@
             (composed)="addLine($event)" />
         }
       }
-      <!-- A draft has nothing to collect yet; a quote or a proforma never will. -->
+      <!-- A draft has nothing to hand over nor to collect yet; a quote or a proforma never will. -->
       @if (inv.type === 'INVOICE' && inv.status !== 'DRAFT') {
+        <app-invoice-deliveries
+          [invoice]="inv"
+          [canDeliver]="canDeliver()"
+          [canCancelDelivery]="canCancelDelivery()"
+          (changed)="onDeliveryChanged($event)" />
+
         <app-invoice-payments
           [invoice]="inv"
           [canPay]="canPay()"

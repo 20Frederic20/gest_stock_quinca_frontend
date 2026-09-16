@@ -7,6 +7,7 @@ import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
+import { Delivery } from '../../core/models/delivery.model';
 import { Payment } from '../../core/models/payment.model';
 import { AgencyStock } from '../../core/models/stock.model';
 import { Role } from '../../core/models/user.model';
@@ -63,6 +64,7 @@ describe('InvoicePageComponent', () => {
     httpTesting.match(request => request.url.startsWith('/api/v1/agencies/g1/stock/'))
       .forEach(request => request.flush(stock));
     httpTesting.match('/api/v1/invoices/i1/payments').forEach(request => request.flush([]));
+    httpTesting.match('/api/v1/invoices/i1/deliveries').forEach(request => request.flush([]));
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -114,8 +116,9 @@ describe('InvoicePageComponent', () => {
     expect(req.request.method).toBe('POST');
     req.flush(validated);
     refresh();
-    // Once validated, the invoice can be collected: its payments load.
+    // Once validated, the invoice can be collected and delivered: both sections load.
     httpTesting.match('/api/v1/invoices/i1/payments').forEach(request => request.flush([]));
+    httpTesting.match('/api/v1/invoices/i1/deliveries').forEach(request => request.flush([]));
     refresh();
 
     expect(component.invoice()?.status).toBe('VALIDATED');
@@ -236,6 +239,29 @@ describe('InvoicePageComponent', () => {
     expect(component.invoice()?.remainingToPay).toBe(9000);
     // Nothing else of the document moved: no reload was needed.
     expect(component.invoice()?.totalAmount).toBe(59000);
+  });
+
+  it('shows what has been handed over once the invoice is validated, never on a draft', () => {
+    expect(setup(validated).element.querySelector('app-invoice-deliveries')).not.toBeNull();
+  });
+
+  it('shows no delivery section on a draft: nothing can leave the shop yet', () => {
+    expect(setup(draft).element.querySelector('app-invoice-deliveries')).toBeNull();
+  });
+
+  it('follows the delivery status and the line quantities of a note just written', () => {
+    const { component } = setup(validated);
+
+    component.onDeliveryChanged({
+      id: 'd1', invoiceId: 'i1', invoiceDeliveryStatus: 'PARTIALLY_DELIVERED',
+      lines: [{ invoiceLineId: 'l1', deliveredQuantity: 4, remainingToDeliver: 6 }],
+    } as Delivery);
+
+    expect(component.invoice()?.deliveryStatus).toBe('PARTIALLY_DELIVERED');
+    expect(component.invoice()?.lines[0].deliveredQuantity).toBe(4);
+    expect(component.invoice()?.lines[0].remainingToDeliver).toBe(6);
+    // The rest of the line is untouched: only what the note moved has moved.
+    expect(component.invoice()?.lines[0].quantity).toBe(10);
   });
 
   it('warns on a draft that the credit of the customer will refuse the validation', () => {

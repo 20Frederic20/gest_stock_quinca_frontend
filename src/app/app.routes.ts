@@ -74,6 +74,11 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/customers/customer-list.component').then(m => m.CustomerListComponent),
       },
+      {
+        path: 'deliveries',
+        loadComponent: () =>
+          import('./features/deliveries/delivery-list.component').then(m => m.DeliveryListComponent),
+      },
       { path: 'sales-history',   component: ComingSoonComponent, data: { title: 'Historique des ventes' } },
       { path: 'purchase-orders', component: ComingSoonComponent, data: { title: 'Commandes fournisseurs' } },
       { path: 'receptions',      component: ComingSoonComponent, data: { title: 'Réceptions' } },

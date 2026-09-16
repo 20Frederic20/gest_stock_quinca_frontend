@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Delivery } from '../../core/models/delivery.model';
 import { Payment } from '../../core/models/payment.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -12,6 +13,7 @@ import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { StateViewComponent } from '../../shared/state-view/state-view.component';
 import { formatDate } from '../articles/article-format';
 import { CustomersService } from '../customers/customers.service';
+import { InvoiceDeliveriesComponent } from '../deliveries/invoice-deliveries.component';
 import { InvoicePaymentsComponent } from '../payments/invoice-payments.component';
 import { formatMoney } from '../pricing/price-rules';
 import { CancelInvoiceFormComponent } from './cancel-invoice-form.component';
@@ -47,6 +49,7 @@ import { InvoicesService } from './invoices.service';
     InvoiceAlertsComponent,
     InvoiceTransportComponent,
     InvoicePaymentsComponent,
+    InvoiceDeliveriesComponent,
     CancelInvoiceFormComponent,
   ],
   templateUrl: './invoice-page.component.html',
@@ -78,6 +81,9 @@ export class InvoicePageComponent {
   /** A cashier takes payments without being allowed to sell; only a manager undoes one. */
   canPay = computed(() => this.auth.can('payments.write'));
   canCancelPayment = computed(() => this.auth.can('payments.cancel'));
+  /** Handing the goods over belongs to whoever sells, not to the till. */
+  canDeliver = computed(() => this.auth.can('deliveries.write'));
+  canCancelDelivery = computed(() => this.auth.can('deliveries.cancel'));
   isDraft = computed(() => this.invoice()?.status === 'DRAFT');
   editable = computed(() => this.isDraft() && this.canWrite());
   cancellable = computed(() => {
@@ -181,6 +187,26 @@ export class InvoicePageComponent {
         ? null
         : { ...invoice, paidAmount: payment.invoicePaidAmount, remainingToPay: payment.invoiceRemainingToPay },
     );
+    this.actionError.set(null);
+  }
+
+  /**
+   * A delivery note was written or cancelled. Its answer says where the invoice then stands — its
+   * status and, line by line, what is left to hand over — so nothing has to be loaded again.
+   */
+  onDeliveryChanged(delivery: Delivery): void {
+    this.invoice.update(invoice => {
+      if (invoice === null) return null;
+
+      const lines = invoice.lines.map(line => {
+        const moved = delivery.lines.find(deliveryLine => deliveryLine.invoiceLineId === line.id);
+        return moved
+          ? { ...line, deliveredQuantity: moved.deliveredQuantity, remainingToDeliver: moved.remainingToDeliver }
+          : line;
+      });
+
+      return { ...invoice, deliveryStatus: delivery.invoiceDeliveryStatus, lines };
+    });
     this.actionError.set(null);
   }
 

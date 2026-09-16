@@ -28,6 +28,7 @@ export const MENU: MenuGroup[] = [
   ]},
   { title: 'Ventes', items: [
     { label: 'Factures',            route: '/invoices',      ready: true },
+    { label: 'Livraisons',          route: '/deliveries',    ready: true },
     { label: 'Clients et créances', route: '/customers',     ready: true },
     { label: 'Historique',          route: '/sales-history', ready: false },
   ]},

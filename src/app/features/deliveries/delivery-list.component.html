@@ -1,0 +1,89 @@
+<app-page-header heading="Livraisons" subtitle="Les bons de livraison de l’agence, du plus récent au plus ancien." />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="deliveries().length === 0"
+  emptyMessage="Aucune livraison dans cette agence."
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && deliveries().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Facture</th>
+          <th>Client</th>
+          <th>Articles</th>
+          <th>Établi par</th>
+          @if (canCancelDelivery()) {
+            <th><span class="visually-hidden">Actions</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (delivery of deliveries(); track delivery.id) {
+          <tr [class.cancelled]="delivery.cancelled" (click)="openInvoice(delivery)">
+            <td class="nowrap">{{ delivery.number }}</td>
+            <td class="nowrap">{{ formatDate(delivery.deliveryDate) }}</td>
+            <td class="nowrap">{{ delivery.invoiceNumber }}</td>
+            <td>{{ delivery.customerName }}</td>
+            <td>
+              <ul class="articles">
+                @for (line of delivery.lines; track line.id) {
+                  <li>{{ formatNumber(line.quantity) }} {{ line.unitLabel }} — {{ line.designation }}</li>
+                }
+              </ul>
+            </td>
+            <td>{{ delivery.createdByName }}</td>
+            @if (canCancelDelivery()) {
+              <td class="row-actions">
+                @if (!delivery.cancelled) {
+                  <button type="button" class="btn btn-ghost" (click)="openCancel(delivery); $event.stopPropagation()">
+                    Annuler
+                  </button>
+                }
+              </td>
+            }
+          </tr>
+          @if (delivery.cancelled) {
+            <tr class="cancelled-reason">
+              <td [attr.colspan]="canCancelDelivery() ? 7 : 6">
+                Annulé{{ delivery.cancellationReason ? ' : ' + delivery.cancellationReason : '.' }}
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="bons de livraison" (pageChange)="load($event)" />
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler un bon de livraison" (closed)="closeCancel()">
+  @if (cancelling(); as delivery) {
+    <app-cancel-delivery-form
+      [deliveryId]="delivery.id"
+      [summary]="summaryOf(delivery)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>

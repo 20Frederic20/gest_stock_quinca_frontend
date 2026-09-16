@@ -34,6 +34,10 @@ export type Permission =
   | 'payments.write'
   /** Cancel a payment already taken. */
   | 'payments.cancel'
+  /** Hand the goods of an invoice over to the customer. */
+  | 'deliveries.write'
+  /** Cancel a delivery note, which brings the goods back into stock. */
+  | 'deliveries.cancel'
   /** Stock of the agency given as `agencyId`. */
   | 'stock.view'
   /** Stock of any agency, e.g. to offer an agency filter. */
@@ -65,7 +69,11 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'sales.write':
       return isManager || user.role === 'SELLER';
     case 'payments.cancel':
+    case 'deliveries.cancel':
       return isManager;
+    // A cashier holds the till, not the counter: handing the goods over is not theirs.
+    case 'deliveries.write':
+      return isManager || user.role === 'SELLER';
     // Same as the backend: a cashier takes payments without being allowed to sell.
     case 'payments.write':
       return isManager || user.role === 'SELLER' || user.role === 'CASHIER';

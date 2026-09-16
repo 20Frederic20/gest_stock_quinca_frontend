@@ -44,6 +44,17 @@ describe('can', () => {
     expect(can(cashier, 'payments.cancel')).toBe(false);
   });
 
+  it('lets whoever sells hand the goods over, but not the cashier', () => {
+    expect(can(manager, 'deliveries.write')).toBe(true);
+    expect(can(seller, 'deliveries.write')).toBe(true);
+    expect(can(cashier, 'deliveries.write')).toBe(false);
+  });
+
+  it('keeps the cancellation of a delivery note for a manager or an administrator', () => {
+    expect(can(manager, 'deliveries.cancel')).toBe(true);
+    expect(can(seller, 'deliveries.cancel')).toBe(false);
+  });
+
   it('keeps agencies and users for the administrator', () => {
     for (const other of [manager, seller, cashier]) {
       expect(can(other, 'agencies.write')).toBe(false);
