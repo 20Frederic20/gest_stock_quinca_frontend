@@ -6,7 +6,7 @@ import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
 import { InvoiceLinesComponent } from './invoice-lines.component';
 
 const line: InvoiceLine = {
-  id: 'l1', articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1', unitLabel: 'Sac',
+  id: 'l1', articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1', unitLabel: 'Sac', appliedCoefficient: 50,
   quantity: 10, deliveredQuantity: 0, remainingToDeliver: 10, unitPrice: 5000, discountRate: 0, discountAmount: 0,
   vatRate: 0.18, netAmount: 50000, vatAmount: 9000, totalAmount: 59000,
 };

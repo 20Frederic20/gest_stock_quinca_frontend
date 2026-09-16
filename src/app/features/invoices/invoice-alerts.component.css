@@ -1,0 +1,18 @@
+/* A warning, not a failure: the seller may still fill the document and fix it before validating. */
+.alerts {
+  margin-top: var(--space-3);
+  padding: var(--space-2);
+  border-left: 3px solid #b26a00;
+  border-radius: var(--radius-md);
+  background: #fff6e5;
+  color: #7a4a00;
+  font-size: 13px;
+}
+
+.alerts p {
+  margin: 0;
+}
+
+.alerts p + p {
+  margin-top: var(--space-1);
+}

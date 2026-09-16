@@ -1,0 +1,23 @@
+@if (editable() || amount() > 0) {
+  <dt>Transport</dt>
+  <dd>
+    @if (editing()) {
+      <span class="edit">
+        <input
+          class="cell-input"
+          type="number"
+          min="0"
+          step="any"
+          aria-label="Frais de transport"
+          [formControl]="field" />
+        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">OK</button>
+        <button type="button" class="btn" (click)="cancelEdit()">Annuler</button>
+      </span>
+    } @else {
+      {{ amount() > 0 ? formatMoney(amount()) : '—' }}
+      @if (editable()) {
+        <button type="button" class="btn btn-ghost" (click)="edit()">Modifier</button>
+      }
+    }
+  </dd>
+}

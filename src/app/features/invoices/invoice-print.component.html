@@ -94,6 +94,11 @@
       <dt>TVA</dt>
       <dd>{{ formatMoney(d.invoice.vatAmount) }}</dd>
 
+      @if (d.invoice.transportAmount > 0) {
+        <dt>Transport</dt>
+        <dd>{{ formatMoney(d.invoice.transportAmount) }}</dd>
+      }
+
       <dt class="grand">Total TTC</dt>
       <dd class="grand">{{ formatMoney(d.invoice.totalAmount) }}</dd>
     </dl>

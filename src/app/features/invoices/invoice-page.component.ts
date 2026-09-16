@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
-import { Customer } from '../../core/models/customer.model';
+import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice } from '../../core/models/invoice.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -13,8 +13,10 @@ import { formatDate } from '../articles/article-format';
 import { CustomersService } from '../customers/customers.service';
 import { formatMoney } from '../pricing/price-rules';
 import { CancelInvoiceFormComponent } from './cancel-invoice-form.component';
+import { InvoiceAlertsComponent } from './invoice-alerts.component';
 import { InvoiceLineFormComponent } from './invoice-line-form.component';
 import { InvoiceLinesComponent } from './invoice-lines.component';
+import { InvoiceTransportComponent } from './invoice-transport.component';
 import {
   DOCUMENT_STATUS_LABELS,
   DOCUMENT_STATUS_TONES,
@@ -38,6 +40,8 @@ import { InvoicesService } from './invoices.service';
     ConfirmDialogComponent,
     InvoiceLinesComponent,
     InvoiceLineFormComponent,
+    InvoiceAlertsComponent,
+    InvoiceTransportComponent,
     CancelInvoiceFormComponent,
   ],
   templateUrl: './invoice-page.component.html',
@@ -55,6 +59,8 @@ export class InvoicePageComponent {
   invoice = signal<Invoice | null>(null);
   /** Gives the price grid of the new lines and the contact details. */
   customer = signal<Customer | null>(null);
+  /** Credit situation of the customer, for the warnings of a draft. Null while unknown. */
+  credit = signal<CustomerCredit | null>(null);
   loading = signal(false);
   /** Loading failure: nothing else can be shown. */
   error = signal<string | null>(null);
@@ -125,6 +131,8 @@ export class InvoicePageComponent {
         this.invoice.set(invoice);
         this.loading.set(false);
         this.loadCustomer(invoice.customerId);
+        // Only a draft can still be fixed: on a locked document the warnings would be noise.
+        if (invoice.status === 'DRAFT') this.loadCredit(invoice.customerId);
       },
       error: (error: ApiError) => {
         this.error.set(error.message);
@@ -197,6 +205,14 @@ export class InvoicePageComponent {
     this.cancelOpen.set(false);
     this.invoice.set(invoice);
     this.notice.set('Document annulé.');
+  }
+
+  /** A failure stays silent: the warning is a comfort, the backend is the one that decides. */
+  private loadCredit(customerId: string): void {
+    this.customersService.getCredit(customerId).subscribe({
+      next: credit => this.credit.set(credit),
+      error: () => this.credit.set(null),
+    });
   }
 
   private loadCustomer(customerId: string): void {

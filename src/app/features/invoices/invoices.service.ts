@@ -45,6 +45,11 @@ export class InvoicesService {
     return this.http.delete<Invoice>(`${this.url}/invoices/${invoiceId}/lines/${lineId}`);
   }
 
+  /** Transport charges of a draft, before VAT: a partial change of the document, hence PATCH. */
+  setTransport(invoiceId: string, transportAmount: number) {
+    return this.http.patch<Invoice>(`${this.url}/invoices/${invoiceId}/transport`, { transportAmount });
+  }
+
   /** Freezes the amounts; a final invoice also reserves the stock and checks the credit limit. */
   validate(id: string) {
     return this.http.post<Invoice>(`${this.url}/invoices/${id}/validation`, null);

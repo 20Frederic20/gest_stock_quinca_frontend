@@ -1,0 +1,19 @@
+@if (overrun() > 0 || shortages().length > 0) {
+  <div class="alerts" role="status">
+    @if (overrun() > 0) {
+      <p>
+        <strong>Plafond de crédit dépassé de {{ formatMoney(overrun()) }}.</strong>
+        Encours {{ formatMoney(credit()!.currentBalance) }} sur un plafond de
+        {{ formatMoney(credit()!.creditLimit) }} : la validation sera refusée.
+      </p>
+    }
+
+    @for (shortage of shortages(); track shortage.articleId) {
+      <p>
+        <strong>Stock insuffisant — {{ shortage.designation }}.</strong>
+        {{ formatQuantity(shortage.needed, shortage.unitCode) }} pour ce document,
+        {{ formatQuantity(shortage.available, shortage.unitCode) }} disponible à {{ invoice().agencyLabel }}.
+      </p>
+    }
+  </div>
+}

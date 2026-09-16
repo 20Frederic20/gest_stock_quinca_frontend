@@ -83,6 +83,13 @@
         <dt>TVA</dt>
         <dd>{{ formatMoney(inv.vatAmount) }}</dd>
 
+        <app-invoice-transport
+          [invoiceId]="inv.id"
+          [amount]="inv.transportAmount"
+          [editable]="editable()"
+          (changed)="onInvoiceChanged($event)"
+          (failed)="onActionFailed($event)" />
+
         <dt class="grand">Total TTC</dt>
         <dd class="grand">{{ formatMoney(inv.totalAmount) }}</dd>
 
@@ -97,6 +104,10 @@
           <dd>{{ deliveryLabels[inv.deliveryStatus] }}</dd>
         }
       </dl>
+
+      @if (isDraft()) {
+        <app-invoice-alerts [invoice]="inv" [credit]="credit()" />
+      }
 
       <div class="actions">
         @if (editable()) {

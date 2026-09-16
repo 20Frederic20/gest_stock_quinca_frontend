@@ -5,21 +5,22 @@ import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
-import { Customer } from '../../core/models/customer.model';
+import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
+import { AgencyStock } from '../../core/models/stock.model';
 import { Role } from '../../core/models/user.model';
 import { InvoicePageComponent } from './invoice-page.component';
 
 const at = '2026-09-15T08:00:00';
 const line: InvoiceLine = {
-  id: 'l1', articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1', unitLabel: 'Sac',
+  id: 'l1', articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1', unitLabel: 'Sac', appliedCoefficient: 50,
   quantity: 10, deliveredQuantity: 0, remainingToDeliver: 10, unitPrice: 5000, discountRate: 0, discountAmount: 0,
   vatRate: 0.18, netAmount: 50000, vatAmount: 9000, totalAmount: 59000,
 };
 const draft: Invoice = {
   id: 'i1', number: 'FAC-COT-2026-00001', type: 'INVOICE', status: 'DRAFT', deliveryStatus: 'NOT_DELIVERED',
   documentDate: '2026-09-15', dueDate: null, grossAmount: 50000, discountAmount: 0, netAmount: 50000, vatAmount: 9000,
-  totalAmount: 59000, paidAmount: 0, remainingToPay: 59000, creditMode: false, cancellationReason: null,
+  transportAmount: 0, totalAmount: 59000, paidAmount: 0, remainingToPay: 59000, creditMode: false, cancellationReason: null,
   customerId: 'c1', customerName: 'Bâtiments Houngbo', agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
   userId: 'u1', userName: 'Awa Dossou', lines: [line], createdAt: at,
 };
@@ -27,6 +28,10 @@ const validated: Invoice = { ...draft, status: 'VALIDATED' };
 const customer = {
   id: 'c1', code: 'CLI-001', name: 'Bâtiments Houngbo', phone: null, privilegeId: 'p1', privilegeLabel: 'Standard',
 } as Customer;
+const credit = {
+  customerId: 'c1', creditLimit: 200000, currentBalance: 150000, remainingCredit: 50000, creditAllowed: true,
+} as CustomerCredit;
+const stock = { articleId: 'a1', stockUnitCode: 'KG', availableQuantity: 5000 } as AgencyStock;
 
 describe('InvoicePageComponent', () => {
   let httpTesting: HttpTestingController;
@@ -51,13 +56,20 @@ describe('InvoicePageComponent', () => {
     fixture.detectChanges();
     httpTesting.expectOne('/api/v1/invoices/i1').flush(invoice);
     httpTesting.expectOne('/api/v1/customers/c1').flush(customer);
+    // Loaded for the alerts of a draft, and answered here so that every test starts on a quiet page.
+    httpTesting.match('/api/v1/customers/c1/credit').forEach(request => request.flush(credit));
+    fixture.detectChanges();
+    httpTesting.match(request => request.url.startsWith('/api/v1/agencies/g1/stock/'))
+      .forEach(request => request.flush(stock));
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
     const refresh = () => fixture.detectChanges();
     const buttons = () => [...element.querySelectorAll('aside .actions button')].map(b => b.textContent?.trim());
 
-    return { component: fixture.componentInstance, element, refresh, buttons, navigate };
+    const totals = () => element.querySelector('aside dl')?.textContent?.replace(/\s+/g, ' ') ?? '';
+
+    return { component: fixture.componentInstance, element, refresh, buttons, totals, navigate };
   }
 
   afterEach(() => httpTesting.verify());
@@ -160,6 +172,33 @@ describe('InvoicePageComponent', () => {
     expect(component.cancelOpen()).toBe(false);
     expect(component.invoice()?.status).toBe('CANCELLED');
     expect(component.cancellable()).toBe(false);
+  });
+
+  it('warns on a draft that the credit of the customer will refuse the validation', () => {
+    const { element } = setup({ ...draft, creditMode: true, totalAmount: 59000 });
+
+    expect(element.querySelector('app-invoice-alerts')?.textContent).toContain('Plafond de crédit');
+  });
+
+  it('leaves a validated document without any warning: it is too late for them', () => {
+    const { element } = setup(validated);
+
+    expect(element.querySelector('app-invoice-alerts')).toBeNull();
+  });
+
+  it('offers to type the transport charges of a draft that has none', () => {
+    const { element } = setup();
+    const row = element.querySelector('app-invoice-transport');
+
+    expect(row?.textContent).toContain('Transport');
+    expect(row?.querySelector('button')?.textContent?.trim()).toBe('Modifier');
+  });
+
+  it('shows the transport charges between the VAT and the total', () => {
+    const { totals } = setup({ ...draft, transportAmount: 5000, totalAmount: 64000 });
+
+    expect(totals()).toContain('Transport');
+    expect(totals()).toContain('5 000');
   });
 
   it('lets a cashier read and print a draft, nothing more', () => {

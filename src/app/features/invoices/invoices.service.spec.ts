@@ -51,6 +51,14 @@ describe('InvoicesService', () => {
     httpTesting.expectOne(r => r.method === 'DELETE' && r.url === '/api/v1/invoices/i1/lines/l1');
   });
 
+  it('sets the transport charges of a draft', () => {
+    service.setTransport('i1', 5000).subscribe();
+
+    const req = httpTesting.expectOne('/api/v1/invoices/i1/transport');
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ transportAmount: 5000 });
+  });
+
   it('validates, cancels with a reason, and deletes a draft', () => {
     service.validate('i1').subscribe();
     service.cancel('i1', 'Erreur de client').subscribe();

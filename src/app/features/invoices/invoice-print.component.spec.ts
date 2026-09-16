@@ -50,6 +50,15 @@ describe('InvoicePrintComponent', () => {
 
   afterEach(() => httpTesting.verify());
 
+  it('prints the transport charges in the totals', () => {
+    const { element, load } = setup({ ...invoice, transportAmount: 5000, totalAmount: 64000 });
+    load();
+    const totals = element.querySelector('.totals')?.textContent?.replace(/\s+/g, ' ') ?? '';
+
+    expect(totals).toContain('Transport');
+    expect(totals).toContain('5 000');
+  });
+
   it('lays out the seller, the customer, the lines and the totals', () => {
     const { element, load } = setup();
     load();

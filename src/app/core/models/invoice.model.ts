@@ -15,6 +15,11 @@ export interface InvoiceLine {
   designation: string;
   packagingId: string;
   unitLabel: string;
+  /**
+   * Stock units in one unit of the packaging, copied when the line was added: 50 for a 50 KG bag.
+   * Frozen like the price, so that a later change of the packaging does not move an existing document.
+   */
+  appliedCoefficient: number;
   /** In the chosen packaging (3 bags, 2 pallets…). */
   quantity: number;
   deliveredQuantity: number;
@@ -47,6 +52,8 @@ export interface Invoice {
   discountAmount: number;
   netAmount: number;
   vatAmount: number;
+  /** Transport charges, before VAT, typed on the draft. Counted in totalAmount, never in netAmount. */
+  transportAmount: number;
   totalAmount: number;
   paidAmount: number;
   remainingToPay: number;
