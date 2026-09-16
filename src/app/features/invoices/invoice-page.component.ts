@@ -5,12 +5,14 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Payment } from '../../core/models/payment.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { StateViewComponent } from '../../shared/state-view/state-view.component';
 import { formatDate } from '../articles/article-format';
 import { CustomersService } from '../customers/customers.service';
+import { InvoicePaymentsComponent } from '../payments/invoice-payments.component';
 import { formatMoney } from '../pricing/price-rules';
 import { CancelInvoiceFormComponent } from './cancel-invoice-form.component';
 import { InvoiceAlertsComponent } from './invoice-alerts.component';
@@ -44,6 +46,7 @@ import { InvoicesService } from './invoices.service';
     InvoiceLineFormComponent,
     InvoiceAlertsComponent,
     InvoiceTransportComponent,
+    InvoicePaymentsComponent,
     CancelInvoiceFormComponent,
   ],
   templateUrl: './invoice-page.component.html',
@@ -72,6 +75,9 @@ export class InvoicePageComponent {
 
   canWrite = computed(() => this.auth.can('sales.write'));
   canCancel = computed(() => this.auth.can('sales.cancel'));
+  /** A cashier takes payments without being allowed to sell; only a manager undoes one. */
+  canPay = computed(() => this.auth.can('payments.write'));
+  canCancelPayment = computed(() => this.auth.can('payments.cancel'));
   isDraft = computed(() => this.invoice()?.status === 'DRAFT');
   editable = computed(() => this.isDraft() && this.canWrite());
   cancellable = computed(() => {
@@ -163,6 +169,19 @@ export class InvoicePageComponent {
     this.invoice.set(invoice);
     this.actionError.set(null);
     this.notice.set(null);
+  }
+
+  /**
+   * A payment was taken or cancelled. The answer carries the invoice as it then stands, so the totals
+   * follow without loading the document again.
+   */
+  onPaymentChanged(payment: Payment): void {
+    this.invoice.update(invoice =>
+      invoice === null
+        ? null
+        : { ...invoice, paidAmount: payment.invoicePaidAmount, remainingToPay: payment.invoiceRemainingToPay },
+    );
+    this.actionError.set(null);
   }
 
   onActionFailed(message: string): void {

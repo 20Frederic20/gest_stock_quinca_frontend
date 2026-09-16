@@ -32,6 +32,18 @@ describe('can', () => {
     expect(can(cashier, 'referential.write')).toBe(false);
   });
 
+  it('lets everyone who sells or holds the till take a payment', () => {
+    expect(can(manager, 'payments.write')).toBe(true);
+    expect(can(seller, 'payments.write')).toBe(true);
+    expect(can(cashier, 'payments.write')).toBe(true);
+  });
+
+  it('keeps the cancellation of a payment for a manager or an administrator', () => {
+    expect(can(manager, 'payments.cancel')).toBe(true);
+    expect(can(seller, 'payments.cancel')).toBe(false);
+    expect(can(cashier, 'payments.cancel')).toBe(false);
+  });
+
   it('keeps agencies and users for the administrator', () => {
     for (const other of [manager, seller, cashier]) {
       expect(can(other, 'agencies.write')).toBe(false);

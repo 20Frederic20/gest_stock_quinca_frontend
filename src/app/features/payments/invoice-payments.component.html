@@ -1,0 +1,83 @@
+<section class="payments">
+  <div class="head">
+    <h2>Règlements</h2>
+    @if (payable()) {
+      <button type="button" class="btn btn-primary" (click)="openForm()">Encaisser</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (!error() && payments().length === 0 && !loading()) {
+    <p class="empty text-muted">Aucun règlement enregistré sur cette facture.</p>
+  }
+
+  @if (payments().length > 0) {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Numéro</th>
+            <th>Date</th>
+            <th>Mode</th>
+            <th>Référence</th>
+            <th class="number">Montant</th>
+            <th>Encaissé par</th>
+            @if (canCancelPayment()) {
+              <th><span class="visually-hidden">Actions</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (payment of payments(); track payment.id) {
+            <tr [class.cancelled]="payment.cancelled">
+              <td class="nowrap">{{ payment.number }}</td>
+              <td class="nowrap">{{ formatDate(payment.paymentDate) }}</td>
+              <td class="nowrap">{{ methodLabels[payment.method] }}</td>
+              <td>{{ payment.externalReference || '—' }}</td>
+              <td class="number">{{ formatMoney(payment.amount) }}</td>
+              <td>{{ payment.userName }}</td>
+              @if (canCancelPayment()) {
+                <td class="row-actions">
+                  @if (!payment.cancelled) {
+                    <button type="button" class="btn btn-ghost" (click)="openCancel(payment)">Annuler</button>
+                  }
+                </td>
+              }
+            </tr>
+            @if (payment.cancelled) {
+              <tr class="cancelled-reason">
+                <td [attr.colspan]="canCancelPayment() ? 7 : 6">
+                  Annulé{{ payment.cancellationReason ? ' : ' + payment.cancellationReason : '.' }}
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+<app-drawer [open]="formOpen()" heading="Encaisser un règlement" (closed)="closeForm()">
+  @if (formOpen()) {
+    <app-payment-form
+      [invoiceId]="invoice().id"
+      [invoiceNumber]="invoice().number"
+      [remainingToPay]="invoice().remainingToPay"
+      (taken)="onTaken($event)"
+      (cancelled)="closeForm()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler un règlement" (closed)="closeCancel()">
+  @if (cancelling(); as payment) {
+    <app-cancel-payment-form
+      [paymentId]="payment.id"
+      [summary]="summaryOf(payment)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>

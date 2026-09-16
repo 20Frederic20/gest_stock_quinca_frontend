@@ -1,0 +1,87 @@
+<app-page-header heading="Règlements" subtitle="Les encaissements de l’agence, du plus récent au plus ancien." />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="payments().length === 0"
+  emptyMessage="Aucun règlement dans cette agence."
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && payments().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Facture</th>
+          <th>Client</th>
+          <th>Mode</th>
+          <th>Référence</th>
+          <th class="number">Montant</th>
+          <th>Encaissé par</th>
+          @if (canCancelPayment()) {
+            <th><span class="visually-hidden">Actions</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (payment of payments(); track payment.id) {
+          <tr [class.cancelled]="payment.cancelled" (click)="openInvoice(payment)">
+            <td class="nowrap">{{ payment.number }}</td>
+            <td class="nowrap">{{ formatDate(payment.paymentDate) }}</td>
+            <td class="nowrap">{{ payment.invoiceNumber }}</td>
+            <td>{{ payment.customerName }}</td>
+            <td class="nowrap">{{ methodLabels[payment.method] }}</td>
+            <td>{{ payment.externalReference || '—' }}</td>
+            <td class="number">{{ formatMoney(payment.amount) }}</td>
+            <td>{{ payment.userName }}</td>
+            @if (canCancelPayment()) {
+              <td class="row-actions">
+                @if (!payment.cancelled) {
+                  <button type="button" class="btn btn-ghost" (click)="openCancel(payment); $event.stopPropagation()">
+                    Annuler
+                  </button>
+                }
+              </td>
+            }
+          </tr>
+          @if (payment.cancelled) {
+            <tr class="cancelled-reason">
+              <td [attr.colspan]="canCancelPayment() ? 9 : 8">
+                Annulé{{ payment.cancellationReason ? ' : ' + payment.cancellationReason : '.' }}
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="règlements" (pageChange)="load($event)" />
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler un règlement" (closed)="closeCancel()">
+  @if (cancelling(); as payment) {
+    <app-cancel-payment-form
+      [paymentId]="payment.id"
+      [summary]="summaryOf(payment)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>

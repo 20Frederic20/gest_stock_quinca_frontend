@@ -88,6 +88,11 @@ export const routes: Routes = [
           import('./features/stock-movements/movement-list.component').then(m => m.MovementListComponent),
       },
       { path: 'transfers',       component: ComingSoonComponent, data: { title: 'Transferts entre agences' } },
+      {
+        path: 'payments',
+        loadComponent: () =>
+          import('./features/payments/payment-list.component').then(m => m.PaymentListComponent),
+      },
       { path: 'day-closing',     component: ComingSoonComponent, data: { title: 'Clôture de journée' } },
       { path: 'reports',         component: ComingSoonComponent, data: { title: 'Rapports et exports' } },
       {

@@ -7,6 +7,7 @@ import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
+import { Payment } from '../../core/models/payment.model';
 import { AgencyStock } from '../../core/models/stock.model';
 import { Role } from '../../core/models/user.model';
 import { InvoicePageComponent } from './invoice-page.component';
@@ -61,6 +62,7 @@ describe('InvoicePageComponent', () => {
     fixture.detectChanges();
     httpTesting.match(request => request.url.startsWith('/api/v1/agencies/g1/stock/'))
       .forEach(request => request.flush(stock));
+    httpTesting.match('/api/v1/invoices/i1/payments').forEach(request => request.flush([]));
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
@@ -111,6 +113,9 @@ describe('InvoicePageComponent', () => {
     const req = httpTesting.expectOne('/api/v1/invoices/i1/validation');
     expect(req.request.method).toBe('POST');
     req.flush(validated);
+    refresh();
+    // Once validated, the invoice can be collected: its payments load.
+    httpTesting.match('/api/v1/invoices/i1/payments').forEach(request => request.flush([]));
     refresh();
 
     expect(component.invoice()?.status).toBe('VALIDATED');
@@ -210,6 +215,27 @@ describe('InvoicePageComponent', () => {
     expect(component.actionError()).toContain('refusée');
     expect(component.addingLine()).toBe(false);
     expect(component.invoice()?.lines.length).toBe(1);
+  });
+
+  it('shows what has been collected once the invoice is validated', () => {
+    expect(setup(validated).element.querySelector('app-invoice-payments')).not.toBeNull();
+  });
+
+  it('shows no payment section on a draft: there is nothing to collect yet', () => {
+    expect(setup(draft).element.querySelector('app-invoice-payments')).toBeNull();
+  });
+
+  it('takes the new totals of the invoice from the payment that was just taken', () => {
+    const { component } = setup(validated);
+
+    component.onPaymentChanged({
+      id: 'p1', invoiceId: 'i1', amount: 50000, invoicePaidAmount: 50000, invoiceRemainingToPay: 9000,
+    } as Payment);
+
+    expect(component.invoice()?.paidAmount).toBe(50000);
+    expect(component.invoice()?.remainingToPay).toBe(9000);
+    // Nothing else of the document moved: no reload was needed.
+    expect(component.invoice()?.totalAmount).toBe(59000);
   });
 
   it('warns on a draft that the credit of the customer will refuse the validation', () => {

@@ -30,6 +30,10 @@ export type Permission =
   | 'sales.cancel'
   /** Documents of any agency. */
   | 'sales.viewAll'
+  /** Take a payment on an invoice: the till as much as the counter. */
+  | 'payments.write'
+  /** Cancel a payment already taken. */
+  | 'payments.cancel'
   /** Stock of the agency given as `agencyId`. */
   | 'stock.view'
   /** Stock of any agency, e.g. to offer an agency filter. */
@@ -60,6 +64,11 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'customers.create':
     case 'sales.write':
       return isManager || user.role === 'SELLER';
+    case 'payments.cancel':
+      return isManager;
+    // Same as the backend: a cashier takes payments without being allowed to sell.
+    case 'payments.write':
+      return isManager || user.role === 'SELLER' || user.role === 'CASHIER';
     case 'agencies.write':
     case 'users.manage':
     case 'customers.delete':

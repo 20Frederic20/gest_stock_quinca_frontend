@@ -49,6 +49,7 @@ export const MENU: MenuGroup[] = [
     { label: 'Tarifs et privilèges', route: '/pricing',          ready: true },
   ]},
   { title: 'Caisse', items: [
+    { label: 'Règlements',         route: '/payments',    ready: true },
     { label: 'Clôture de journée', route: '/day-closing', ready: false },
   ]},
   { title: 'Analyse', items: [

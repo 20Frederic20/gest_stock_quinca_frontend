@@ -1,0 +1,45 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <p class="intro">
+    Encaissement sur <strong>{{ invoiceNumber() }}</strong><br />
+    Reste à payer : <strong>{{ formatMoney(remainingToPay()) }}</strong>
+  </p>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label>Mode de paiement</label>
+    <app-select-search
+      [options]="methodOptions()"
+      [value]="method()"
+      [label]="methodLabel()"
+      placeholder="Choisir un mode"
+      (selected)="onMethodSelected($event)" />
+  </div>
+
+  <div class="field">
+    <label for="paymentAmount">Montant encaissé</label>
+    <input id="paymentAmount" type="number" min="0.0001" [max]="remainingToPay()" step="any" formControlName="amount" />
+    <app-field-error [control]="form.controls.amount" [serverError]="fieldErrors()['amount']" />
+    <p class="hint">Au plus le reste à payer. Un encaissement partiel est accepté.</p>
+  </div>
+
+  <div class="field">
+    <label for="paymentReference">{{ referenceLabel() }}</label>
+    <input
+      id="paymentReference"
+      formControlName="externalReference"
+      maxlength="100"
+      autocomplete="off"
+      [placeholder]="referenceNeeded() ? 'Obligatoire pour ce mode de paiement' : 'Facultatif'" />
+    <app-field-error [control]="form.controls.externalReference" [serverError]="fieldErrors()['externalReference']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Retour</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Encaissement…' : 'Encaisser' }}
+    </button>
+  </div>
+</form>

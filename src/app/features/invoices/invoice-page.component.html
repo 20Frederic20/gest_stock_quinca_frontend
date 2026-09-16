@@ -67,6 +67,14 @@
             (composed)="addLine($event)" />
         }
       }
+      <!-- A draft has nothing to collect yet; a quote or a proforma never will. -->
+      @if (inv.type === 'INVOICE' && inv.status !== 'DRAFT') {
+        <app-invoice-payments
+          [invoice]="inv"
+          [canPay]="canPay()"
+          [canCancelPayment]="canCancelPayment()"
+          (changed)="onPaymentChanged($event)" />
+      }
     </section>
 
     <aside class="totals">
