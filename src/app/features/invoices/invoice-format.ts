@@ -1,4 +1,4 @@
-import { DocumentStatus, DocumentType, Invoice, WithdrawalStatus } from '../../core/models/invoice.model';
+import { DocumentStatus, DocumentType, Invoice, DeliveryStatus } from '../../core/models/invoice.model';
 import { BadgeTone } from '../../shared/badge/badge.component';
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
@@ -20,10 +20,10 @@ export const DOCUMENT_STATUS_TONES: Record<DocumentStatus, BadgeTone> = {
   CANCELLED: 'muted',
 };
 
-export const WITHDRAWAL_STATUS_LABELS: Record<WithdrawalStatus, string> = {
-  NOT_WITHDRAWN: 'Non retiré',
-  PARTIALLY_WITHDRAWN: 'Retrait partiel',
-  FULLY_WITHDRAWN: 'Entièrement retiré',
+export const DELIVERY_STATUS_LABELS: Record<DeliveryStatus, string> = {
+  NOT_DELIVERED: 'Non livré',
+  PARTIALLY_DELIVERED: 'Livraison partielle',
+  FULLY_DELIVERED: 'Entièrement livré',
 };
 
 /** 3 bags of 50 KG → 150: what a line takes from the stock, in the article's stock unit. */
@@ -37,7 +37,7 @@ export function lineNetAmount(quantity: number, unitPrice: number, discountRate:
   return gross - Math.round(((gross * discountRate) / 100) * 10000) / 10000;
 }
 
-/** Backend rule: a validated document is cancelled only while nothing was paid nor collected. */
+/** Backend rule: a validated document is cancelled only while nothing was paid nor delivered. */
 export function isCancellable(invoice: Invoice): boolean {
-  return invoice.status === 'VALIDATED' && invoice.paidAmount === 0 && invoice.withdrawalStatus === 'NOT_WITHDRAWN';
+  return invoice.status === 'VALIDATED' && invoice.paidAmount === 0 && invoice.deliveryStatus === 'NOT_DELIVERED';
 }

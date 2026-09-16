@@ -19,7 +19,7 @@ import {
   DOCUMENT_STATUS_LABELS,
   DOCUMENT_STATUS_TONES,
   DOCUMENT_TYPE_LABELS,
-  WITHDRAWAL_STATUS_LABELS,
+  DELIVERY_STATUS_LABELS,
   isCancellable,
 } from './invoice-format';
 import { InvoicesService } from './invoices.service';
@@ -99,7 +99,7 @@ export class InvoicePageComponent {
 
   protected statusLabels = DOCUMENT_STATUS_LABELS;
   protected statusTones = DOCUMENT_STATUS_TONES;
-  protected withdrawalLabels = WITHDRAWAL_STATUS_LABELS;
+  protected deliveryLabels = DELIVERY_STATUS_LABELS;
   protected formatDate = formatDate;
   protected formatMoney = formatMoney;
 

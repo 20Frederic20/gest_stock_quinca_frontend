@@ -2,7 +2,7 @@ import { Invoice } from '../../core/models/invoice.model';
 import { isCancellable, lineNetAmount, stockQuantity } from './invoice-format';
 
 const validated = {
-  status: 'VALIDATED', paidAmount: 0, withdrawalStatus: 'NOT_WITHDRAWN',
+  status: 'VALIDATED', paidAmount: 0, deliveryStatus: 'NOT_DELIVERED',
 } as Invoice;
 
 describe('invoice format', () => {
@@ -21,6 +21,6 @@ describe('invoice format', () => {
     expect(isCancellable({ ...validated, status: 'DRAFT' })).toBe(false);
     expect(isCancellable({ ...validated, status: 'CANCELLED' })).toBe(false);
     expect(isCancellable({ ...validated, paidAmount: 1000 })).toBe(false);
-    expect(isCancellable({ ...validated, withdrawalStatus: 'PARTIALLY_WITHDRAWN' })).toBe(false);
+    expect(isCancellable({ ...validated, deliveryStatus: 'PARTIALLY_DELIVERED' })).toBe(false);
   });
 });

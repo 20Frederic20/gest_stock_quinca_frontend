@@ -13,11 +13,11 @@ import { InvoicePageComponent } from './invoice-page.component';
 const at = '2026-09-15T08:00:00';
 const line: InvoiceLine = {
   id: 'l1', articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1', unitLabel: 'Sac',
-  quantity: 10, withdrawnQuantity: 0, remainingToWithdraw: 10, unitPrice: 5000, discountRate: 0, discountAmount: 0,
+  quantity: 10, deliveredQuantity: 0, remainingToDeliver: 10, unitPrice: 5000, discountRate: 0, discountAmount: 0,
   vatRate: 0.18, netAmount: 50000, vatAmount: 9000, totalAmount: 59000,
 };
 const draft: Invoice = {
-  id: 'i1', number: 'FAC-COT-2026-00001', type: 'INVOICE', status: 'DRAFT', withdrawalStatus: 'NOT_WITHDRAWN',
+  id: 'i1', number: 'FAC-COT-2026-00001', type: 'INVOICE', status: 'DRAFT', deliveryStatus: 'NOT_DELIVERED',
   documentDate: '2026-09-15', dueDate: null, grossAmount: 50000, discountAmount: 0, netAmount: 50000, vatAmount: 9000,
   totalAmount: 59000, paidAmount: 0, remainingToPay: 59000, creditMode: false, cancellationReason: null,
   customerId: 'c1', customerName: 'Bâtiments Houngbo', agencyId: 'g1', agencyLabel: 'Cotonou — Siège',

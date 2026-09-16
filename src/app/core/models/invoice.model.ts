@@ -4,8 +4,8 @@ export type DocumentType = 'QUOTE' | 'PROFORMA' | 'INVOICE';
 /** DRAFT is freely editable; VALIDATED freezes the amounts; CANCELLED keeps the document for the record. */
 export type DocumentStatus = 'DRAFT' | 'VALIDATED' | 'CANCELLED';
 
-/** How much of the goods the customer has already collected. */
-export type WithdrawalStatus = 'NOT_WITHDRAWN' | 'PARTIALLY_WITHDRAWN' | 'FULLY_WITHDRAWN';
+/** How much of the goods has already been delivered to the customer. */
+export type DeliveryStatus = 'NOT_DELIVERED' | 'PARTIALLY_DELIVERED' | 'FULLY_DELIVERED';
 
 export interface InvoiceLine {
   id: string;
@@ -17,8 +17,8 @@ export interface InvoiceLine {
   unitLabel: string;
   /** In the chosen packaging (3 bags, 2 pallets…). */
   quantity: number;
-  withdrawnQuantity: number;
-  remainingToWithdraw: number;
+  deliveredQuantity: number;
+  remainingToDeliver: number;
   /** Set by the backend from the customer's price grid, never sent by the front. */
   unitPrice: number;
   /** In percent, 0 to 100. */
@@ -38,7 +38,7 @@ export interface Invoice {
   number: string;
   type: DocumentType;
   status: DocumentStatus;
-  withdrawalStatus: WithdrawalStatus;
+  deliveryStatus: DeliveryStatus;
   /** ISO date, e.g. "2026-09-15". */
   documentDate: string;
   /** Credit sales only: document date + the customer's payment term. */
