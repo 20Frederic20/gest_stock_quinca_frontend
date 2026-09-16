@@ -5,7 +5,8 @@ import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
-import { PendingLine } from '../../core/models/invoice.model';
+import { Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Payment } from '../../core/models/payment.model';
 import { SaleStartComponent } from './sale-start.component';
 
 const credit = (creditAllowed: boolean): CustomerCredit => ({
@@ -18,6 +19,9 @@ const cement: PendingLine = {
   articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
   unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 0, unitPrice: 5000, vatRate: 0.18,
 };
+
+const created = { id: 'i1', number: 'FAC-COT-2026-00001', status: 'DRAFT' } as Invoice;
+const validated = { ...created, status: 'VALIDATED', totalAmount: 59000, paidAmount: 0, remainingToPay: 59000 } as Invoice;
 
 describe('SaleStartComponent', () => {
   let httpTesting: HttpTestingController;
@@ -154,6 +158,67 @@ describe('SaleStartComponent', () => {
     component.removeLine(0);
 
     expect(component.lines().map(line => line.designation)).toEqual(['Fer à béton']);
+  });
+
+  it('creates, validates and offers to collect in one move', () => {
+    const { component, navigate } = setup();
+    chooseHoungbo(component);
+    component.addLine(cement);
+
+    component.submitAndCollect();
+
+    httpTesting.expectOne('/api/v1/invoices').flush(created);
+    const validation = httpTesting.expectOne('/api/v1/invoices/i1/validation');
+    expect(validation.request.method).toBe('POST');
+    validation.flush(validated);
+
+    // The drawer opens on what the invoice owes, without leaving the screen.
+    expect(component.collecting()?.remainingToPay).toBe(59000);
+    expect(component.saving()).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('opens the document once the payment is taken', () => {
+    const { component, navigate } = setup();
+    chooseHoungbo(component);
+    component.submitAndCollect();
+    httpTesting.expectOne('/api/v1/invoices').flush(created);
+    httpTesting.expectOne('/api/v1/invoices/i1/validation').flush(validated);
+
+    component.onPaymentTaken({ id: 'p1', invoiceId: 'i1' } as Payment);
+
+    expect(navigate).toHaveBeenCalledWith(['/invoices', 'i1'], { replaceUrl: true });
+  });
+
+  it('opens the document all the same when the collection is put off', () => {
+    const { component, navigate } = setup();
+    chooseHoungbo(component);
+    component.submitAndCollect();
+    httpTesting.expectOne('/api/v1/invoices').flush(created);
+    httpTesting.expectOne('/api/v1/invoices/i1/validation').flush(validated);
+
+    component.closePayment();
+
+    expect(navigate).toHaveBeenCalledWith(['/invoices', 'i1'], { replaceUrl: true });
+  });
+
+  it('stops on the document it just created when the validation is refused', () => {
+    const { component, navigate } = setup();
+    chooseHoungbo(component);
+    component.submitAndCollect();
+    httpTesting.expectOne('/api/v1/invoices').flush(created);
+
+    httpTesting.expectOne('/api/v1/invoices/i1/validation').flush(
+      { status: 400, message: 'Stock insuffisant pour « Ciment CIM II 32.5R »', fieldErrors: null },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    // The document exists: it must not be lost, nor silently left behind.
+    expect(component.formError()).toContain('Stock insuffisant');
+    expect(component.created()?.number).toBe('FAC-COT-2026-00001');
+    expect(component.collecting()).toBeNull();
+    expect(component.saving()).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('shows the backend message when the draft is refused, keeping what was typed', () => {

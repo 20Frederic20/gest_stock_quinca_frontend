@@ -6,7 +6,8 @@ import { Observable, Subscription, map } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
-import { DocumentType, PendingLine } from '../../core/models/invoice.model';
+import { DocumentType, Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Payment } from '../../core/models/payment.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
@@ -14,6 +15,8 @@ import { paymentTermLabel } from '../customers/customer-detail.component';
 import { CustomersService } from '../customers/customers.service';
 import { formatMoney } from '../pricing/price-rules';
 import { formatNumber } from '../articles/article-format';
+import { DrawerComponent } from '../../shared/drawer/drawer.component';
+import { PaymentFormComponent } from '../payments/payment-form.component';
 import { InvoiceAlertsComponent } from './invoice-alerts.component';
 import { DOCUMENT_TYPE_LABELS, previewTotals, toLineRequest } from './invoice-format';
 import { InvoiceLineFormComponent } from './invoice-line-form.component';
@@ -35,6 +38,8 @@ const DEFAULT_TYPE: DocumentType = 'INVOICE';
     FieldErrorComponent,
     InvoiceLineFormComponent,
     InvoiceAlertsComponent,
+    DrawerComponent,
+    PaymentFormComponent,
   ],
   templateUrl: './sale-start.component.html',
   styleUrl: './sale-start.component.css',
@@ -63,6 +68,10 @@ export class SaleStartComponent {
 
   saving = signal(false);
   formError = signal<string | null>(null);
+  /** The invoice just created and validated, waiting for its payment. */
+  collecting = signal<Invoice | null>(null);
+  /** A document that exists on the backend although the sale did not go all the way through. */
+  created = signal<Invoice | null>(null);
 
   form = this.fb.nonNullable.group({
     customerId: ['', [Validators.required]],
@@ -156,7 +165,37 @@ export class SaleStartComponent {
     this.typeLabel.set(option.label);
   }
 
+  /** Creates the document and opens it: the sale will be validated, and paid, later. */
   submit(): void {
+    this.save(invoice => this.openCreated(invoice));
+  }
+
+  /**
+   * The counter sale: create, validate, collect, without leaving the screen. The backend refuses a
+   * payment on anything but a validated invoice, so the three calls have to follow one another.
+   */
+  submitAndCollect(): void {
+    this.save(invoice => this.validateThenCollect(invoice));
+  }
+
+  /** The payment is taken: the document is now the right place to print it or look at it. */
+  onPaymentTaken(payment: Payment): void {
+    this.router.navigate(['/invoices', payment.invoiceId], { replaceUrl: true });
+  }
+
+  /** The customer will pay later: the invoice exists all the same, so we open it. */
+  closePayment(): void {
+    const invoice = this.collecting();
+    this.collecting.set(null);
+    if (invoice) this.openCreated(invoice);
+  }
+
+  openCreated(invoice: Invoice): void {
+    // Replaces this step in the history: "back" from the document returns to where the sale started.
+    this.router.navigate(['/invoices', invoice.id], { replaceUrl: true });
+  }
+
+  private save(onCreated: (invoice: Invoice) => void): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -164,6 +203,7 @@ export class SaleStartComponent {
 
     this.saving.set(true);
     this.formError.set(null);
+    this.created.set(null);
 
     const { customerId, type, creditMode, transportAmount } = this.form.getRawValue();
 
@@ -176,16 +216,27 @@ export class SaleStartComponent {
         lines: this.lines().map(toLineRequest),
       })
       .subscribe({
-        next: invoice => {
-          this.saving.set(false);
-          // Replaces this step in the history: "back" from the draft returns to where the sale started.
-          this.router.navigate(['/invoices', invoice.id], { replaceUrl: true });
-        },
+        next: invoice => onCreated(invoice),
         error: (error: ApiError) => {
           this.saving.set(false);
           this.formError.set(error.message);
         },
       });
+  }
+
+  private validateThenCollect(invoice: Invoice): void {
+    this.service.validate(invoice.id).subscribe({
+      next: validatedInvoice => {
+        this.saving.set(false);
+        this.collecting.set(validatedInvoice);
+      },
+      // The document was created: saying so, with a way to open it, beats losing it.
+      error: (error: ApiError) => {
+        this.saving.set(false);
+        this.created.set(invoice);
+        this.formError.set(`Le document ${invoice.number} a été créé mais n’a pas pu être validé : ${error.message}`);
+      },
+    });
   }
 
   cancel(): void {

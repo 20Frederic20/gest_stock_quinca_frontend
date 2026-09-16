@@ -7,6 +7,7 @@ import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Agency } from '../../core/models/agency.model';
 import { Invoice } from '../../core/models/invoice.model';
+import { Payment } from '../../core/models/payment.model';
 import { Role } from '../../core/models/user.model';
 import { formatMoney } from '../pricing/price-rules';
 import { InvoiceListComponent } from './invoice-list.component';
@@ -22,7 +23,7 @@ const draft = {
 
 const validated = {
   ...draft, id: 'i2', number: 'FAC-COT-2026-00002', status: 'VALIDATED', paidAmount: 0,
-  deliveryStatus: 'NOT_DELIVERED',
+  remainingToPay: 59000, deliveryStatus: 'NOT_DELIVERED',
 } as unknown as Invoice;
 
 const page = (content: Invoice[]) => ({ content, totalElements: content.length, totalPages: 1, number: 0, size: 20 });
@@ -108,16 +109,16 @@ describe('InvoiceListComponent', () => {
     refresh();
 
     expect(rowActions(0)).toEqual(['Valider', 'Supprimer']);
-    expect(rowActions(1)).toEqual(['Annuler']);
+    expect(rowActions(1)).toEqual(['Encaisser', 'Annuler']);
   });
 
-  it('lets a seller validate a draft but neither delete nor cancel', () => {
+  it('lets a seller validate and collect, but neither delete nor cancel', () => {
     const { refresh, rowActions } = setup('SELLER');
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft, validated]));
     refresh();
 
     expect(rowActions(0)).toEqual(['Valider']);
-    expect(rowActions(1)).toEqual([]);
+    expect(rowActions(1)).toEqual(['Encaisser']);
   });
 
   it('validates a draft from the list after confirmation and updates its row', () => {
@@ -180,6 +181,36 @@ describe('InvoiceListComponent', () => {
 
     expect(component.actionError()).toContain('Stock insuffisant');
     expect(component.invoices()[0].status).toBe('DRAFT');
+  });
+
+  it('offers to collect a validated invoice that still owes something', () => {
+    const { refresh, rowActions } = setup('MANAGER');
+    const paid = { ...validated, id: 'i3', paidAmount: 59000, remainingToPay: 0 } as Invoice;
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft, validated, paid]));
+    refresh();
+
+    expect(rowActions(0)).toEqual(['Valider', 'Supprimer']);
+    expect(rowActions(1)).toEqual(['Encaisser', 'Annuler']);
+    // Nothing left to collect, and a paid invoice can no longer be cancelled.
+    expect(rowActions(2)).toEqual([]);
+  });
+
+  it('collects from the list and updates the row with what the invoice still owes', () => {
+    const { component, refresh } = setup('MANAGER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([validated]));
+
+    component.openPayment(validated);
+    expect(component.collecting()?.id).toBe('i2');
+    refresh();
+
+    component.onPaymentTaken({
+      id: 'p1', invoiceId: 'i2', amount: 50000, invoicePaidAmount: 50000, invoiceRemainingToPay: 9000,
+    } as Payment);
+    refresh();
+
+    expect(component.collecting()).toBeNull();
+    expect(component.invoices()[0].paidAmount).toBe(50000);
+    expect(component.invoices()[0].remainingToPay).toBe(9000);
   });
 
   it('shows the error message when loading fails', () => {

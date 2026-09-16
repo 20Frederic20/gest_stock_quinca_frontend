@@ -151,11 +151,21 @@
 }
 
 .form-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
   color: #a11;
   background: #fdecec;
   padding: var(--space-2);
   border-radius: var(--radius-md);
   margin: 0 0 var(--space-3);
+}
+
+/* The actions no longer fit on one line on a phone once there are three of them. */
+.actions {
+  flex-wrap: wrap;
 }
 
 .hint {

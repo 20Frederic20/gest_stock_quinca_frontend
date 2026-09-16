@@ -8,7 +8,12 @@
   <!-- A div, not a form: the add-a-line form lives inside, and a form inside a form is invalid HTML. -->
   <div class="start" [formGroup]="form">
     @if (formError()) {
-      <p class="form-error">{{ formError() }}</p>
+      <p class="form-error">
+        {{ formError() }}
+        @if (created(); as invoice) {
+          <button type="button" class="btn" (click)="openCreated(invoice)">Ouvrir {{ invoice.number }}</button>
+        }
+      </p>
     }
 
     <!-- Two columns once there is a sale to total: the document on the left, what it costs on the right. -->
@@ -140,11 +145,27 @@
 
         <div class="actions">
           <button type="button" class="btn" (click)="cancel()">Annuler</button>
-          <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="submit()">
+          <button type="button" class="btn" [disabled]="saving()" (click)="submit()">
             {{ saving() ? 'Création…' : 'Créer le document' }}
           </button>
+          @if (type() === 'INVOICE') {
+            <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="submitAndCollect()">
+              Créer, valider et encaisser
+            </button>
+          }
         </div>
       </div>
     </div>
   </div>
 }
+
+<app-drawer [open]="collecting() !== null" heading="Encaisser un règlement" (closed)="closePayment()">
+  @if (collecting(); as invoice) {
+    <app-payment-form
+      [invoiceId]="invoice.id"
+      [invoiceNumber]="invoice.number"
+      [remainingToPay]="invoice.remainingToPay"
+      (taken)="onPaymentTaken($event)"
+      (cancelled)="closePayment()" />
+  }
+</app-drawer>

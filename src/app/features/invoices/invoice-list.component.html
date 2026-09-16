@@ -62,6 +62,10 @@
                 <button type="button" class="btn btn-primary" [disabled]="busy()"
                   (click)="askValidation(invoice); $event.stopPropagation()">Valider</button>
               }
+              @if (canCollect(invoice)) {
+                <button type="button" class="btn btn-primary" [disabled]="busy()"
+                  (click)="openPayment(invoice); $event.stopPropagation()">Encaisser</button>
+              }
               @if (canDelete(invoice)) {
                 <button type="button" class="btn btn-ghost" [disabled]="busy()"
                   (click)="askDelete(invoice); $event.stopPropagation()">Supprimer</button>
@@ -88,6 +92,17 @@
   [confirmLabel]="confirmLabel()"
   (confirmed)="confirm()"
   (cancelled)="pending.set(null)" />
+
+<app-drawer [open]="collecting() !== null" heading="Encaisser un règlement" (closed)="closePayment()">
+  @if (collecting(); as invoice) {
+    <app-payment-form
+      [invoiceId]="invoice.id"
+      [invoiceNumber]="invoice.number"
+      [remainingToPay]="invoice.remainingToPay"
+      (taken)="onPaymentTaken($event)"
+      (cancelled)="closePayment()" />
+  }
+</app-drawer>
 
 <app-drawer [open]="cancelling() !== null" heading="Annuler le document" (closed)="closeCancel()">
   @if (cancelling(); as invoice) {

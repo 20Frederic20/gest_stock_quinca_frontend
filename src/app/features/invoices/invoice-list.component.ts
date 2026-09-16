@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Agency } from '../../core/models/agency.model';
 import { Invoice } from '../../core/models/invoice.model';
+import { Payment } from '../../core/models/payment.model';
 import { PageInfo, toPageInfo } from '../../core/models/page.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -16,6 +17,8 @@ import { StateViewComponent } from '../../shared/state-view/state-view.component
 import { AgenciesService } from '../agencies/agencies.service';
 import { formatDate } from '../articles/article-format';
 import { formatMoney } from '../pricing/price-rules';
+import { isPayable } from '../payments/payment-format';
+import { PaymentFormComponent } from '../payments/payment-form.component';
 import { CancelInvoiceFormComponent } from './cancel-invoice-form.component';
 import {
   DOCUMENT_STATUS_LABELS,
@@ -38,6 +41,7 @@ import { InvoicesService } from './invoices.service';
     ConfirmDialogComponent,
     DrawerComponent,
     CancelInvoiceFormComponent,
+    PaymentFormComponent,
   ],
   templateUrl: './invoice-list.component.html',
   styleUrl: './invoice-list.component.css',
@@ -50,6 +54,8 @@ export class InvoiceListComponent implements OnInit {
 
   canCreate = computed(() => this.auth.can('sales.write'));
   canCancel = computed(() => this.auth.can('sales.cancel'));
+  /** A cashier collects without being allowed to sell. */
+  canPay = computed(() => this.auth.can('payments.write'));
   /** Other agencies are for managers and administrators. */
   canChooseAgency = computed(() => this.auth.can('sales.viewAll'));
 
@@ -73,6 +79,8 @@ export class InvoiceListComponent implements OnInit {
   pending = signal<{ invoice: Invoice; action: 'validate' | 'delete' } | null>(null);
   /** The validated document whose cancellation reason is being typed. */
   cancelling = signal<Invoice | null>(null);
+  /** The invoice being collected, without leaving the list. */
+  collecting = signal<Invoice | null>(null);
   busy = signal(false);
 
   confirmHeading = computed(() =>
@@ -141,6 +149,11 @@ export class InvoiceListComponent implements OnInit {
     return invoice.status === 'DRAFT' && this.canCancel();
   }
 
+  /** Backend rules, plus the permission: a validated invoice that still owes something. */
+  canCollect(invoice: Invoice): boolean {
+    return this.canPay() && isPayable(invoice);
+  }
+
   canCancelDocument(invoice: Invoice): boolean {
     return this.canCancel() && isCancellable(invoice);
   }
@@ -195,6 +208,27 @@ export class InvoiceListComponent implements OnInit {
         this.actionError.set(error.message);
       },
     });
+  }
+
+  openPayment(invoice: Invoice): void {
+    this.actionError.set(null);
+    this.collecting.set(invoice);
+  }
+
+  closePayment(): void {
+    this.collecting.set(null);
+  }
+
+  /** The answer carries the invoice as it then stands: the row follows without loading the page again. */
+  onPaymentTaken(payment: Payment): void {
+    this.collecting.set(null);
+    this.invoices.update(invoices =>
+      invoices.map(invoice =>
+        invoice.id === payment.invoiceId
+          ? { ...invoice, paidAmount: payment.invoicePaidAmount, remainingToPay: payment.invoiceRemainingToPay }
+          : invoice,
+      ),
+    );
   }
 
   openCancel(invoice: Invoice): void {
