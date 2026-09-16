@@ -174,6 +174,44 @@ describe('InvoicePageComponent', () => {
     expect(component.cancellable()).toBe(false);
   });
 
+  it('saves the line the form composed and takes the document back', () => {
+    const { component, refresh } = setup();
+    const withTwoLines = { ...draft, lines: [line, { ...line, id: 'l2' }], totalAmount: 118000 };
+
+    component.addLine({
+      articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
+      unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 5, unitPrice: 5000, vatRate: 0.18,
+    });
+
+    const request = httpTesting.expectOne(r => r.method === 'POST' && r.url === '/api/v1/invoices/i1/lines');
+    // Only the three fields the backend accepts: it prices the line itself.
+    expect(request.request.body).toEqual({ packagingId: 'k1', quantity: 10, discountRate: 5 });
+    request.flush(withTwoLines);
+    refresh();
+    httpTesting.match(r => r.url.startsWith('/api/v1/agencies/g1/stock/')).forEach(r => r.flush(stock));
+
+    expect(component.invoice()?.lines.length).toBe(2);
+    expect(component.addingLine()).toBe(false);
+  });
+
+  it('shows the refusal of a line without losing the document', () => {
+    const { component } = setup();
+
+    component.addLine({
+      articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
+      unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 30, unitPrice: 5000, vatRate: 0.18,
+    });
+
+    httpTesting.expectOne(r => r.method === 'POST' && r.url === '/api/v1/invoices/i1/lines').flush(
+      { status: 400, message: 'Remise de 30 % refusée : votre plafond est de 5 %', fieldErrors: null },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    expect(component.actionError()).toContain('refusée');
+    expect(component.addingLine()).toBe(false);
+    expect(component.invoice()?.lines.length).toBe(1);
+  });
+
   it('warns on a draft that the credit of the customer will refuse the validation', () => {
     const { element } = setup({ ...draft, creditMode: true, totalAmount: 59000 });
 

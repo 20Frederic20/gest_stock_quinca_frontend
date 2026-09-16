@@ -31,12 +31,20 @@ describe('InvoicesService', () => {
     expect(httpTesting.expectOne('/api/v1/invoices/i1').request.method).toBe('GET');
   });
 
-  it('creates a draft', () => {
-    service.create({ customerId: 'c1', type: 'INVOICE', creditMode: true }).subscribe();
+  it('creates a document with its lines and its transport in one call', () => {
+    const body = {
+      customerId: 'c1',
+      type: 'INVOICE' as const,
+      creditMode: true,
+      transportAmount: 5000,
+      lines: [{ packagingId: 'k1', quantity: 3, discountRate: 0 }],
+    };
+
+    service.create(body).subscribe();
 
     const req = httpTesting.expectOne('/api/v1/invoices');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ customerId: 'c1', type: 'INVOICE', creditMode: true });
+    expect(req.request.body).toEqual(body);
   });
 
   it('adds, updates and removes a line', () => {

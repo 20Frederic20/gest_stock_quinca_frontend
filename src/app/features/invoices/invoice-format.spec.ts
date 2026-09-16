@@ -1,6 +1,14 @@
 import { CustomerCredit } from '../../core/models/customer.model';
-import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
-import { creditOverrun, isCancellable, lineNetAmount, stockNeedsByArticle, stockQuantity } from './invoice-format';
+import { Invoice, InvoiceLine, PendingLine } from '../../core/models/invoice.model';
+import {
+  creditOverrun,
+  isCancellable,
+  lineNetAmount,
+  previewTotals,
+  stockNeedsByArticle,
+  stockQuantity,
+  toLineRequest,
+} from './invoice-format';
 
 const validated = {
   status: 'VALIDATED', paidAmount: 0, deliveryStatus: 'NOT_DELIVERED',
@@ -32,12 +40,44 @@ describe('invoice format', () => {
   });
 
   it('measures how far a credit sale goes past what the customer may still owe', () => {
-    expect(creditOverrun({ ...validated, creditMode: true, totalAmount: 59000 }, credit)).toBe(9000);
-    expect(creditOverrun({ ...validated, creditMode: true, totalAmount: 50000 }, credit)).toBe(0);
+    expect(creditOverrun(true, 59000, credit)).toBe(9000);
+    expect(creditOverrun(true, 50000, credit)).toBe(0);
   });
 
   it('never reports an overrun on a cash sale, whatever its amount', () => {
-    expect(creditOverrun({ ...validated, creditMode: false, totalAmount: 900000 }, credit)).toBe(0);
+    expect(creditOverrun(false, 900000, credit)).toBe(0);
+  });
+
+  it('previews the totals of a sale being typed, as the backend will compute them', () => {
+    // The very numbers the backend answered on the same line: 10 bags at 5 000, VAT 18 %, 5 000 of transport.
+    const cement: PendingLine = {
+      articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
+      unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 0, unitPrice: 5000, vatRate: 0.18,
+    };
+
+    expect(previewTotals([cement], 5000)).toEqual({
+      grossAmount: 50000, discountAmount: 0, netAmount: 50000, vatAmount: 9000, totalAmount: 64000,
+    });
+  });
+
+  it('deducts the discount of each line before the VAT, like the backend', () => {
+    const cement: PendingLine = {
+      articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
+      unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 10, unitPrice: 5000, vatRate: 0.18,
+    };
+
+    expect(previewTotals([cement], 0)).toEqual({
+      grossAmount: 50000, discountAmount: 5000, netAmount: 45000, vatAmount: 8100, totalAmount: 53100,
+    });
+  });
+
+  it('keeps of a composed line only what the backend accepts', () => {
+    const cement: PendingLine = {
+      articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
+      unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 5, unitPrice: 5000, vatRate: 0.18,
+    };
+
+    expect(toLineRequest(cement)).toEqual({ packagingId: 'k1', quantity: 10, discountRate: 5 });
   });
 
   it('allows cancelling only an untouched validated document', () => {

@@ -2,7 +2,7 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { Subscription } from 'rxjs';
 import { ApiError } from '../../core/http/api-error.model';
 import { CustomerCredit } from '../../core/models/customer.model';
-import { Invoice } from '../../core/models/invoice.model';
+import { DocumentType, StockConsuming } from '../../core/models/invoice.model';
 import { formatMoney } from '../pricing/price-rules';
 import { formatQuantity } from '../stock/stock-format';
 import { StockService } from '../stock/stock.service';
@@ -30,7 +30,15 @@ interface Shortage {
 export class InvoiceAlertsComponent {
   private stockService = inject(StockService);
 
-  invoice = input.required<Invoice>();
+  /** Lines of the sale, saved or still being typed. */
+  lines = input.required<StockConsuming[]>();
+  /** Only a final invoice reserves stock; a quote or a proforma commit nothing. */
+  type = input.required<DocumentType>();
+  creditMode = input(false);
+  totalAmount = input(0);
+  /** The agency of the document, which is the one the backend will draw the stock from. */
+  agencyId = input.required<string>();
+  agencyLabel = input('');
   /** Null while the credit situation of the customer is unknown: nothing is claimed then. */
   credit = input<CustomerCredit | null>(null);
 
@@ -38,7 +46,7 @@ export class InvoiceAlertsComponent {
 
   overrun = computed(() => {
     const credit = this.credit();
-    return credit ? creditOverrun(this.invoice(), credit) : 0;
+    return credit ? creditOverrun(this.creditMode(), this.totalAmount(), credit) : 0;
   });
 
   protected formatMoney = formatMoney;
@@ -47,24 +55,24 @@ export class InvoiceAlertsComponent {
   private requests: Subscription[] = [];
 
   constructor() {
-    // Every change of the document (a line added, a quantity changed) asks the stock again.
+    // Every change of the sale (a line added, a quantity changed) asks the stock again.
     effect(() => {
-      const invoice = this.invoice();
-      untracked(() => this.checkStock(invoice));
+      const lines = this.lines();
+      untracked(() => this.checkStock(lines));
     });
   }
 
-  private checkStock(invoice: Invoice): void {
+  private checkStock(lines: StockConsuming[]): void {
     // Answers about the previous state of the document must not land on the new one.
     this.requests.forEach(request => request.unsubscribe());
     this.requests = [];
     this.shortages.set([]);
 
     // A quote or a proforma reserves nothing: there is nothing to warn about.
-    if (invoice.type !== 'INVOICE') return;
+    if (this.type() !== 'INVOICE') return;
 
-    for (const need of stockNeedsByArticle(invoice.lines)) {
-      const request = this.stockService.getOne(invoice.agencyId, need.articleId).subscribe({
+    for (const need of stockNeedsByArticle(lines)) {
+      const request = this.stockService.getOne(this.agencyId(), need.articleId).subscribe({
         next: stock => {
           if (need.needed > stock.availableQuantity) {
             this.addShortage({ ...need, available: stock.availableQuantity, unitCode: stock.stockUnitCode });

@@ -3,7 +3,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable, Subscription, map } from 'rxjs';
 import { ApiError } from '../../core/http/api-error.model';
-import { Invoice } from '../../core/models/invoice.model';
+import { Article } from '../../core/models/article.model';
+import { PendingLine } from '../../core/models/invoice.model';
 import { Packaging } from '../../core/models/packaging.model';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
 import { formatNumber } from '../articles/article-format';
@@ -15,11 +16,11 @@ import { PricesService } from '../pricing/prices.service';
 import { formatQuantity } from '../stock/stock-format';
 import { StockService } from '../stock/stock.service';
 import { lineNetAmount, stockQuantity } from './invoice-format';
-import { InvoicesService } from './invoices.service';
 
 /**
- * Adds one article to a draft. The price and the stock shown are only a preview:
- * the backend sets the real price and checks the stock when the document is validated.
+ * Composes one line: the article, its packaging, the quantity and the discount. It saves nothing —
+ * it hands the line over, and whoever asked for it decides when it reaches the backend. The price and
+ * the stock shown are only a preview: the backend sets the real price and checks the stock at validation.
  */
 @Component({
   selector: 'app-invoice-line-form',
@@ -29,22 +30,24 @@ import { InvoicesService } from './invoices.service';
 })
 export class InvoiceLineFormComponent {
   private fb = inject(FormBuilder);
-  private service = inject(InvoicesService);
   private articlesService = inject(ArticlesService);
   private packagingsService = inject(PackagingsService);
   private pricesService = inject(PricesService);
   private stockService = inject(StockService);
 
-  invoiceId = input.required<string>();
   /** The customer's price grid. */
   privilegeId = input.required<string>();
   agencyId = input.required<string>();
   /** Only a final invoice reserves stock: quotes and proformas need no availability check. */
   checkStock = input(true);
+  /** True while the parent is saving the previous line: no second one is composed meanwhile. */
+  busy = input(false);
 
-  added = output<Invoice>();
+  composed = output<PendingLine>();
 
   article = signal<SelectOption | null>(null);
+  /** The chosen article itself: its VAT rate and its code belong to the composed line. */
+  chosen = signal<Article | null>(null);
   packagings = signal<Packaging[]>([]);
   packaging = signal<Packaging | null>(null);
   unitPrice = signal<number | null>(null);
@@ -54,7 +57,6 @@ export class InvoiceLineFormComponent {
   available = signal<number | null>(null);
   stockUnitCode = signal('');
 
-  saving = signal(false);
   formError = signal<string | null>(null);
 
   // Same rules as InvoiceLineRequest on the backend.
@@ -90,7 +92,7 @@ export class InvoiceLineFormComponent {
   });
 
   /** Without a price the backend would refuse the line anyway. */
-  canAdd = computed(() => this.packaging() !== null && this.unitPrice() !== null && !this.saving());
+  canAdd = computed(() => this.packaging() !== null && this.unitPrice() !== null && this.chosen() !== null && !this.busy());
 
   searchArticles = (term: string): Observable<SelectOption[]> => searchArticleOptions(this.articlesService, term);
 
@@ -103,15 +105,18 @@ export class InvoiceLineFormComponent {
   protected formatQuantity = formatQuantity;
 
   private packagingsRequest?: Subscription;
+  private articleRequest?: Subscription;
   private stockRequest?: Subscription;
   private priceRequest?: Subscription;
 
   onArticleSelected(option: SelectOption | null): void {
     // Answers about the previous article must not land on the new one.
     this.packagingsRequest?.unsubscribe();
+    this.articleRequest?.unsubscribe();
     this.stockRequest?.unsubscribe();
     this.priceRequest?.unsubscribe();
     this.article.set(option);
+    this.chosen.set(null);
     this.packagings.set([]);
     this.packaging.set(null);
     this.unitPrice.set(null);
@@ -134,6 +139,12 @@ export class InvoiceLineFormComponent {
       error: (error: ApiError) => this.formError.set(error.message),
     });
 
+    // The VAT rate and the code of the article: the search only hands over an id and a label.
+    this.articleRequest = this.articlesService.getById(option.id).subscribe({
+      next: article => this.chosen.set(article),
+      error: (error: ApiError) => this.formError.set(error.message),
+    });
+
     this.stockRequest = this.stockService.getOne(this.agencyId(), option.id).subscribe({
       next: stock => {
         this.available.set(stock.availableQuantity);
@@ -151,7 +162,9 @@ export class InvoiceLineFormComponent {
 
   submit(): void {
     const packaging = this.packaging();
-    if (!packaging) return;
+    const article = this.chosen();
+    const unitPrice = this.unitPrice();
+    if (!packaging || !article || unitPrice === null) return;
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -159,22 +172,25 @@ export class InvoiceLineFormComponent {
       return;
     }
 
-    this.saving.set(true);
     this.formError.set(null);
+    const { quantity, discountRate } = this.form.getRawValue();
 
-    this.service.addLine(this.invoiceId(), { packagingId: packaging.id, ...this.form.getRawValue() }).subscribe({
-      next: invoice => {
-        this.saving.set(false);
-        this.added.emit(invoice);
-        // Ready for the next article.
-        this.onArticleSelected(null);
-        this.form.reset({ quantity: 1, discountRate: 0 });
-      },
-      error: (error: ApiError) => {
-        this.saving.set(false);
-        this.formError.set(error.message);
-      },
+    this.composed.emit({
+      articleId: article.id,
+      articleCode: article.code,
+      designation: article.designation,
+      packagingId: packaging.id,
+      unitLabel: packaging.unitLabel,
+      appliedCoefficient: packaging.quantity,
+      quantity,
+      discountRate,
+      unitPrice,
+      vatRate: article.vatRate,
     });
+
+    // Ready for the next article.
+    this.onArticleSelected(null);
+    this.form.reset({ quantity: 1, discountRate: 0 });
   }
 
   private choosePackaging(packaging: Packaging): void {

@@ -8,6 +8,7 @@ import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Agency } from '../../core/models/agency.model';
 import { Invoice } from '../../core/models/invoice.model';
 import { Role } from '../../core/models/user.model';
+import { formatMoney } from '../pricing/price-rules';
 import { InvoiceListComponent } from './invoice-list.component';
 
 const at = '2026-09-15T08:00:00';
@@ -17,6 +18,11 @@ const agency = (id: string, label: string): Agency => ({
 const draft = {
   id: 'i1', number: 'FAC-COT-2026-00001', type: 'INVOICE', status: 'DRAFT', documentDate: '2026-09-15',
   totalAmount: 59000, creditMode: false, customerName: 'Bâtiments Houngbo', lines: [],
+} as unknown as Invoice;
+
+const validated = {
+  ...draft, id: 'i2', number: 'FAC-COT-2026-00002', status: 'VALIDATED', paidAmount: 0,
+  deliveryStatus: 'NOT_DELIVERED',
 } as unknown as Invoice;
 
 const page = (content: Invoice[]) => ({ content, totalElements: content.length, totalPages: 1, number: 0, size: 20 });
@@ -43,7 +49,14 @@ describe('InvoiceListComponent', () => {
     fixture.detectChanges();
     httpTesting.expectOne('/api/v1/agencies/active').flush([agency('g1', 'Cotonou — Siège'), agency('g2', 'Parakou')]);
 
-    return { component: fixture.componentInstance, navigate };
+    const element = fixture.nativeElement as HTMLElement;
+    const refresh = () => fixture.detectChanges();
+    /** The action buttons of one row, in order. */
+    const rowActions = (row = 0) =>
+      [...element.querySelectorAll('tbody tr')[row].querySelectorAll('.row-actions button')]
+        .map(button => button.textContent?.trim());
+
+    return { component: fixture.componentInstance, element, refresh, rowActions, navigate };
   }
 
   afterEach(() => httpTesting.verify());
@@ -87,6 +100,86 @@ describe('InvoiceListComponent', () => {
 
     expect(navigate).toHaveBeenCalledWith(['/invoices', 'i1']);
     expect(navigate).toHaveBeenCalledWith(['/new-sale']);
+  });
+
+  it('offers a manager to validate or delete a draft, and to cancel a validated document', () => {
+    const { refresh, rowActions } = setup('MANAGER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft, validated]));
+    refresh();
+
+    expect(rowActions(0)).toEqual(['Valider', 'Supprimer']);
+    expect(rowActions(1)).toEqual(['Annuler']);
+  });
+
+  it('lets a seller validate a draft but neither delete nor cancel', () => {
+    const { refresh, rowActions } = setup('SELLER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft, validated]));
+    refresh();
+
+    expect(rowActions(0)).toEqual(['Valider']);
+    expect(rowActions(1)).toEqual([]);
+  });
+
+  it('validates a draft from the list after confirmation and updates its row', () => {
+    const { component, refresh } = setup('MANAGER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
+
+    component.askValidation(draft);
+    httpTesting.expectNone('/api/v1/invoices/i1/validation');
+    expect(component.confirmMessage()).toContain(formatMoney(59000));
+
+    component.validate();
+    httpTesting.expectOne('/api/v1/invoices/i1/validation').flush({ ...draft, status: 'VALIDATED' });
+    refresh();
+
+    expect(component.invoices()[0].status).toBe('VALIDATED');
+    expect(component.actionError()).toBeNull();
+  });
+
+  it('deletes a draft from the list after confirmation and loads the page again', () => {
+    const { component } = setup('MANAGER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
+
+    component.askDelete(draft);
+    httpTesting.expectNone('/api/v1/invoices/i1');
+
+    component.deleteDraft();
+    const request = httpTesting.expectOne('/api/v1/invoices/i1');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+
+    // The page is loaded again: the totals of the pagination must not go stale.
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([]));
+
+    expect(component.invoices()).toEqual([]);
+  });
+
+  it('cancels a validated document from the list and updates its row', () => {
+    const { component } = setup('MANAGER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([validated]));
+
+    component.openCancel(validated);
+    expect(component.cancelling()?.id).toBe('i2');
+
+    component.onCancelled({ ...validated, status: 'CANCELLED', cancellationReason: 'Erreur de client' });
+
+    expect(component.cancelling()).toBeNull();
+    expect(component.invoices()[0].status).toBe('CANCELLED');
+  });
+
+  it('keeps the row as it was when the backend refuses the validation', () => {
+    const { component } = setup('MANAGER');
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
+
+    component.askValidation(draft);
+    component.validate();
+    httpTesting.expectOne('/api/v1/invoices/i1/validation').flush(
+      { status: 400, message: 'Stock insuffisant pour « Ciment CIM II 32.5R »', fieldErrors: null },
+      { status: 400, statusText: 'Bad Request' },
+    );
+
+    expect(component.actionError()).toContain('Stock insuffisant');
+    expect(component.invoices()[0].status).toBe('DRAFT');
   });
 
   it('shows the error message when loading fails', () => {

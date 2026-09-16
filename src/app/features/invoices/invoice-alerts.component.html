@@ -12,7 +12,7 @@
       <p>
         <strong>Stock insuffisant — {{ shortage.designation }}.</strong>
         {{ formatQuantity(shortage.needed, shortage.unitCode) }} pour ce document,
-        {{ formatQuantity(shortage.available, shortage.unitCode) }} disponible à {{ invoice().agencyLabel }}.
+        {{ formatQuantity(shortage.available, shortage.unitCode) }} disponible à {{ agencyLabel() }}.
       </p>
     }
   </div>

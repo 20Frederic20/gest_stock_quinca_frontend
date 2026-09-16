@@ -60,11 +60,11 @@
       @if (editable()) {
         @if (customer(); as c) {
           <app-invoice-line-form
-            [invoiceId]="inv.id"
             [privilegeId]="c.privilegeId"
             [agencyId]="inv.agencyId"
             [checkStock]="inv.type === 'INVOICE'"
-            (added)="onInvoiceChanged($event)" />
+            [busy]="addingLine()"
+            (composed)="addLine($event)" />
         }
       }
     </section>
@@ -106,7 +106,14 @@
       </dl>
 
       @if (isDraft()) {
-        <app-invoice-alerts [invoice]="inv" [credit]="credit()" />
+        <app-invoice-alerts
+          [lines]="inv.lines"
+          [type]="inv.type"
+          [creditMode]="inv.creditMode"
+          [totalAmount]="inv.totalAmount"
+          [agencyId]="inv.agencyId"
+          [agencyLabel]="inv.agencyLabel"
+          [credit]="credit()" />
       }
 
       <div class="actions">

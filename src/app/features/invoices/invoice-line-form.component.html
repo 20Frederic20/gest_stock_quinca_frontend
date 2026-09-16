@@ -58,7 +58,7 @@
     </p>
 
     <button type="submit" class="btn btn-primary" [disabled]="!canAdd()">
-      {{ saving() ? 'Ajout…' : 'Ajouter la ligne' }}
+      {{ busy() ? 'Ajout…' : 'Ajouter la ligne' }}
     </button>
   </div>
 </form>

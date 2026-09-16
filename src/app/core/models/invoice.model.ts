@@ -70,11 +70,36 @@ export interface Invoice {
   createdAt: string;
 }
 
+/**
+ * A line being typed, before the backend has seen it. It carries what the screen needs to show
+ * (price, VAT, packaging) on top of what the backend accepts, which is only the three fields of
+ * InvoiceLineRequest — the price is always the backend's, never what the front displays.
+ */
+export interface PendingLine {
+  articleId: string;
+  articleCode: string;
+  designation: string;
+  packagingId: string;
+  unitLabel: string;
+  appliedCoefficient: number;
+  quantity: number;
+  discountRate: number;
+  unitPrice: number;
+  vatRate: number;
+}
+
+/** What is needed to know how much of the stock a line takes: a saved line or one being typed. */
+export type StockConsuming = Pick<InvoiceLine, 'articleId' | 'designation' | 'quantity' | 'appliedCoefficient'>;
+
 /** The agency and the seller come from the session. */
 export interface InvoiceCreateRequest {
   customerId: string;
   type: DocumentType;
   creditMode: boolean;
+  /** Before VAT. Zero when the sale carries no transport charges. */
+  transportAmount: number;
+  /** The whole sale in one call: either everything is saved, or nothing is. */
+  lines: InvoiceLineRequest[];
 }
 
 export interface InvoiceLineRequest {

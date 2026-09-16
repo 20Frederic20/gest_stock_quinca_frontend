@@ -7,6 +7,8 @@ import { Agency } from '../../core/models/agency.model';
 import { Invoice } from '../../core/models/invoice.model';
 import { PageInfo, toPageInfo } from '../../core/models/page.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
+import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
+import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { PaginationComponent } from '../../shared/pagination/pagination.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
@@ -14,13 +16,29 @@ import { StateViewComponent } from '../../shared/state-view/state-view.component
 import { AgenciesService } from '../agencies/agencies.service';
 import { formatDate } from '../articles/article-format';
 import { formatMoney } from '../pricing/price-rules';
-import { DOCUMENT_STATUS_LABELS, DOCUMENT_STATUS_TONES, DOCUMENT_TYPE_LABELS } from './invoice-format';
+import { CancelInvoiceFormComponent } from './cancel-invoice-form.component';
+import {
+  DOCUMENT_STATUS_LABELS,
+  DOCUMENT_STATUS_TONES,
+  DOCUMENT_TYPE_LABELS,
+  isCancellable,
+  validationSummary,
+} from './invoice-format';
 import { InvoicesService } from './invoices.service';
 
 /** Ventes > Factures: the documents of one agency, the user's own by default. A row opens the document. */
 @Component({
   selector: 'app-invoice-list',
-  imports: [PageHeaderComponent, SelectSearchComponent, StateViewComponent, PaginationComponent, BadgeComponent],
+  imports: [
+    PageHeaderComponent,
+    SelectSearchComponent,
+    StateViewComponent,
+    PaginationComponent,
+    BadgeComponent,
+    ConfirmDialogComponent,
+    DrawerComponent,
+    CancelInvoiceFormComponent,
+  ],
   templateUrl: './invoice-list.component.html',
   styleUrl: './invoice-list.component.css',
 })
@@ -31,6 +49,7 @@ export class InvoiceListComponent implements OnInit {
   private router = inject(Router);
 
   canCreate = computed(() => this.auth.can('sales.write'));
+  canCancel = computed(() => this.auth.can('sales.cancel'));
   /** Other agencies are for managers and administrators. */
   canChooseAgency = computed(() => this.auth.can('sales.viewAll'));
 
@@ -47,6 +66,29 @@ export class InvoiceListComponent implements OnInit {
   pageInfo = signal<PageInfo | null>(null);
   loading = signal(false);
   error = signal<string | null>(null);
+  /** An action that failed: the list stays as it is, with the reason above it. */
+  actionError = signal<string | null>(null);
+
+  /** The document waiting for a confirmation, and what is about to happen to it. */
+  pending = signal<{ invoice: Invoice; action: 'validate' | 'delete' } | null>(null);
+  /** The validated document whose cancellation reason is being typed. */
+  cancelling = signal<Invoice | null>(null);
+  busy = signal(false);
+
+  confirmHeading = computed(() =>
+    this.pending()?.action === 'validate' ? 'Valider ce document ?' : 'Supprimer ce brouillon ?',
+  );
+
+  confirmLabel = computed(() => (this.pending()?.action === 'validate' ? 'Valider' : 'Supprimer'));
+
+  confirmMessage = computed(() => {
+    const pending = this.pending();
+    if (!pending) return '';
+
+    return pending.action === 'validate'
+      ? validationSummary(pending.invoice)
+      : `Le brouillon ${pending.invoice.number} et toutes ses lignes seront supprimés.`;
+  });
 
   protected typeLabels = DOCUMENT_TYPE_LABELS;
   protected statusLabels = DOCUMENT_STATUS_LABELS;
@@ -88,6 +130,90 @@ export class InvoiceListComponent implements OnInit {
     if (!option) return;
     this.agencyId.set(option.id);
     this.load(0);
+  }
+
+  /** Same rules as on the document page: a draft is filled or thrown away, a validated one is cancelled. */
+  canValidate(invoice: Invoice): boolean {
+    return invoice.status === 'DRAFT' && this.canCreate();
+  }
+
+  canDelete(invoice: Invoice): boolean {
+    return invoice.status === 'DRAFT' && this.canCancel();
+  }
+
+  canCancelDocument(invoice: Invoice): boolean {
+    return this.canCancel() && isCancellable(invoice);
+  }
+
+  askValidation(invoice: Invoice): void {
+    this.actionError.set(null);
+    this.pending.set({ invoice, action: 'validate' });
+  }
+
+  askDelete(invoice: Invoice): void {
+    this.actionError.set(null);
+    this.pending.set({ invoice, action: 'delete' });
+  }
+
+  confirm(): void {
+    if (this.pending()?.action === 'validate') this.validate();
+    else this.deleteDraft();
+  }
+
+  validate(): void {
+    const pending = this.pending();
+    this.pending.set(null);
+    if (!pending) return;
+
+    this.busy.set(true);
+    this.service.validate(pending.invoice.id).subscribe({
+      next: validatedInvoice => {
+        this.busy.set(false);
+        this.replace(validatedInvoice);
+      },
+      error: (error: ApiError) => {
+        this.busy.set(false);
+        this.actionError.set(error.message);
+      },
+    });
+  }
+
+  deleteDraft(): void {
+    const pending = this.pending();
+    this.pending.set(null);
+    if (!pending) return;
+
+    this.busy.set(true);
+    this.service.deleteDraft(pending.invoice.id).subscribe({
+      // The page is loaded again rather than the row dropped: the pagination must stay true.
+      next: () => {
+        this.busy.set(false);
+        this.load(this.pageInfo()?.page ?? 0);
+      },
+      error: (error: ApiError) => {
+        this.busy.set(false);
+        this.actionError.set(error.message);
+      },
+    });
+  }
+
+  openCancel(invoice: Invoice): void {
+    this.actionError.set(null);
+    this.cancelling.set(invoice);
+  }
+
+  closeCancel(): void {
+    this.cancelling.set(null);
+  }
+
+  onCancelled(invoice: Invoice): void {
+    this.cancelling.set(null);
+    this.replace(invoice);
+  }
+
+  /** Puts the document back in the list where it was, with its new status and totals. */
+  private replace(invoice: Invoice): void {
+    this.invoices.update(invoices => invoices.map(current => (current.id === invoice.id ? invoice : current)));
   }
 
   open(invoice: Invoice): void {

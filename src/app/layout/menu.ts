@@ -27,7 +27,6 @@ export const MENU: MenuGroup[] = [
     { label: 'Tableau de bord', route: '/dashboard', ready: false },
   ]},
   { title: 'Ventes', items: [
-    { label: 'Nouvelle vente',      route: '/new-sale',      ready: true },
     { label: 'Factures',            route: '/invoices',      ready: true },
     { label: 'Clients et créances', route: '/customers',     ready: true },
     { label: 'Historique',          route: '/sales-history', ready: false },

@@ -1,3 +1,9 @@
+/* The form lives in a column whose width does not follow the window: it measures itself. */
+:host {
+  display: block;
+  container-type: inline-size;
+}
+
 .line-form {
   margin-top: var(--space-6);
   padding: var(--space-4);
@@ -16,9 +22,15 @@ h3 {
   gap: var(--space-3);
 }
 
-@media (max-width: 900px) {
+@container (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@container (max-width: 380px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
 

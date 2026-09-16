@@ -4,7 +4,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
-import { Invoice } from '../../core/models/invoice.model';
+import { Invoice, PendingLine } from '../../core/models/invoice.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { DrawerComponent } from '../../shared/drawer/drawer.component';
@@ -23,6 +23,8 @@ import {
   DOCUMENT_TYPE_LABELS,
   DELIVERY_STATUS_LABELS,
   isCancellable,
+  toLineRequest,
+  validationSummary,
 } from './invoice-format';
 import { InvoicesService } from './invoices.service';
 
@@ -83,20 +85,15 @@ export class InvoicePageComponent {
   });
 
   validating = signal(false);
+  /** A line on its way to the backend: the form waits for the answer before composing the next one. */
+  addingLine = signal(false);
   askingValidation = signal(false);
   askingDelete = signal(false);
   cancelOpen = signal(false);
 
   validationMessage = computed(() => {
     const invoice = this.invoice();
-    if (!invoice) return '';
-
-    const parts = [`Total : ${formatMoney(invoice.totalAmount)}.`, 'Le document ne pourra plus être modifié.'];
-    if (invoice.type === 'INVOICE') {
-      parts.push('Le stock des articles sera réservé pour le client.');
-      if (invoice.creditMode) parts.push('Le montant s’ajoutera à l’encours du client.');
-    }
-    return parts.join(' ');
+    return invoice ? validationSummary(invoice) : '';
   });
 
   deleteMessage = computed(
@@ -137,6 +134,26 @@ export class InvoicePageComponent {
       error: (error: ApiError) => {
         this.error.set(error.message);
         this.loading.set(false);
+      },
+    });
+  }
+
+  /** The form composed a line: the page is the one that saves it, and shows the refusal if any. */
+  addLine(line: PendingLine): void {
+    const invoice = this.invoice();
+    if (!invoice) return;
+
+    this.addingLine.set(true);
+    this.actionError.set(null);
+
+    this.service.addLine(invoice.id, toLineRequest(line)).subscribe({
+      next: updated => {
+        this.addingLine.set(false);
+        this.invoice.set(updated);
+      },
+      error: (error: ApiError) => {
+        this.addingLine.set(false);
+        this.actionError.set(error.message);
       },
     });
   }

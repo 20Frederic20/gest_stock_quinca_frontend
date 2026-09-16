@@ -18,6 +18,13 @@
   }
 </div>
 
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
 <app-state-view
   [loading]="loading()"
   [error]="error()"
@@ -37,6 +44,7 @@
           <th>Règlement</th>
           <th class="number">Total TTC</th>
           <th>Statut</th>
+          <th><span class="visually-hidden">Actions</span></th>
         </tr>
       </thead>
       <tbody>
@@ -49,6 +57,20 @@
             <td class="text-muted">{{ invoice.creditMode ? 'Crédit' : 'Comptant' }}</td>
             <td class="number">{{ formatMoney(invoice.totalAmount) }}</td>
             <td><app-badge [text]="statusLabels[invoice.status]" [tone]="statusTones[invoice.status]" /></td>
+            <td class="row-actions">
+              @if (canValidate(invoice)) {
+                <button type="button" class="btn btn-primary" [disabled]="busy()"
+                  (click)="askValidation(invoice); $event.stopPropagation()">Valider</button>
+              }
+              @if (canDelete(invoice)) {
+                <button type="button" class="btn btn-ghost" [disabled]="busy()"
+                  (click)="askDelete(invoice); $event.stopPropagation()">Supprimer</button>
+              }
+              @if (canCancelDocument(invoice)) {
+                <button type="button" class="btn btn-ghost" [disabled]="busy()"
+                  (click)="openCancel(invoice); $event.stopPropagation()">Annuler</button>
+              }
+            </td>
           </tr>
         }
       </tbody>
@@ -58,3 +80,21 @@
 
 <!-- Outside the @if so that it does not blink while the next page loads. -->
 <app-pagination [info]="pageInfo()" itemsLabel="documents" (pageChange)="load($event)" />
+
+<app-confirm-dialog
+  [open]="pending() !== null"
+  [heading]="confirmHeading()"
+  [message]="confirmMessage()"
+  [confirmLabel]="confirmLabel()"
+  (confirmed)="confirm()"
+  (cancelled)="pending.set(null)" />
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler le document" (closed)="closeCancel()">
+  @if (cancelling(); as invoice) {
+    <app-cancel-invoice-form
+      [invoiceId]="invoice.id"
+      [summary]="invoice.number + ' — ' + formatMoney(invoice.totalAmount)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>

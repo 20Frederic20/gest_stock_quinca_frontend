@@ -1,29 +1,41 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable, Subscription, map } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
-import { CustomerCredit } from '../../core/models/customer.model';
-import { DocumentType } from '../../core/models/invoice.model';
+import { Customer, CustomerCredit } from '../../core/models/customer.model';
+import { DocumentType, PendingLine } from '../../core/models/invoice.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
 import { paymentTermLabel } from '../customers/customer-detail.component';
 import { CustomersService } from '../customers/customers.service';
 import { formatMoney } from '../pricing/price-rules';
-import { DOCUMENT_TYPE_LABELS } from './invoice-format';
+import { formatNumber } from '../articles/article-format';
+import { InvoiceAlertsComponent } from './invoice-alerts.component';
+import { DOCUMENT_TYPE_LABELS, previewTotals, toLineRequest } from './invoice-format';
+import { InvoiceLineFormComponent } from './invoice-line-form.component';
 import { InvoicesService } from './invoices.service';
 
 const DEFAULT_TYPE: DocumentType = 'INVOICE';
 
 /**
- * Ventes > Nouvelle vente, first step: who buys, which document, cash or credit.
- * The backend cannot change these afterwards, so they are settled before the draft exists.
+ * Ventes > Nouvelle vente : the whole sale on one screen. Who buys, which document, cash or credit,
+ * then the articles and the transport. Nothing exists on the backend until « Créer » : the document is
+ * saved with its lines in one call, so an abandoned sale leaves neither draft nor consumed number.
  */
 @Component({
   selector: 'app-sale-start',
-  imports: [ReactiveFormsModule, PageHeaderComponent, SelectSearchComponent, FieldErrorComponent],
+  imports: [
+    ReactiveFormsModule,
+    PageHeaderComponent,
+    SelectSearchComponent,
+    FieldErrorComponent,
+    InvoiceLineFormComponent,
+    InvoiceAlertsComponent,
+  ],
   templateUrl: './sale-start.component.html',
   styleUrl: './sale-start.component.css',
 })
@@ -35,8 +47,15 @@ export class SaleStartComponent {
   private router = inject(Router);
 
   canCreate = computed(() => this.auth.can('sales.write'));
+  /** The sale is drawn from the agency of the seller, which is the one the backend will use. */
+  agencyId = computed(() => this.auth.user()?.agencyId ?? '');
+  agencyLabel = computed(() => this.auth.user()?.agencyLabel ?? '');
 
   customer = signal<SelectOption | null>(null);
+  /** The customer itself: its price grid is what prices every line. */
+  chosen = signal<Customer | null>(null);
+  /** Lines being typed. They reach the backend only when the sale is created. */
+  lines = signal<PendingLine[]>([]);
   /** Credit situation of the chosen customer: decides whether a credit sale is possible. */
   credit = signal<CustomerCredit | null>(null);
   creditError = signal<string | null>(null);
@@ -50,7 +69,19 @@ export class SaleStartComponent {
     type: [DEFAULT_TYPE, [Validators.required]],
     // Disabled until a customer allowed to credit is chosen.
     creditMode: [{ value: false, disabled: true }],
+    // Before VAT, added to the total without passing through the lines.
+    transportAmount: [0, [Validators.required, Validators.min(0)]],
   });
+
+  private value = toSignal(this.form.valueChanges.pipe(map(() => this.form.getRawValue())), {
+    initialValue: this.form.getRawValue(),
+  });
+
+  /** Only a final invoice reserves stock. */
+  type = computed(() => this.value().type);
+
+  /** What the backend will compute, shown while the sale is typed. */
+  totals = computed(() => previewTotals(this.lines(), this.value().transportAmount || 0));
 
   typeOptions = computed<SelectOption[]>(() =>
     (Object.keys(DOCUMENT_TYPE_LABELS) as DocumentType[]).map(type => ({ id: type, label: DOCUMENT_TYPE_LABELS[type] })),
@@ -66,9 +97,26 @@ export class SaleStartComponent {
   };
 
   protected formatMoney = formatMoney;
+  protected formatNumber = formatNumber;
   protected paymentTermLabel = paymentTermLabel;
 
   private creditRequest?: Subscription;
+  private customerRequest?: Subscription;
+
+  /** The form composed a line: it waits here until the sale is created. */
+  addLine(line: PendingLine): void {
+    this.lines.update(lines => [...lines, line]);
+    this.formError.set(null);
+  }
+
+  removeLine(index: number): void {
+    this.lines.update(lines => lines.filter((_, position) => position !== index));
+  }
+
+  /** Amount before VAT of one line, discount deducted. */
+  lineNet(line: PendingLine): number {
+    return line.quantity * line.unitPrice - (line.quantity * line.unitPrice * line.discountRate) / 100;
+  }
 
   onCustomerSelected(option: SelectOption | null): void {
     const { customerId, creditMode } = this.form.controls;
@@ -82,7 +130,16 @@ export class SaleStartComponent {
     this.credit.set(null);
     this.creditError.set(null);
     this.creditRequest?.unsubscribe();
+    this.customerRequest?.unsubscribe();
+    this.chosen.set(null);
+    // The prices of the lines come from the grid of the customer: they no longer mean anything.
+    this.lines.set([]);
     if (!option) return;
+
+    this.customerRequest = this.customersService.getById(option.id).subscribe({
+      next: customer => this.chosen.set(customer),
+      error: (error: ApiError) => this.formError.set(error.message),
+    });
 
     this.creditRequest = this.customersService.getCredit(option.id).subscribe({
       next: credit => {
@@ -108,17 +165,27 @@ export class SaleStartComponent {
     this.saving.set(true);
     this.formError.set(null);
 
-    this.service.create(this.form.getRawValue()).subscribe({
-      next: invoice => {
-        this.saving.set(false);
-        // Replaces this step in the history: "back" from the draft returns to where the sale started.
-        this.router.navigate(['/invoices', invoice.id], { replaceUrl: true });
-      },
-      error: (error: ApiError) => {
-        this.saving.set(false);
-        this.formError.set(error.message);
-      },
-    });
+    const { customerId, type, creditMode, transportAmount } = this.form.getRawValue();
+
+    this.service
+      .create({
+        customerId,
+        type,
+        creditMode,
+        transportAmount: transportAmount || 0,
+        lines: this.lines().map(toLineRequest),
+      })
+      .subscribe({
+        next: invoice => {
+          this.saving.set(false);
+          // Replaces this step in the history: "back" from the draft returns to where the sale started.
+          this.router.navigate(['/invoices', invoice.id], { replaceUrl: true });
+        },
+        error: (error: ApiError) => {
+          this.saving.set(false);
+          this.formError.set(error.message);
+        },
+      });
   }
 
   cancel(): void {

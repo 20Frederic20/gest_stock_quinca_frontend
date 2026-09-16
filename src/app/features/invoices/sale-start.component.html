@@ -1,60 +1,150 @@
 <app-page-header
   heading="Nouvelle vente"
-  subtitle="Choisissez le client et le type de document. Les articles se saisissent à l’étape suivante." />
+  subtitle="Le client, les articles et le transport. Rien n’est enregistré tant que le document n’est pas créé." />
 
 @if (!canCreate()) {
   <p class="text-muted">Votre rôle ne permet pas de saisir une vente.</p>
 } @else {
-  <form class="start" [formGroup]="form" (ngSubmit)="submit()">
+  <!-- A div, not a form: the add-a-line form lives inside, and a form inside a form is invalid HTML. -->
+  <div class="start" [formGroup]="form">
     @if (formError()) {
       <p class="form-error">{{ formError() }}</p>
     }
 
-    <div class="field">
-      <label>Client</label>
-      <app-select-search
-        [remoteSearch]="searchCustomers"
-        [value]="customer()?.id ?? null"
-        [label]="customer()?.label ?? ''"
-        placeholder="Rechercher un client…"
-        (selected)="onCustomerSelected($event)" />
-      <app-field-error [control]="form.controls.customerId" />
+    <!-- Two columns once there is a sale to total: the document on the left, what it costs on the right. -->
+    <div class="layout" [class.two-columns]="chosen() !== null">
+      <section class="main">
+        <div class="field">
+          <label>Client</label>
+          <app-select-search
+            [remoteSearch]="searchCustomers"
+            [value]="customer()?.id ?? null"
+            [label]="customer()?.label ?? ''"
+            placeholder="Rechercher un client…"
+            (selected)="onCustomerSelected($event)" />
+          <app-field-error [control]="form.controls.customerId" />
 
-      @if (credit(); as c) {
-        <p class="hint">
-          @if (c.creditAllowed) {
-            Crédit disponible : {{ formatMoney(c.remainingCredit) }} · délai {{ paymentTermLabel(c.paymentTermDays) }}
-          } @else {
-            Ce client paie comptant uniquement.
+          @if (credit(); as c) {
+            <p class="hint">
+              @if (c.creditAllowed) {
+                Crédit disponible : {{ formatMoney(c.remainingCredit) }} · délai {{ paymentTermLabel(c.paymentTermDays) }}
+              } @else {
+                Ce client paie comptant uniquement.
+              }
+            </p>
           }
-        </p>
-      }
-      @if (creditError()) {
-        <p class="hint warning">{{ creditError() }}</p>
-      }
-    </div>
+          @if (creditError()) {
+            <p class="hint warning">{{ creditError() }}</p>
+          }
+        </div>
 
-    <div class="field">
-      <label>Type de document</label>
-      <app-select-search
-        [options]="typeOptions()"
-        [value]="form.controls.type.value"
-        [label]="typeLabel()"
-        placeholder="Choisir un type"
-        (selected)="onTypeSelected($event)" />
-      <p class="hint">Seule une facture réserve le stock. Un devis ou une proforma n’engagent rien.</p>
-    </div>
+        <div class="field">
+          <label>Type de document</label>
+          <app-select-search
+            [options]="typeOptions()"
+            [value]="form.controls.type.value"
+            [label]="typeLabel()"
+            placeholder="Choisir un type"
+            (selected)="onTypeSelected($event)" />
+          <p class="hint">Seule une facture réserve le stock. Un devis ou une proforma n’engagent rien.</p>
+        </div>
 
-    <label class="checkbox" [class.disabled]="form.controls.creditMode.disabled">
-      <input type="checkbox" formControlName="creditMode" />
-      Vente à crédit
-    </label>
+        <label class="checkbox" [class.disabled]="form.controls.creditMode.disabled">
+          <input type="checkbox" formControlName="creditMode" />
+          Vente à crédit
+        </label>
 
-    <div class="actions">
-      <button type="button" class="btn" (click)="cancel()">Annuler</button>
-      <button type="submit" class="btn btn-primary" [disabled]="saving()">
-        {{ saving() ? 'Création…' : 'Créer le brouillon' }}
-      </button>
+        @if (chosen(); as c) {
+          <section class="sale-lines">
+            <h2>Articles</h2>
+
+            @if (lines().length === 0) {
+              <p class="empty text-muted">Aucun article pour l’instant. Ajoutez-en un ci-dessous.</p>
+            } @else {
+              <div class="table-scroll">
+                <table class="table lines">
+                  <thead>
+                    <tr>
+                      <th>Article</th>
+                      <th>Conditionnement</th>
+                      <th class="number">Quantité</th>
+                      <th class="number">Prix unitaire</th>
+                      <th class="number">Remise</th>
+                      <th class="number">Total HT</th>
+                      <th><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (line of lines(); track $index) {
+                      <tr>
+                        <td><span class="code">{{ line.articleCode }}</span> {{ line.designation }}</td>
+                        <td class="nowrap">{{ line.unitLabel }}</td>
+                        <td class="number">{{ formatNumber(line.quantity) }}</td>
+                        <td class="number">{{ formatMoney(line.unitPrice) }}</td>
+                        <td class="number">{{ line.discountRate > 0 ? formatNumber(line.discountRate) + ' %' : '—' }}</td>
+                        <td class="number">{{ formatMoney(lineNet(line)) }}</td>
+                        <td class="row-actions">
+                          <button type="button" class="btn btn-ghost" (click)="removeLine($index)">Retirer</button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+
+            <app-invoice-line-form
+              [privilegeId]="c.privilegeId"
+              [agencyId]="agencyId()"
+              [checkStock]="type() === 'INVOICE'"
+              (composed)="addLine($event)" />
+          </section>
+        }
+      </section>
+
+      <div class="side">
+        @if (chosen()) {
+          <aside class="sale-totals">
+            <dl>
+              <dt>Total brut</dt>
+              <dd>{{ formatMoney(totals().grossAmount) }}</dd>
+
+              <dt>Remise</dt>
+              <dd>{{ totals().discountAmount > 0 ? '− ' + formatMoney(totals().discountAmount) : '—' }}</dd>
+
+              <dt>Total HT</dt>
+              <dd>{{ formatMoney(totals().netAmount) }}</dd>
+
+              <dt>TVA</dt>
+              <dd>{{ formatMoney(totals().vatAmount) }}</dd>
+
+              <dt><label for="transport">Transport</label></dt>
+              <dd><input id="transport" type="number" min="0" step="any" formControlName="transportAmount" /></dd>
+
+              <dt class="grand">Total TTC</dt>
+              <dd class="grand">{{ formatMoney(totals().totalAmount) }}</dd>
+            </dl>
+
+            <p class="hint">Les montants sont recalculés par le serveur à la création, sur ses propres tarifs.</p>
+
+            <app-invoice-alerts
+              [lines]="lines()"
+              [type]="type()"
+              [creditMode]="form.controls.creditMode.value"
+              [totalAmount]="totals().totalAmount"
+              [agencyId]="agencyId()"
+              [agencyLabel]="agencyLabel()"
+              [credit]="credit()" />
+          </aside>
+        }
+
+        <div class="actions">
+          <button type="button" class="btn" (click)="cancel()">Annuler</button>
+          <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="submit()">
+            {{ saving() ? 'Création…' : 'Créer le document' }}
+          </button>
+        </div>
+      </div>
     </div>
-  </form>
+  </div>
 }

@@ -5,12 +5,19 @@ import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
+import { PendingLine } from '../../core/models/invoice.model';
 import { SaleStartComponent } from './sale-start.component';
 
 const credit = (creditAllowed: boolean): CustomerCredit => ({
   customerId: 'c1', customerName: 'Bâtiments Houngbo', creditLimit: creditAllowed ? 500000 : 0, currentBalance: 0,
   remainingCredit: creditAllowed ? 500000 : 0, paymentTermDays: 30, creditAllowed,
 });
+
+const houngbo = { id: 'c1', code: 'CLI-001', name: 'Bâtiments Houngbo', privilegeId: 'p1' } as Customer;
+const cement: PendingLine = {
+  articleId: 'a1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', packagingId: 'k1',
+  unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 0, unitPrice: 5000, vatRate: 0.18,
+};
 
 describe('SaleStartComponent', () => {
   let httpTesting: HttpTestingController;
@@ -31,12 +38,21 @@ describe('SaleStartComponent', () => {
     return { component: fixture.componentInstance, navigate };
   }
 
+  /** Picks the customer: the credit situation and the customer itself, whose grid prices the lines. */
+  function chooseHoungbo(component: SaleStartComponent, creditAllowed = false) {
+    component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
+    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(creditAllowed));
+    httpTesting.expectOne('/api/v1/customers/c1').flush(houngbo);
+  }
+
   afterEach(() => httpTesting.verify());
 
   it('starts as a cash invoice, credit locked until a customer is chosen', () => {
     const { component } = setup();
 
-    expect(component.form.getRawValue()).toEqual({ customerId: '', type: 'INVOICE', creditMode: false });
+    expect(component.form.getRawValue()).toEqual({
+      customerId: '', type: 'INVOICE', creditMode: false, transportAmount: 0,
+    });
     expect(component.typeLabel()).toBe('Facture');
     expect(component.form.controls.creditMode.disabled).toBe(true);
   });
@@ -45,14 +61,14 @@ describe('SaleStartComponent', () => {
     const { component } = setup();
     const { creditMode } = component.form.controls;
 
-    component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
-    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(true));
+    chooseHoungbo(component, true);
     expect(creditMode.enabled).toBe(true);
     creditMode.setValue(true);
 
     component.onCustomerSelected({ id: 'c2', label: 'CLI-002 — Awa Dossou' });
     expect(creditMode.value).toBe(false);
     httpTesting.expectOne('/api/v1/customers/c2/credit').flush(credit(false));
+    httpTesting.expectOne('/api/v1/customers/c2').flush({ ...houngbo, id: 'c2' });
     expect(creditMode.disabled).toBe(true);
   });
 
@@ -80,8 +96,7 @@ describe('SaleStartComponent', () => {
 
   it('creates the draft, then opens it in place of this step', () => {
     const { component, navigate } = setup();
-    component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
-    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(true));
+    chooseHoungbo(component, true);
     component.form.controls.creditMode.setValue(true);
     component.onTypeSelected({ id: 'PROFORMA', label: 'Proforma' });
 
@@ -89,15 +104,62 @@ describe('SaleStartComponent', () => {
 
     const req = httpTesting.expectOne('/api/v1/invoices');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ customerId: 'c1', type: 'PROFORMA', creditMode: true });
+    expect(req.request.body).toEqual({
+      customerId: 'c1', type: 'PROFORMA', creditMode: true, transportAmount: 0, lines: [],
+    });
     req.flush({ id: 'i1' });
     expect(navigate).toHaveBeenCalledWith(['/invoices', 'i1'], { replaceUrl: true });
   });
 
-  it('shows the backend message when the draft is refused', () => {
+  it('sends the whole sale in one call: its lines, its transport and nothing else', () => {
+    const { component } = setup();
+    chooseHoungbo(component);
+    component.addLine(cement);
+    component.addLine({ ...cement, articleId: 'a2', packagingId: 'k2', quantity: 2, discountRate: 10 });
+    component.form.controls.transportAmount.setValue(5000);
+
+    component.submit();
+
+    // Only the three fields the backend accepts per line: it prices the sale itself.
+    expect(httpTesting.expectOne('/api/v1/invoices').request.body).toEqual({
+      customerId: 'c1',
+      type: 'INVOICE',
+      creditMode: false,
+      transportAmount: 5000,
+      lines: [
+        { packagingId: 'k1', quantity: 10, discountRate: 0 },
+        { packagingId: 'k2', quantity: 2, discountRate: 10 },
+      ],
+    });
+  });
+
+  it('shows the totals of the sale being typed, transport included', () => {
+    const { component } = setup();
+    chooseHoungbo(component);
+
+    component.addLine(cement);
+    component.form.controls.transportAmount.setValue(5000);
+
+    expect(component.totals()).toEqual({
+      grossAmount: 50000, discountAmount: 0, netAmount: 50000, vatAmount: 9000, totalAmount: 64000,
+    });
+  });
+
+  it('drops a line that was typed by mistake', () => {
+    const { component } = setup();
+    chooseHoungbo(component);
+    component.addLine(cement);
+    component.addLine({ ...cement, articleId: 'a2', designation: 'Fer à béton' });
+
+    component.removeLine(0);
+
+    expect(component.lines().map(line => line.designation)).toEqual(['Fer à béton']);
+  });
+
+  it('shows the backend message when the draft is refused, keeping what was typed', () => {
     const { component, navigate } = setup();
-    component.onCustomerSelected({ id: 'c1', label: 'CLI-001 — Bâtiments Houngbo' });
-    httpTesting.expectOne('/api/v1/customers/c1/credit').flush(credit(false));
+    chooseHoungbo(component, false);
+    component.addLine(cement);
 
     component.submit();
 
@@ -107,6 +169,7 @@ describe('SaleStartComponent', () => {
     );
     expect(component.formError()).toContain('désactivé');
     expect(component.saving()).toBe(false);
+    expect(component.lines()).toEqual([cement]);
     expect(navigate).not.toHaveBeenCalled();
   });
 });

@@ -3,17 +3,21 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { CustomerCredit } from '../../core/models/customer.model';
-import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
+import { DocumentType, InvoiceLine } from '../../core/models/invoice.model';
 import { AgencyStock } from '../../core/models/stock.model';
 import { InvoiceAlertsComponent } from './invoice-alerts.component';
 
 const line = {
   id: 'l1', articleId: 'a1', designation: 'Ciment CIM II 32.5R', quantity: 3, appliedCoefficient: 50,
 } as InvoiceLine;
-const draft = {
-  id: 'i1', type: 'INVOICE', status: 'DRAFT', agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
-  creditMode: false, totalAmount: 59000, lines: [line],
-} as Invoice;
+/** What the page and the sale screen both hand over. */
+interface Sale {
+  lines: InvoiceLine[];
+  type: DocumentType;
+  creditMode: boolean;
+  totalAmount: number;
+}
+const draft: Sale = { lines: [line], type: 'INVOICE', creditMode: false, totalAmount: 59000 };
 const credit = {
   customerId: 'c1', creditLimit: 200000, currentBalance: 150000, remainingCredit: 50000, creditAllowed: true,
 } as CustomerCredit;
@@ -22,14 +26,19 @@ const stock = { articleId: 'a1', stockUnitCode: 'KG', availableQuantity: 100 } a
 describe('InvoiceAlertsComponent', () => {
   let httpTesting: HttpTestingController;
 
-  function setup(invoice: Invoice = draft, customerCredit: CustomerCredit | null = credit) {
+  function setup(sale: Sale = draft, customerCredit: CustomerCredit | null = credit) {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(withInterceptors([errorInterceptor])), provideHttpClientTesting()],
     });
     httpTesting = TestBed.inject(HttpTestingController);
 
     const fixture = TestBed.createComponent(InvoiceAlertsComponent);
-    fixture.componentRef.setInput('invoice', invoice);
+    fixture.componentRef.setInput('lines', sale.lines);
+    fixture.componentRef.setInput('type', sale.type);
+    fixture.componentRef.setInput('creditMode', sale.creditMode);
+    fixture.componentRef.setInput('totalAmount', sale.totalAmount);
+    fixture.componentRef.setInput('agencyId', 'g1');
+    fixture.componentRef.setInput('agencyLabel', 'Cotonou — Siège');
     fixture.componentRef.setInput('credit', customerCredit);
     fixture.detectChanges();
 
@@ -104,7 +113,7 @@ describe('InvoiceAlertsComponent', () => {
     refresh();
     expect(text()).toBe('');
 
-    fixture.componentRef.setInput('invoice', { ...draft, lines: [line, { ...line, id: 'l2', quantity: 10 }] });
+    fixture.componentRef.setInput('lines', [line, { ...line, id: 'l2', quantity: 10 }]);
     refresh();
 
     httpTesting.expectOne('/api/v1/agencies/g1/stock/a1').flush({ ...stock, availableQuantity: 500 });

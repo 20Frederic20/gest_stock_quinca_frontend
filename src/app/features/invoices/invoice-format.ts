@@ -1,6 +1,15 @@
 import { CustomerCredit } from '../../core/models/customer.model';
-import { DocumentStatus, DocumentType, Invoice, InvoiceLine, DeliveryStatus } from '../../core/models/invoice.model';
+import {
+  DocumentStatus,
+  DocumentType,
+  Invoice,
+  InvoiceLineRequest,
+  DeliveryStatus,
+  PendingLine,
+  StockConsuming,
+} from '../../core/models/invoice.model';
 import { BadgeTone } from '../../shared/badge/badge.component';
+import { formatMoney } from '../pricing/price-rules';
 
 export const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
   QUOTE: 'Devis',
@@ -42,7 +51,7 @@ export function lineNetAmount(quantity: number, unitPrice: number, discountRate:
  * What the whole document takes from the stock, article by article: the backend reserves the sum of
  * the lines at validation, so two lines of the same article must be counted together, not one by one.
  */
-export function stockNeedsByArticle(lines: InvoiceLine[]): { articleId: string; designation: string; needed: number }[] {
+export function stockNeedsByArticle(lines: StockConsuming[]): { articleId: string; designation: string; needed: number }[] {
   const needs = new Map<string, { articleId: string; designation: string; needed: number }>();
 
   for (const line of lines) {
@@ -62,9 +71,62 @@ export function stockNeedsByArticle(lines: InvoiceLine[]): { articleId: string; 
  * How far a credit sale goes past what the customer may still owe, 0 when it fits.
  * A cash sale never touches the outstanding balance, whatever its amount.
  */
-export function creditOverrun(invoice: Invoice, credit: CustomerCredit): number {
-  if (!invoice.creditMode) return 0;
-  return Math.max(0, invoice.totalAmount - credit.remainingCredit);
+export function creditOverrun(creditMode: boolean, totalAmount: number, credit: CustomerCredit): number {
+  if (!creditMode) return 0;
+  return Math.max(0, totalAmount - credit.remainingCredit);
+}
+
+/** Four decimals, as the backend columns hold them. */
+function round(amount: number): number {
+  return Math.round(amount * 10000) / 10000;
+}
+
+/**
+ * Totals of a sale being typed, computed like Invoice.computeTotals and InvoiceLine.computeAmounts:
+ * the discount is a percentage, the VAT rate a fraction, and the transport is added after the VAT.
+ * It is only a preview — the backend recomputes everything from its own prices when it saves.
+ */
+export function previewTotals(lines: PendingLine[], transportAmount: number) {
+  let grossAmount = 0;
+  let discountAmount = 0;
+  let netAmount = 0;
+  let vatAmount = 0;
+
+  for (const line of lines) {
+    const gross = line.quantity * line.unitPrice;
+    const discount = round((gross * line.discountRate) / 100);
+    const net = gross - discount;
+
+    grossAmount += gross;
+    discountAmount += discount;
+    netAmount += net;
+    vatAmount += round(net * line.vatRate);
+  }
+
+  return {
+    grossAmount: round(grossAmount),
+    discountAmount: round(discountAmount),
+    netAmount: round(netAmount),
+    vatAmount: round(vatAmount),
+    totalAmount: round(netAmount + vatAmount + transportAmount),
+  };
+}
+
+/** Of a composed line, the backend only accepts these three: it sets the price itself. */
+export function toLineRequest(line: PendingLine): InvoiceLineRequest {
+  return { packagingId: line.packagingId, quantity: line.quantity, discountRate: line.discountRate };
+}
+
+/** What validating commits to, in one sentence: shown before the seller confirms, wherever they confirm. */
+export function validationSummary(invoice: Invoice): string {
+  const parts = [`Total : ${formatMoney(invoice.totalAmount)}.`, 'Le document ne pourra plus être modifié.'];
+
+  if (invoice.type === 'INVOICE') {
+    parts.push('Le stock des articles sera réservé pour le client.');
+    if (invoice.creditMode) parts.push('Le montant s’ajoutera à l’encours du client.');
+  }
+
+  return parts.join(' ');
 }
 
 /** Backend rule: a validated document is cancelled only while nothing was paid nor delivered. */

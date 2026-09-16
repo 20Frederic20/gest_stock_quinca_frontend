@@ -39,8 +39,12 @@ describe('MENU', () => {
     expect(MENU.length).toBe(8);
   });
 
-  it('has 22 items', () => {
-    expect(allItems.length).toBe(22);
+  it('has 21 items', () => {
+    expect(allItems.length).toBe(21);
+  });
+
+  it('starts a sale from the invoices screen, which has its own button, not from a menu entry', () => {
+    expect(allItems.map(item => item.route)).not.toContain('/new-sale');
   });
 
   it('only points to routes that are declared', () => {
@@ -53,7 +57,7 @@ describe('MENU', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/agencies', '/articles', '/customers', '/families', '/invoices', '/new-sale', '/packagings', '/pricing', '/stock', '/stock-movements', '/units-of-measure', '/users'],
+      ['/agencies', '/articles', '/customers', '/families', '/invoices', '/packagings', '/pricing', '/stock', '/stock-movements', '/units-of-measure', '/users'],
     );
   });
 });
