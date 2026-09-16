@@ -1,0 +1,55 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="grid">
+    <div class="field">
+      <label for="supplierCode">Code</label>
+      <input id="supplierCode" formControlName="code" maxlength="30" autocomplete="off" placeholder="FOU-001" />
+      <app-field-error [control]="form.controls.code" [serverError]="fieldErrors()['code']" />
+    </div>
+
+    <div class="field">
+      <label for="supplierName">Raison sociale</label>
+      <input id="supplierName" formControlName="companyName" maxlength="200" autocomplete="off" />
+      <app-field-error [control]="form.controls.companyName" [serverError]="fieldErrors()['companyName']" />
+    </div>
+
+    <div class="field">
+      <label for="supplierPhone">Téléphone</label>
+      <input id="supplierPhone" formControlName="phone" maxlength="30" autocomplete="off" />
+      <app-field-error [control]="form.controls.phone" [serverError]="fieldErrors()['phone']" />
+    </div>
+
+    <div class="field">
+      <label for="supplierTaxId">IFU</label>
+      <input id="supplierTaxId" formControlName="taxId" maxlength="30" autocomplete="off" />
+      <app-field-error [control]="form.controls.taxId" [serverError]="fieldErrors()['taxId']" />
+    </div>
+  </div>
+
+  <div class="field">
+    <label for="supplierAddress">Adresse</label>
+    <input id="supplierAddress" formControlName="address" maxlength="255" autocomplete="off" />
+    <app-field-error [control]="form.controls.address" [serverError]="fieldErrors()['address']" />
+  </div>
+
+  <div class="field">
+    <label for="supplierTerms">Conditions de règlement</label>
+    <input
+      id="supplierTerms"
+      formControlName="paymentTerms"
+      maxlength="255"
+      autocomplete="off"
+      placeholder="30 jours fin de mois, comptant à la livraison…" />
+    <app-field-error [control]="form.controls.paymentTerms" [serverError]="fieldErrors()['paymentTerms']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

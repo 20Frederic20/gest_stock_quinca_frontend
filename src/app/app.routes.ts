@@ -82,7 +82,11 @@ export const routes: Routes = [
       { path: 'sales-history',   component: ComingSoonComponent, data: { title: 'Historique des ventes' } },
       { path: 'purchase-orders', component: ComingSoonComponent, data: { title: 'Commandes fournisseurs' } },
       { path: 'receptions',      component: ComingSoonComponent, data: { title: 'Réceptions' } },
-      { path: 'suppliers',       component: ComingSoonComponent, data: { title: 'Fournisseurs' } },
+      {
+        path: 'suppliers',
+        loadComponent: () =>
+          import('./features/suppliers/supplier-list.component').then(m => m.SupplierListComponent),
+      },
       {
         path: 'stock',
         loadComponent: () => import('./features/stock/stock-list.component').then(m => m.StockListComponent),

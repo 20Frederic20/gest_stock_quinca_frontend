@@ -55,6 +55,13 @@ describe('can', () => {
     expect(can(seller, 'deliveries.cancel')).toBe(false);
   });
 
+  it('lets a manager keep the suppliers, but only an administrator remove one', () => {
+    expect(can(manager, 'suppliers.write')).toBe(true);
+    expect(can(seller, 'suppliers.write')).toBe(false);
+    expect(can(admin, 'suppliers.delete')).toBe(true);
+    expect(can(manager, 'suppliers.delete')).toBe(false);
+  });
+
   it('keeps agencies and users for the administrator', () => {
     for (const other of [manager, seller, cashier]) {
       expect(can(other, 'agencies.write')).toBe(false);

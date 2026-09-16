@@ -57,7 +57,7 @@ describe('MENU', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/agencies', '/articles', '/customers', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/stock', '/stock-movements', '/units-of-measure', '/users'],
+      ['/agencies', '/articles', '/customers', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/stock', '/stock-movements', '/suppliers', '/units-of-measure', '/users'],
     );
   });
 });

@@ -1,0 +1,76 @@
+<app-page-header heading="Fournisseurs" [actionLabel]="canEdit() ? 'Nouveau fournisseur' : ''" (action)="openCreate()" />
+
+<app-search-bar placeholder="Code, raison sociale ou téléphone" (termChange)="onSearch($event)" />
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="suppliers().length === 0"
+  [emptyMessage]="emptyMessage()"
+  (retry)="reload()" />
+
+@if (!loading() && !error() && suppliers().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Raison sociale</th>
+          <th>Téléphone</th>
+          <th>IFU</th>
+          <th>Conditions de règlement</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (supplier of suppliers(); track supplier.id) {
+          <tr [class.selected]="selectedSupplier()?.id === supplier.id" (click)="openDetail(supplier)">
+            <td class="nowrap">{{ supplier.code }}</td>
+            <td>{{ supplier.companyName }}</td>
+            <td class="nowrap text-muted">{{ supplier.phone || '—' }}</td>
+            <td class="nowrap text-muted">{{ supplier.taxId || '—' }}</td>
+            <td class="text-muted">{{ supplier.paymentTerms || '—' }}</td>
+            <td>
+              <app-badge [text]="supplier.active ? 'Actif' : 'Inactif'" [tone]="supplier.active ? 'neutral' : 'muted'" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="fournisseurs" (pageChange)="load($event)" />
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedSupplier(); as supplier) {
+        <app-supplier-detail
+          [supplier]="supplier"
+          [canEdit]="canEdit()"
+          [canDelete]="canDelete()"
+          (edit)="openEdit()"
+          (toggleActive)="toggleActive()"
+          (delete)="askDelete()" />
+      }
+    } @else {
+      <app-supplier-form [supplier]="selectedSupplier()" (saved)="onSaved()" (cancelled)="onFormCancelled()" />
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="supplierToDelete() !== null"
+  heading="Supprimer ce fournisseur ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

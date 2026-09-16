@@ -38,6 +38,9 @@ export type Permission =
   | 'deliveries.write'
   /** Cancel a delivery note, which brings the goods back into stock. */
   | 'deliveries.cancel'
+  /** Register a supplier, change it, activate or deactivate it. */
+  | 'suppliers.write'
+  | 'suppliers.delete'
   /** Stock of the agency given as `agencyId`. */
   | 'stock.view'
   /** Stock of any agency, e.g. to offer an agency filter. */
@@ -61,6 +64,7 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
   switch (permission) {
     case 'referential.write':
     case 'customers.write':
+    case 'suppliers.write':
     case 'sales.cancel':
     case 'sales.viewAll':
     case 'stock.viewAll':
@@ -80,6 +84,7 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'agencies.write':
     case 'users.manage':
     case 'customers.delete':
+    case 'suppliers.delete':
       return false;
     case 'stock.view':
       return isManager || isOwnAgency;

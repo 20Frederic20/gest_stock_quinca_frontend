@@ -1,0 +1,39 @@
+@let s = supplier();
+
+<dl class="sheet">
+  <dt>Code</dt>
+  <dd>{{ s.code }}</dd>
+
+  <dt>Raison sociale</dt>
+  <dd>{{ s.companyName }}</dd>
+
+  <dt>Téléphone</dt>
+  <dd>{{ s.phone || '—' }}</dd>
+
+  <dt>Adresse</dt>
+  <dd>{{ s.address || '—' }}</dd>
+
+  <dt>IFU</dt>
+  <dd>{{ s.taxId || '—' }}</dd>
+
+  <dt>Conditions de règlement</dt>
+  <dd>{{ s.paymentTerms || '—' }}</dd>
+
+  <dt>État</dt>
+  <dd><app-badge [text]="s.active ? 'Actif' : 'Inactif'" [tone]="s.active ? 'neutral' : 'muted'" /></dd>
+
+  <dt>Enregistré le</dt>
+  <dd>{{ formatDate(s.createdAt) }}</dd>
+</dl>
+
+@if (canEdit() || canDelete()) {
+  <div class="actions">
+    @if (canEdit()) {
+      <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+      <button type="button" class="btn" (click)="toggleActive.emit()">{{ s.active ? 'Désactiver' : 'Activer' }}</button>
+    }
+    @if (canDelete()) {
+      <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+    }
+  </div>
+}
