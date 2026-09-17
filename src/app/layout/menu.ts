@@ -33,8 +33,8 @@ export const MENU: MenuGroup[] = [
     { label: 'Historique',          route: '/sales-history', ready: false },
   ]},
   { title: 'Achats', items: [
-    { label: 'Commandes fournisseurs', route: '/purchase-orders', ready: false },
-    { label: 'Réceptions',             route: '/receptions',      ready: false },
+    { label: 'Commandes fournisseurs', route: '/purchase-orders', ready: true },
+    { label: 'Réceptions',             route: '/receptions',      ready: true },
     { label: 'Fournisseurs',           route: '/suppliers',       ready: true },
   ]},
   { title: 'Stock', items: [

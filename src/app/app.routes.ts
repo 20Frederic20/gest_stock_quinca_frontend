@@ -80,8 +80,21 @@ export const routes: Routes = [
           import('./features/deliveries/delivery-list.component').then(m => m.DeliveryListComponent),
       },
       { path: 'sales-history',   component: ComingSoonComponent, data: { title: 'Historique des ventes' } },
-      { path: 'purchase-orders', component: ComingSoonComponent, data: { title: 'Commandes fournisseurs' } },
-      { path: 'receptions',      component: ComingSoonComponent, data: { title: 'Réceptions' } },
+      {
+        path: 'purchase-orders',
+        loadComponent: () =>
+          import('./features/purchases/purchase-order-list.component').then(m => m.PurchaseOrderListComponent),
+      },
+      {
+        path: 'purchase-orders/:id',
+        loadComponent: () =>
+          import('./features/purchases/purchase-order-page.component').then(m => m.PurchaseOrderPageComponent),
+      },
+      {
+        path: 'receptions',
+        loadComponent: () =>
+          import('./features/purchases/reception-list.component').then(m => m.ReceptionListComponent),
+      },
       {
         path: 'suppliers',
         loadComponent: () =>

@@ -1,0 +1,90 @@
+<section class="receptions">
+  <div class="head">
+    <h2>Réceptions</h2>
+    @if (receivable()) {
+      <button type="button" class="btn btn-primary" (click)="openForm()">Réceptionner</button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
+  }
+
+  @if (actionError()) {
+    <p class="error" role="alert">{{ actionError() }}</p>
+  }
+
+  @if (!error() && receptions().length === 0 && !loading()) {
+    <p class="empty text-muted">Aucune réception sur cette commande.</p>
+  }
+
+  @if (receptions().length > 0) {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Numéro</th>
+            <th>Date</th>
+            <th>Reçu par</th>
+            <th>Statut</th>
+            @if (canWrite()) {
+              <th><span class="visually-hidden">Actions</span></th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (reception of receptions(); track reception.id) {
+            <tr>
+              <td class="nowrap">{{ reception.number }}</td>
+              <td class="nowrap">{{ formatDate(reception.receptionDate) }}</td>
+              <td>{{ reception.userName }}</td>
+              <td>
+                <app-badge [text]="statusLabels[reception.status]" [tone]="statusTones[reception.status]" />
+              </td>
+              @if (canWrite()) {
+                <td class="row-actions">
+                  @if (reception.status === 'DRAFT') {
+                    <button type="button" class="btn btn-primary" (click)="confirm(reception)">Confirmer</button>
+                    <button type="button" class="btn btn-ghost" (click)="askDelete(reception)">Supprimer</button>
+                  }
+                  @if (reception.status === 'CONFIRMED') {
+                    <button type="button" class="btn btn-ghost" (click)="openCancel(reception)">Annuler</button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
+
+<app-drawer [open]="formOpen()" heading="Réceptionner la marchandise" (closed)="closeForm()">
+  @if (formOpen()) {
+    <app-reception-form
+      [orderId]="order().id"
+      [orderNumber]="order().number"
+      [lines]="order().lines"
+      (received)="onReceived($event)"
+      (failed)="onFailed($event)"
+      (cancelled)="closeForm()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler une réception" (closed)="closeCancel()">
+  @if (cancelling(); as reception) {
+    <app-cancel-reception-form
+      [receptionId]="reception.id"
+      [summary]="summaryOf(reception)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="toDelete() !== null"
+  heading="Supprimer cette réception ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

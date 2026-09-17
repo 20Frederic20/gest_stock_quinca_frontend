@@ -1,0 +1,70 @@
+@if (lines().length === 0) {
+  <p class="empty text-muted">
+    Aucune ligne pour l’instant.
+    @if (editable()) {
+      Ajoutez un article ci-dessous.
+    }
+  </p>
+} @else {
+  <div class="table-scroll">
+    <table class="table lines">
+      <thead>
+        <tr>
+          <th>Article</th>
+          <th>Conditionnement</th>
+          <th class="number">Quantité</th>
+          <th class="number">Prix d’achat</th>
+          <th class="number">TVA</th>
+          <th class="number">Total HT</th>
+          @if (!editable()) {
+            <th class="number">Reçu</th>
+            <th class="number">Reste</th>
+          }
+          @if (editable()) {
+            <th><span class="visually-hidden">Actions</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines(); track line.id) {
+          <tr>
+            <td><span class="code">{{ line.articleCode }}</span> {{ line.designation }}</td>
+            <td class="nowrap">{{ line.unitLabel }}</td>
+
+            @if (editingId() === line.id) {
+              <td class="number" [formGroup]="form">
+                <input class="cell-input" type="number" min="0.0001" step="any" formControlName="quantity" aria-label="Quantité" />
+              </td>
+              <td class="number" [formGroup]="form">
+                <input class="cell-input" type="number" min="0" step="any" formControlName="unitPrice" aria-label="Prix d’achat" />
+              </td>
+            } @else {
+              <td class="number">{{ formatNumber(line.quantity) }}</td>
+              <td class="number">{{ formatMoney(line.unitPrice) }}</td>
+            }
+
+            <td class="number text-muted">{{ formatNumber(rateToPercent(line.vatRate)) }} %</td>
+            <td class="number">{{ formatMoney(line.netAmount) }}</td>
+
+            @if (!editable()) {
+              <td class="number">{{ formatNumber(line.receivedQuantity) }}</td>
+              <td class="number">{{ formatNumber(line.remainingToReceive) }}</td>
+            }
+
+            @if (editable()) {
+              <td class="row-actions">
+                @if (editingId() === line.id) {
+                  <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="save(line)">OK</button>
+                  <button type="button" class="btn" (click)="cancelEdit()">Annuler</button>
+                } @else {
+                  <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="edit(line)">Modifier</button>
+                  <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="remove(line)">Retirer</button>
+                }
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

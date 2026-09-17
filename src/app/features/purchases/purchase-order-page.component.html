@@ -1,0 +1,122 @@
+<a routerLink="/purchase-orders" class="back">← Commandes</a>
+
+<app-state-view [loading]="loading() && !order()" [error]="error()" (retry)="load()" />
+
+@if (order(); as ord) {
+  <div class="head">
+    <div>
+      <h1>{{ heading() }}</h1>
+      <p class="meta text-muted">
+        {{ formatDate(ord.orderDate) }} · {{ ord.agencyLabel }} · commandé par {{ ord.userName }}
+      </p>
+    </div>
+    <div class="head-tags">
+      <app-badge [text]="statusLabels[ord.status]" [tone]="statusTones[ord.status]" />
+    </div>
+  </div>
+
+  @if (notice()) {
+    <div class="notice" role="status">
+      <span>{{ notice() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="notice.set(null)">✕</button>
+    </div>
+  }
+
+  @if (actionError()) {
+    <div class="action-error" role="alert">
+      <span>{{ actionError() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+    </div>
+  }
+
+  @if (ord.status === 'CANCELLED') {
+    <p class="cancelled">Commande annulée{{ ord.cancellationReason ? ' : ' + ord.cancellationReason : '.' }}</p>
+  }
+
+  <div class="layout">
+    <section class="main">
+      <dl class="supplier">
+        <dt>Fournisseur</dt>
+        <dd>{{ ord.supplierName }}</dd>
+
+        <dt>Livraison prévue</dt>
+        <dd>{{ ord.expectedDeliveryDate ? formatDate(ord.expectedDeliveryDate) : '—' }}</dd>
+
+        @if (ord.comment) {
+          <dt>Commentaire</dt>
+          <dd>{{ ord.comment }}</dd>
+        }
+      </dl>
+
+      <app-purchase-order-lines
+        [orderId]="ord.id"
+        [lines]="ord.lines"
+        [editable]="editable()"
+        (changed)="onOrderChanged($event)"
+        (failed)="onActionFailed($event)" />
+
+      @if (editable()) {
+        <app-purchase-order-line-form [busy]="addingLine()" (composed)="addLine($event)" />
+      }
+
+      <!-- Nothing can arrive against a draft: the supplier has not been told yet. -->
+      @if (ord.status !== 'DRAFT') {
+        <app-order-receptions [order]="ord" [canWrite]="canWrite()" (changed)="onReceptionChanged()" />
+      }
+    </section>
+
+    <aside class="totals">
+      <dl>
+        <dt>Total HT</dt>
+        <dd>{{ formatMoney(ord.netAmount) }}</dd>
+
+        <dt>TVA</dt>
+        <dd>{{ formatMoney(ord.vatAmount) }}</dd>
+
+        <dt class="grand">Total TTC</dt>
+        <dd class="grand">{{ formatMoney(ord.totalAmount) }}</dd>
+      </dl>
+
+      <div class="actions">
+        @if (editable()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="ord.lines.length === 0 || confirming()"
+            (click)="askConfirmation()">
+            {{ confirming() ? 'Confirmation…' : 'Confirmer' }}
+          </button>
+          <button type="button" class="btn btn-danger" (click)="askDelete()">Supprimer le brouillon</button>
+        }
+        @if (cancellable()) {
+          <button type="button" class="btn btn-danger" (click)="openCancel()">Annuler la commande</button>
+        }
+      </div>
+    </aside>
+  </div>
+
+  <app-drawer [open]="cancelOpen()" heading="Annuler la commande" (closed)="closeCancel()">
+    @if (cancelOpen()) {
+      <app-cancel-order-form
+        [orderId]="ord.id"
+        [summary]="ord.number + ' — ' + ord.supplierName"
+        (saved)="onCancelled($event)"
+        (cancelled)="closeCancel()" />
+    }
+  </app-drawer>
+}
+
+<app-confirm-dialog
+  [open]="askingConfirmation()"
+  heading="Confirmer cette commande ?"
+  [message]="confirmMessage()"
+  confirmLabel="Confirmer"
+  (confirmed)="confirmOrder()"
+  (cancelled)="askingConfirmation.set(false)" />
+
+<app-confirm-dialog
+  [open]="askingDelete()"
+  heading="Supprimer ce brouillon ?"
+  [message]="deleteMessage()"
+  (confirmed)="deleteDraft()"
+  (cancelled)="askingDelete.set(false)" />

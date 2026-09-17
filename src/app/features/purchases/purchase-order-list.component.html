@@ -1,0 +1,66 @@
+<app-page-header
+  heading="Commandes fournisseurs"
+  subtitle="Les commandes de l’agence, de la plus récente à la plus ancienne."
+  [actionLabel]="canWrite() ? 'Nouvelle commande' : ''"
+  (action)="openCreate()" />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="orders().length === 0"
+  emptyMessage="Aucune commande dans cette agence."
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && orders().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Fournisseur</th>
+          <th>Livraison prévue</th>
+          <th class="number">Total TTC</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (order of orders(); track order.id) {
+          <tr (click)="open(order)">
+            <td class="nowrap">{{ order.number }}</td>
+            <td class="nowrap">{{ formatDate(order.orderDate) }}</td>
+            <td>{{ order.supplierName }}</td>
+            <td class="nowrap text-muted">
+              {{ order.expectedDeliveryDate ? formatDate(order.expectedDeliveryDate) : '—' }}
+            </td>
+            <td class="number">{{ formatMoney(order.totalAmount) }}</td>
+            <td><app-badge [text]="statusLabels[order.status]" [tone]="statusTones[order.status]" /></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="commandes" (pageChange)="load($event)" />
+
+<app-drawer [open]="formOpen()" heading="Nouvelle commande" (closed)="closeCreate()">
+  @if (formOpen()) {
+    <app-purchase-order-form (saved)="onCreated($event)" (cancelled)="closeCreate()" />
+  }
+</app-drawer>

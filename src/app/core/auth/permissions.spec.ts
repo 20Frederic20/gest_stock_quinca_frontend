@@ -62,6 +62,12 @@ describe('can', () => {
     expect(can(manager, 'suppliers.delete')).toBe(false);
   });
 
+  it('keeps the purchases for a manager or an administrator', () => {
+    expect(can(manager, 'purchases.write')).toBe(true);
+    expect(can(seller, 'purchases.write')).toBe(false);
+    expect(can(cashier, 'purchases.write')).toBe(false);
+  });
+
   it('keeps agencies and users for the administrator', () => {
     for (const other of [manager, seller, cashier]) {
       expect(can(other, 'agencies.write')).toBe(false);

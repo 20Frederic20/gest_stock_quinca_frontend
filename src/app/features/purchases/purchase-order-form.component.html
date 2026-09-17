@@ -1,0 +1,43 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label>Fournisseur</label>
+    <app-select-search
+      [options]="supplierOptions()"
+      [value]="form.controls.supplierId.value"
+      [label]="supplierLabel()"
+      placeholder="Choisir un fournisseur"
+      (selected)="onSupplierSelected($event)" />
+    <app-field-error [control]="form.controls.supplierId" />
+  </div>
+
+  <div class="field">
+    <label for="expectedDate">Livraison prévue</label>
+    <input id="expectedDate" type="date" formControlName="expectedDeliveryDate" />
+    <app-field-error [control]="form.controls.expectedDeliveryDate" />
+    <p class="hint">Facultatif, mais jamais dans le passé.</p>
+  </div>
+
+  <div class="field">
+    <label for="orderComment">Commentaire</label>
+    <input
+      id="orderComment"
+      formControlName="comment"
+      maxlength="500"
+      autocomplete="off"
+      placeholder="Réassort ciment, commande urgente…" />
+    <app-field-error [control]="form.controls.comment" />
+  </div>
+
+  <p class="hint">Les articles s’ajoutent ensuite, sur la commande.</p>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Création…' : 'Créer la commande' }}
+    </button>
+  </div>
+</form>

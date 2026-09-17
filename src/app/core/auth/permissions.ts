@@ -40,6 +40,8 @@ export type Permission =
   | 'deliveries.cancel'
   /** Register a supplier, change it, activate or deactivate it. */
   | 'suppliers.write'
+  /** Order from a supplier and receive the goods: the whole purchasing side. */
+  | 'purchases.write'
   | 'suppliers.delete'
   /** Stock of the agency given as `agencyId`. */
   | 'stock.view'
@@ -65,6 +67,7 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'referential.write':
     case 'customers.write':
     case 'suppliers.write':
+    case 'purchases.write':
     case 'sales.cancel':
     case 'sales.viewAll':
     case 'stock.viewAll':
