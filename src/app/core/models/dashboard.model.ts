@@ -18,7 +18,10 @@ export interface Dashboard {
 
   /** Documents still in draft, waiting to be finished. */
   draftDocuments: number;
-  /** Validated invoices whose goods have not fully left. */
+  /**
+   * Validated invoices still waiting for a delivery note — none written yet, or only part of the
+   * quantity. Their goods are still in stock, reserved for the customer.
+   */
   invoicesToDeliver: number;
   /** What the customers of this agency still owe on their credit sales. */
   outstandingTotal: number;

@@ -54,7 +54,7 @@
       @if (d.invoicesToDeliver > 0) {
         <a class="row" routerLink="/deliveries">
           <span class="count">{{ d.invoicesToDeliver }}</span>
-          <span>facture(s) dont la marchandise n’est pas sortie</span>
+          <span>facture(s) en attente de livraison</span>
         </a>
       }
       @if (d.ordersToReceive > 0) {

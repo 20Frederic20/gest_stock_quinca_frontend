@@ -1,7 +1,9 @@
 <form [formGroup]="form" (ngSubmit)="submit()">
   <p class="intro">
     Bon de livraison sur <strong>{{ invoiceNumber() }}</strong><br />
-    Les quantités proposées sont ce qu’il reste à livrer. Mettez 0 sur ce qui ne part pas aujourd’hui.
+    Les quantités proposées sont ce qu’il reste à livrer. Mettez 0 sur ce qui ne part pas aujourd’hui.<br />
+    <strong>Il n’y a pas de confirmation :</strong> enregistrer le bon fait sortir la marchandise du stock
+    immédiatement. Pour revenir en arrière, il faudra annuler le bon.
   </p>
 
   @if (formError()) {
@@ -55,7 +57,7 @@
   <div class="actions">
     <button type="button" class="btn" (click)="cancelled.emit()">Retour</button>
     <button type="submit" class="btn btn-primary" [disabled]="saving()">
-      {{ saving() ? 'Enregistrement…' : 'Enregistrer le bon' }}
+      {{ saving() ? 'Sortie du stock…' : 'Livrer et sortir du stock' }}
     </button>
   </div>
 </form>
