@@ -77,3 +77,79 @@ h2 {
   margin: 0;
   padding: var(--space-2) 0;
 }
+
+.panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.panel .empty {
+  margin: 0;
+}
+
+.invoices {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.invoices th {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  padding: var(--space-1) 0;
+}
+
+.invoices td {
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-divider);
+}
+
+.invoices .amount {
+  text-align: right;
+}
+
+.stock-alert,
+.movement {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.stock-alert-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-1);
+  font-size: 13px;
+}
+
+.meter {
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-divider);
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  background: #a11;
+}
+
+.movement {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: 13px;
+}
+
+.movement-qty {
+  font: 600 13px/1 var(--font-heading);
+}
+
+.movement-qty.negative {
+  color: #a11;
+}

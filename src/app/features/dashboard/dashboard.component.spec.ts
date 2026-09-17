@@ -7,6 +7,8 @@ import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Agency } from '../../core/models/agency.model';
 import { Dashboard } from '../../core/models/dashboard.model';
+import { Invoice } from '../../core/models/invoice.model';
+import { AgencyStock, StockMovement } from '../../core/models/stock.model';
 import { Role } from '../../core/models/user.model';
 import { DashboardComponent } from './dashboard.component';
 
@@ -49,11 +51,23 @@ describe('DashboardComponent', () => {
     return { component: fixture.componentInstance, element, refresh, text };
   }
 
+  /** The three supplementary panels the dashboard also loads alongside the main figures. */
+  function flushPanels(agencyId: string) {
+    httpTesting.expectOne(`/api/v1/agencies/${agencyId}/stock/alerts`).flush([]);
+    httpTesting.expectOne(r => r.url === `/api/v1/agencies/${agencyId}/stock-movements`).flush({
+      content: [], totalElements: 0, totalPages: 0, number: 0, size: 5,
+    });
+    httpTesting.expectOne(r => r.url === `/api/v1/agencies/${agencyId}/invoices`).flush({
+      content: [], totalElements: 0, totalPages: 0, number: 0, size: 20,
+    });
+  }
+
   afterEach(() => httpTesting.verify());
 
   it('shows what the agency sold and collected today', () => {
     const { text, refresh } = setup();
     httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    flushPanels('g1');
     refresh();
 
     expect(text()).toContain('268 000');
@@ -66,6 +80,7 @@ describe('DashboardComponent', () => {
   it('shows what is still waiting, each with the way to it', () => {
     const { element, text, refresh } = setup();
     httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    flushPanels('g1');
     refresh();
 
     expect(text()).toContain('420 000');
@@ -80,6 +95,7 @@ describe('DashboardComponent', () => {
     httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush({
       ...figures, draftDocuments: 0, invoicesToDeliver: 0, ordersToReceive: 0, stockAlerts: 0,
     });
+    flushPanels('g1');
     refresh();
 
     expect(text()).toContain('Rien n’attend');
@@ -88,18 +104,88 @@ describe('DashboardComponent', () => {
   it('follows the agency a manager chooses', () => {
     const { component } = setup();
     httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    flushPanels('g1');
 
     component.onAgencySelected({ id: 'g2', label: 'Parakou' });
 
     httpTesting.expectOne('/api/v1/agencies/g2/dashboard').flush({ ...figures, agencyId: 'g2' });
+    flushPanels('g2');
     expect(component.figures()?.agencyId).toBe('g2');
   });
 
   it('keeps a seller on their own agency', () => {
     const { component } = setup('SELLER');
     httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    flushPanels('g1');
 
     expect(component.canChooseAgency()).toBe(false);
+  });
+
+  it('shows the count of stock alerts as a headline figure', () => {
+    const { text, refresh } = setup();
+    httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    flushPanels('g1');
+    refresh();
+
+    expect(text()).toContain('Alertes stock');
+    expect(text()).toContain('5');
+  });
+
+  it('lists the articles below their alert threshold', () => {
+    const { text, refresh } = setup();
+    const alert: AgencyStock = {
+      id: 'as1', articleId: 'a1', articleCode: 'ART-0014', articleDesignation: 'Fer à béton HA 12 mm — barre 12 m',
+      agencyId: 'g1', agencyLabel: 'Cotonou — Siège', stockUnitCode: 'BAR',
+      quantity: 72, reservedQuantity: 0, availableQuantity: 72, alertThreshold: 120, belowThreshold: true, updatedAt: at,
+    };
+    httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([alert]);
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 5 });
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    refresh();
+
+    expect(text()).toContain('Fer à béton HA 12 mm');
+    expect(text()).toContain('72 BAR');
+    expect(text()).toContain('120 BAR');
+  });
+
+  it('lists the most recent stock movements', () => {
+    const { text, refresh } = setup();
+    const movement: StockMovement = {
+      id: 'm1', type: 'SALE', quantity: -60, resultingQuantity: 72, documentType: 'INVOICE', documentId: 'i1',
+      reason: null, movementDate: '2026-09-17T11:05:00', reversedMovementId: null,
+      articleId: 'a1', articleDesignation: 'Fer à béton HA 12 mm', agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
+      userId: 'u1', userName: 'Awa Dossou',
+    };
+    httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([]);
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [movement], totalElements: 1, totalPages: 1, number: 0, size: 5 });
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    refresh();
+
+    expect(text()).toContain('Fer à béton HA 12 mm');
+    expect(text()).toContain('Vente');
+  });
+
+  it('lists the most recent invoices with their delivery status', () => {
+    const { text, refresh } = setup();
+    const invoice: Invoice = {
+      id: 'i1', number: 'FAC-000125', type: 'INVOICE', status: 'VALIDATED', deliveryStatus: 'PARTIALLY_DELIVERED',
+      documentDate: '2026-09-17', dueDate: null, grossAmount: 1258500, discountAmount: 0, netAmount: 1258500,
+      vatAmount: 0, transportAmount: 0, totalAmount: 1258500, paidAmount: 0, remainingToPay: 1258500,
+      creditMode: false, cancellationReason: null, customerId: 'c1', customerName: 'ETS SODJI & Frères',
+      agencyId: 'g1', agencyLabel: 'Cotonou — Siège', userId: 'u1', userName: 'Awa Dossou', lines: [], createdAt: at,
+    };
+    httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+    httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([]);
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 5 });
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [invoice], totalElements: 1, totalPages: 1, number: 0, size: 20 });
+    refresh();
+
+    expect(text()).toContain('FAC-000125');
+    expect(text()).toContain('ETS SODJI & Frères');
+    expect(text()).toContain('1 258 500');
+    expect(text()).toContain('Partiel');
   });
 
   it('shows the error message when the figures cannot be loaded', () => {
@@ -109,6 +195,7 @@ describe('DashboardComponent', () => {
       { status: 500, message: 'Erreur interne du serveur', fieldErrors: null },
       { status: 500, statusText: 'Server Error' },
     );
+    flushPanels('g1');
 
     expect(component.error()).toBe('Erreur interne du serveur');
   });

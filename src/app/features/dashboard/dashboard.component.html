@@ -37,6 +37,76 @@
       <span class="figure">{{ formatMoney(d.outstandingTotal) }}</span>
       <a class="link" routerLink="/customers">Voir les créances</a>
     </article>
+
+    <article class="tile">
+      <span class="label">Alertes stock</span>
+      <span class="figure">{{ d.stockAlerts }}</span>
+      <a class="link" routerLink="/stock">Voir l’état du stock</a>
+    </article>
+  </section>
+
+  <section class="panels">
+    <div class="panel">
+      <h2>Dernières factures</h2>
+      @if (recentInvoices().length === 0) {
+        <p class="empty text-muted">Aucune facture pour l’instant.</p>
+      } @else {
+        <table class="invoices">
+          <thead>
+            <tr>
+              <th>Numéro</th>
+              <th>Client</th>
+              <th>Retrait</th>
+              <th class="amount">Montant TTC</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invoice of recentInvoices(); track invoice.id) {
+              <tr>
+                <td><a routerLink="/invoices">{{ invoice.number }}</a></td>
+                <td>{{ invoice.customerName }}</td>
+                <td><app-badge [text]="retraitLabel(invoice.deliveryStatus)" [tone]="retraitTone(invoice.deliveryStatus)" /></td>
+                <td class="amount">{{ formatMoney(invoice.totalAmount) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <div class="panel">
+      <h2>Articles à surveiller</h2>
+      @if (stockAlerts().length === 0) {
+        <p class="empty text-muted">Aucun article sous son seuil d’alerte.</p>
+      } @else {
+        @for (stock of stockAlerts(); track stock.id) {
+          <article class="stock-alert">
+            <div class="stock-alert-head">
+              <span>{{ stock.articleDesignation }}</span>
+              <span class="text-muted">{{ formatQuantity(stock.availableQuantity, stock.stockUnitCode) }} · seuil {{ formatQuantity(stock.alertThreshold, stock.stockUnitCode) }}</span>
+            </div>
+            <div class="meter"><div class="meter-fill" [style.width.%]="alertRatio(stock)"></div></div>
+          </article>
+        }
+      }
+
+      <h2>Derniers mouvements</h2>
+      @if (recentMovements().length === 0) {
+        <p class="empty text-muted">Aucun mouvement récent.</p>
+      } @else {
+        @for (movement of recentMovements(); track movement.id) {
+          <article class="movement">
+            <div>
+              <div>{{ movement.articleDesignation }}</div>
+              <div class="text-muted">{{ formatDateTime(movement.movementDate) }} · {{ movementTypeLabel(movement.type) }}</div>
+            </div>
+            <span class="movement-qty" [class.negative]="movement.quantity < 0">
+              {{ formatSignedQuantity(movement.quantity, '') }}
+            </span>
+          </article>
+        }
+      }
+    </div>
   </section>
 
   <h2>Ce qui attend</h2>

@@ -3,12 +3,12 @@ import { CurrentUser } from '../models/user.model';
 
 /**
  * Switch for the role-based rules in the front.
- * Disabled for now: every logged-in user sees every screen and every action.
- * To enable them again, change the factory to `() => true`.
+ * Enabled: the backend now enforces these same rules (role and agency), so the
+ * front must hide what it would refuse rather than let the user hit a 403.
  */
 export const PERMISSIONS_ENABLED = new InjectionToken<boolean>('PERMISSIONS_ENABLED', {
   providedIn: 'root',
-  factory: () => false,
+  factory: () => true,
 });
 
 /**
@@ -28,7 +28,11 @@ export type Permission =
   | 'sales.write'
   /** Cancel a validated document or delete a draft. */
   | 'sales.cancel'
-  /** Documents of any agency. */
+  /**
+   * Disabled for everyone, managers included: outside their own agency, a manager
+   * only gets `stock.view` / `stock.viewAll`. Sales, purchases, deliveries and
+   * payments are never visible across agencies, not even to a manager.
+   */
   | 'sales.viewAll'
   /** Take a payment on an invoice: the till as much as the counter. */
   | 'payments.write'
@@ -69,7 +73,6 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'suppliers.write':
     case 'purchases.write':
     case 'sales.cancel':
-    case 'sales.viewAll':
     case 'stock.viewAll':
       return isManager;
     case 'customers.create':
@@ -88,6 +91,7 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'users.manage':
     case 'customers.delete':
     case 'suppliers.delete':
+    case 'sales.viewAll':
       return false;
     case 'stock.view':
       return isManager || isOwnAgency;

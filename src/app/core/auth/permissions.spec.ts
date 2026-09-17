@@ -87,15 +87,18 @@ describe('can', () => {
     expect(can(admin, 'customers.delete')).toBe(true);
   });
 
-  it('lets sellers draft sales, and keeps cancellations and other agencies for managers', () => {
+  it('lets sellers draft sales, and keeps cancellations for managers', () => {
     expect(can(seller, 'sales.write')).toBe(true);
     expect(can(cashier, 'sales.write')).toBe(false);
 
     expect(can(manager, 'sales.cancel')).toBe(true);
     expect(can(seller, 'sales.cancel')).toBe(false);
+  });
 
-    expect(can(manager, 'sales.viewAll')).toBe(true);
+  it('never shows sale documents of another agency, not even to a manager', () => {
+    expect(can(manager, 'sales.viewAll')).toBe(false);
     expect(can(seller, 'sales.viewAll')).toBe(false);
+    expect(can(admin, 'sales.viewAll')).toBe(true);
   });
 
   it('shows the stock of every agency to a manager, and only their own to sellers and cashiers', () => {

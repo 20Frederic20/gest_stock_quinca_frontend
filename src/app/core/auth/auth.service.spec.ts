@@ -138,13 +138,13 @@ describe('AuthService', () => {
     expect(service.status()).toBe('anonymous');
   });
 
-  it('lets any logged-in user do everything while permissions are disabled, the default for now', () => {
+  it('applies the role-based rules by default: permissions are enabled unless overridden', () => {
     expect(service.can('users.manage')).toBe(false);
 
     loginAs({ ...manager, role: 'SELLER' });
 
-    expect(service.can('users.manage')).toBe(true);
-    expect(service.can('stock.act', 'other')).toBe(true);
+    expect(service.can('users.manage')).toBe(false);
+    expect(service.can('stock.act', 'other')).toBe(false);
   });
 });
 
