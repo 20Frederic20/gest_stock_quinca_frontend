@@ -53,7 +53,11 @@ export const routes: Routes = [
       },
 
       // --- Not exposed by the backend yet ---
-      { path: 'dashboard',       component: ComingSoonComponent, data: { title: 'Tableau de bord' } },
+      {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
+      },
       {
         path: 'new-sale',
         loadComponent: () =>

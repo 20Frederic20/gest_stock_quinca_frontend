@@ -26,9 +26,96 @@
   font-size: 12px;
 }
 
+/* The menu hangs from the button: the wrapper is what it is measured against. */
+.user-wrap {
+  position: relative;
+}
+
+.user {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font: inherit;
+  font-size: 12px;
+  padding: 3px var(--space-2) 3px 3px;
+  border: 1px solid var(--color-divider);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.user:hover {
+  background: var(--color-accent-100);
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.avatar.large {
+  width: 36px;
+  height: 36px;
+  font-size: 13px;
+}
+
+.chevron {
+  font-size: 10px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.user-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-1));
+  z-index: 20;
+  min-width: 240px;
+  padding: var(--space-3);
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  text-align: left;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.identity .name {
+  font-weight: 600;
+}
+
+.identity .line {
+  font-size: 12px;
+}
+
 .logout {
+  width: 100%;
   font-size: 12px;
   padding-inline: var(--space-2);
+}
+
+/* On a phone the name would eat the bar: the initials say enough. */
+@media (max-width: 768px) {
+  .user-name {
+    display: none;
+  }
 }
 
 .rule-accent {

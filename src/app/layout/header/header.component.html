@@ -1,13 +1,40 @@
 <div class="bar">
-  <div class="context">
-    {{ today }} · {{ user()?.name }} <span class="role">— {{ roleLabel() }}</span>
-  </div>
+  <div class="context">{{ today }}</div>
+
   <div class="agency">
     <span class="text-muted">Agence</span>
     <span class="tag">{{ user()?.agencyLabel }}</span>
-    <button type="button" class="btn btn-ghost logout" [disabled]="loggingOut()" (click)="logout()">
-      Se déconnecter
-    </button>
+
+    <div class="user-wrap" (click)="$event.stopPropagation()">
+      <button
+        type="button"
+        class="user"
+        [attr.aria-expanded]="menuOpen()"
+        aria-haspopup="menu"
+        [attr.aria-label]="'Compte de ' + (user()?.name ?? '')"
+        (click)="toggleMenu($event)">
+        <span class="avatar" aria-hidden="true">{{ initials() }}</span>
+        <span class="user-name">{{ user()?.name }}</span>
+        <span class="chevron" aria-hidden="true">▾</span>
+      </button>
+
+      @if (menuOpen()) {
+        <div class="user-menu" role="menu">
+          <div class="identity">
+            <span class="avatar large" aria-hidden="true">{{ initials() }}</span>
+            <div>
+              <div class="name">{{ user()?.name }}</div>
+              <div class="line text-muted">{{ roleLabel() }}</div>
+              <div class="line text-muted">{{ user()?.agencyLabel }}</div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-ghost logout" [disabled]="loggingOut()" (click)="logout()">
+            {{ loggingOut() ? 'Déconnexion…' : 'Se déconnecter' }}
+          </button>
+        </div>
+      }
+    </div>
   </div>
 </div>
 

@@ -28,23 +28,70 @@ describe('HeaderComponent', () => {
     const fixture = TestBed.createComponent(HeaderComponent);
     fixture.detectChanges();
 
-    return { fixture, auth, navigate, element: fixture.nativeElement as HTMLElement };
+    const element = fixture.nativeElement as HTMLElement;
+    const refresh = () => fixture.detectChanges();
+    const trigger = () => element.querySelector<HTMLButtonElement>('button.user')!;
+    const menu = () => element.querySelector('.user-menu');
+
+    return { fixture, auth, navigate, element, refresh, trigger, menu };
   }
 
   afterEach(() => httpTesting.verify());
 
-  it('shows who is logged in, their role and their agency', () => {
-    const { element } = setup();
+  it('shows the agency of the day, and who is logged in behind a user button', () => {
+    const { element, trigger } = setup();
 
-    expect(element.querySelector('.context')?.textContent).toContain('Awa Dossou');
-    expect(element.querySelector('.context')?.textContent).toContain('Responsable d’agence');
     expect(element.querySelector('.agency')?.textContent).toContain('Cotonou — Siège');
+    // Initials stand in for a picture, and the name is written next to them.
+    expect(trigger().textContent).toContain('AD');
+    expect(trigger().textContent).toContain('Awa Dossou');
   });
 
-  it('logs out and returns to the login page', async () => {
-    const { fixture, auth, navigate, element } = setup();
+  it('keeps the menu closed until the user asks for it', () => {
+    const { menu, trigger, refresh } = setup();
 
+    expect(menu()).toBeNull();
+    expect(trigger().getAttribute('aria-expanded')).toBe('false');
+
+    trigger().click();
+    refresh();
+
+    expect(menu()).not.toBeNull();
+    expect(trigger().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('tells the role and the agency inside the menu', () => {
+    const { menu, trigger, refresh } = setup();
+
+    trigger().click();
+    refresh();
+
+    const text = menu()?.textContent?.replace(/\s+/g, ' ') ?? '';
+    expect(text).toContain('Awa Dossou');
+    expect(text).toContain('Responsable d’agence');
+    expect(text).toContain('Cotonou — Siège');
+  });
+
+  it('closes the menu on escape', () => {
+    const { menu, trigger, refresh } = setup();
+
+    trigger().click();
+    refresh();
+    expect(menu()).not.toBeNull();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    refresh();
+
+    expect(menu()).toBeNull();
+  });
+
+  it('logs out from the menu and returns to the login page', async () => {
+    const { fixture, auth, navigate, element, trigger, refresh } = setup();
+
+    trigger().click();
+    refresh();
     element.querySelector<HTMLButtonElement>('button.logout')!.click();
+
     httpTesting.expectOne('/api/v1/auth/logout').flush(null, { status: 204, statusText: 'No Content' });
     await fixture.whenStable();
 

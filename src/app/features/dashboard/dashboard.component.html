@@ -1,0 +1,74 @@
+<app-page-header heading="Tableau de bord" subtitle="Ce que l’agence a fait aujourd’hui, et ce qui l’attend." />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view [loading]="loading() && !figures()" [error]="error()" (retry)="load()" />
+
+@if (figures(); as d) {
+  <p class="day text-muted">Chiffres du {{ formatDate(d.date) }}</p>
+
+  <section class="today" aria-label="Aujourd’hui">
+    <article class="tile">
+      <span class="label">Ventes du jour</span>
+      <span class="figure">{{ formatMoney(d.salesToday) }}</span>
+      <a class="link" routerLink="/invoices">{{ d.invoicesToday }} factures validées</a>
+    </article>
+
+    <article class="tile">
+      <span class="label">Encaissé aujourd’hui</span>
+      <span class="figure">{{ formatMoney(d.collectedToday) }}</span>
+      <a class="link" routerLink="/payments">dont {{ formatMoney(d.cashCollectedToday) }} en espèces</a>
+    </article>
+
+    <article class="tile">
+      <span class="label">Encours clients</span>
+      <span class="figure">{{ formatMoney(d.outstandingTotal) }}</span>
+      <a class="link" routerLink="/customers">Voir les créances</a>
+    </article>
+  </section>
+
+  <h2>Ce qui attend</h2>
+
+  @if (nothingWaiting()) {
+    <p class="clear text-muted">Rien n’attend : aucun brouillon, aucune livraison, aucune réception, aucune alerte.</p>
+  } @else {
+    <section class="waiting" aria-label="Ce qui attend">
+      @if (d.draftDocuments > 0) {
+        <a class="row" routerLink="/invoices">
+          <span class="count">{{ d.draftDocuments }}</span>
+          <span>document(s) en brouillon à terminer</span>
+        </a>
+      }
+      @if (d.invoicesToDeliver > 0) {
+        <a class="row" routerLink="/deliveries">
+          <span class="count">{{ d.invoicesToDeliver }}</span>
+          <span>facture(s) dont la marchandise n’est pas sortie</span>
+        </a>
+      }
+      @if (d.ordersToReceive > 0) {
+        <a class="row" routerLink="/receptions">
+          <span class="count">{{ d.ordersToReceive }}</span>
+          <span>commande(s) en attente de réception</span>
+        </a>
+      }
+      @if (d.stockAlerts > 0) {
+        <a class="row alert" routerLink="/stock">
+          <span class="count">{{ d.stockAlerts }}</span>
+          <span>article(s) sous leur seuil d’alerte</span>
+        </a>
+      }
+    </section>
+  }
+}

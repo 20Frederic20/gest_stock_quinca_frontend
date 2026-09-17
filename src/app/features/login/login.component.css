@@ -18,15 +18,18 @@
   box-sizing: border-box;
 }
 
-.brand-bar {
-  width: 34px;
-  height: 4px;
-  background: var(--color-accent);
+/* The card is light, so the badge needs nothing behind it. */
+.brand .logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
   margin-bottom: var(--space-2);
 }
 
 .brand-name {
   font: 600 18px/1.2 var(--font-heading);
+  white-space: nowrap;
 }
 
 .brand-subtitle {

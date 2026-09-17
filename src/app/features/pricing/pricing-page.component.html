@@ -1,9 +1,32 @@
-<app-page-header heading="Tarifs et privilèges" />
+<app-page-header heading="Tarifs et prix" />
 
-<section aria-label="Privilèges">
-  <app-privilege-list />
-</section>
+<div class="tabs" role="tablist">
+  <button
+    type="button"
+    role="tab"
+    [class.active]="tab() === 'grids'"
+    [attr.aria-selected]="tab() === 'grids'"
+    (click)="show('grids')">
+    Grilles tarifaires
+  </button>
+  <button
+    type="button"
+    role="tab"
+    [class.active]="tab() === 'prices'"
+    [attr.aria-selected]="tab() === 'prices'"
+    (click)="show('prices')">
+    Prix des articles
+  </button>
+</div>
 
-<section aria-label="Prix">
-  <app-price-list />
-</section>
+@if (tab() === 'grids') {
+  <section aria-label="Grilles tarifaires">
+    <p class="hint">Les grilles appliquées aux clients : Détail, Gros, Chantier… et celle qui sert par défaut.</p>
+    <app-privilege-list />
+  </section>
+} @else {
+  <section aria-label="Prix des articles">
+    <p class="hint">Le prix d’un conditionnement dans une grille, avec la date à partir de laquelle il s’applique.</p>
+    <app-price-list />
+  </section>
+}

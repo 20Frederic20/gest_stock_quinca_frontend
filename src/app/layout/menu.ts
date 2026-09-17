@@ -24,7 +24,7 @@ export function visibleMenu(menu: MenuGroup[], can: (permission: Permission) => 
 
 export const MENU: MenuGroup[] = [
   { title: 'Pilotage', items: [
-    { label: 'Tableau de bord', route: '/dashboard', ready: false },
+    { label: 'Tableau de bord', route: '/dashboard', ready: true },
   ]},
   { title: 'Ventes', items: [
     { label: 'Factures',            route: '/invoices',      ready: true },
@@ -47,7 +47,7 @@ export const MENU: MenuGroup[] = [
     { label: 'Familles',             route: '/families',         ready: true },
     { label: 'Conditionnements',     route: '/packagings',       ready: true },
     { label: 'Unités de mesure',     route: '/units-of-measure', ready: true },
-    { label: 'Tarifs et privilèges', route: '/pricing',          ready: true },
+    { label: 'Tarifs et prix',      route: '/pricing',          ready: true },
   ]},
   { title: 'Caisse', items: [
     { label: 'Règlements',         route: '/payments',    ready: true },
