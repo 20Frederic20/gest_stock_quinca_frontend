@@ -101,13 +101,16 @@ describe('can', () => {
     expect(can(admin, 'sales.viewAll')).toBe(true);
   });
 
-  it('shows the stock of every agency to a manager, and only their own to sellers and cashiers', () => {
+  it('shows the stock of every agency to every role, e.g. through the navbar switcher', () => {
     expect(can(manager, 'stock.view', OTHER)).toBe(true);
     expect(can(manager, 'stock.viewAll')).toBe(true);
 
     expect(can(seller, 'stock.view', OWN)).toBe(true);
-    expect(can(seller, 'stock.view', OTHER)).toBe(false);
-    expect(can(cashier, 'stock.viewAll')).toBe(false);
+    expect(can(seller, 'stock.view', OTHER)).toBe(true);
+    expect(can(seller, 'stock.viewAll')).toBe(true);
+
+    expect(can(cashier, 'stock.view', OTHER)).toBe(true);
+    expect(can(cashier, 'stock.viewAll')).toBe(true);
   });
 
   it('lets a manager count or reverse stock only in their own agency', () => {

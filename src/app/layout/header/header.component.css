@@ -26,6 +26,17 @@
   font-size: 12px;
 }
 
+.agency-switch {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.agency-switch app-select-search {
+  display: block;
+  flex: 1;
+  min-width: 0;
+}
+
 /* The menu hangs from the button: the wrapper is what it is measured against. */
 .user-wrap {
   position: relative;

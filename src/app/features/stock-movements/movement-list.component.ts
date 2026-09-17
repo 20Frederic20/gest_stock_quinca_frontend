@@ -1,8 +1,8 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
+import { AgencyContextService } from '../../core/agency/agency-context.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
-import { Agency } from '../../core/models/agency.model';
 import { PageInfo, toPageInfo } from '../../core/models/page.model';
 import { MOVEMENT_TYPE_LABELS, StockMovement } from '../../core/models/stock.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
@@ -11,7 +11,6 @@ import { PageHeaderComponent } from '../../shared/page-header/page-header.compon
 import { PaginationComponent } from '../../shared/pagination/pagination.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
 import { StateViewComponent } from '../../shared/state-view/state-view.component';
-import { AgenciesService } from '../agencies/agencies.service';
 import { formatNumber } from '../articles/article-format';
 import { searchArticleOptions } from '../articles/article-options';
 import { ArticlesService } from '../articles/articles.service';
@@ -41,20 +40,16 @@ type DrawerMode = 'detail' | 'reversal';
 export class MovementListComponent implements OnInit {
   private auth = inject(AuthService);
   private service = inject(StockService);
-  private agenciesService = inject(AgenciesService);
   private articlesService = inject(ArticlesService);
+  agencyContext = inject(AgencyContextService);
 
-  agencies = signal<Agency[]>([]);
-  agencyOptions = computed<SelectOption[]>(() =>
-    this.agencies().map(agency => ({ id: agency.id, label: agency.label })),
-  );
-  agencyId = signal(this.auth.user()?.agencyId ?? '');
-  agencyLabel = computed(
-    () => this.agencies().find(a => a.id === this.agencyId())?.label ?? this.auth.user()?.agencyLabel ?? '',
-  );
+  agencyOptions = this.agencyContext.agencyOptions;
+  /** The agency whose movements are shown: shared with the navbar switcher, so either can change it. */
+  agencyId = this.agencyContext.viewedAgencyId;
+  agencyLabel = this.agencyContext.viewedAgencyLabel;
   articleFilter = signal<SelectOption | null>(null);
 
-  /** Other agencies are for managers and administrators; sellers and cashiers see their own. */
+  /** Everyone may look at another agency's stock, from here or the navbar. */
   canChooseAgency = computed(() => this.auth.can('stock.viewAll'));
   /** Reversal: in one's own agency for a manager, anywhere for an administrator. */
   canAct = computed(() => this.auth.can('stock.act', this.agencyId()));
@@ -88,13 +83,24 @@ export class MovementListComponent implements OnInit {
   protected formatSignedQuantity = formatSignedQuantity;
 
   private request?: Subscription;
+  /** So a change this page made itself isn't reloaded a second time by the effect below. */
+  private knownAgencyId: string;
+
+  constructor() {
+    // Settles the agency (back to the user's own the first time) before anything reads it.
+    this.agencyContext.ensureLoaded();
+    this.knownAgencyId = this.agencyId();
+
+    // Catches a change made elsewhere, e.g. the navbar switcher, while this page is open.
+    effect(() => {
+      const id = this.agencyId();
+      if (id === this.knownAgencyId) return;
+      this.knownAgencyId = id;
+      untracked(() => this.load(0));
+    });
+  }
 
   ngOnInit(): void {
-    this.agenciesService.getActive().subscribe({
-      next: agencies => this.agencies.set(agencies),
-      // The own agency stays shown: only the choice of another one is missing.
-      error: () => this.agencies.set([]),
-    });
     this.load(0);
   }
 
@@ -121,7 +127,8 @@ export class MovementListComponent implements OnInit {
 
   onAgencySelected(option: SelectOption | null): void {
     if (!option) return;
-    this.agencyId.set(option.id);
+    this.knownAgencyId = option.id;
+    this.agencyContext.select(option.id);
     this.closeDrawer();
     this.notice.set(null);
     this.load(0);

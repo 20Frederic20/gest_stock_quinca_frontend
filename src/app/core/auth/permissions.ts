@@ -29,9 +29,9 @@ export type Permission =
   /** Cancel a validated document or delete a draft. */
   | 'sales.cancel'
   /**
-   * Disabled for everyone, managers included: outside their own agency, a manager
-   * only gets `stock.view` / `stock.viewAll`. Sales, purchases, deliveries and
-   * payments are never visible across agencies, not even to a manager.
+   * Disabled for everyone but an administrator: outside their own agency, every
+   * role only gets `stock.view` / `stock.viewAll`. Sales, purchases, deliveries
+   * and payments are never visible across agencies.
    */
   | 'sales.viewAll'
   /** Take a payment on an invoice: the till as much as the counter. */
@@ -47,9 +47,9 @@ export type Permission =
   /** Order from a supplier and receive the goods: the whole purchasing side. */
   | 'purchases.write'
   | 'suppliers.delete'
-  /** Stock of the agency given as `agencyId`. */
+  /** Stock of the agency given as `agencyId`. Open to every authenticated role. */
   | 'stock.view'
-  /** Stock of any agency, e.g. to offer an agency filter. */
+  /** Stock of any agency, e.g. to offer the navbar agency switcher. Open to every authenticated role. */
   | 'stock.viewAll'
   /** Inventory count or movement reversal in the agency given as `agencyId`. */
   | 'stock.act'
@@ -73,7 +73,6 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'suppliers.write':
     case 'purchases.write':
     case 'sales.cancel':
-    case 'stock.viewAll':
       return isManager;
     case 'customers.create':
     case 'sales.write':
@@ -93,8 +92,10 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'suppliers.delete':
     case 'sales.viewAll':
       return false;
+    // Stock viewing is never agency-bound: anyone logged in can look at any agency's stock.
     case 'stock.view':
-      return isManager || isOwnAgency;
+    case 'stock.viewAll':
+      return true;
     case 'stock.act':
     case 'transfer.request':
     case 'transfer.ship':

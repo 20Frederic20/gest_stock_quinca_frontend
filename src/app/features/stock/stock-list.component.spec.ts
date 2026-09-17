@@ -170,11 +170,15 @@ describe('StockListComponent', () => {
     expect(component.canChooseAgency()).toBe(true);
   });
 
-  it('with permissions enabled, keeps sellers on their own agency and read-only', () => {
+  it('with permissions enabled, lets a seller look at any agency’s stock but stay read-only', () => {
     const component = setup('SELLER', true);
     stockRequest().flush(page([]));
 
-    expect(component.canChooseAgency()).toBe(false);
+    expect(component.canChooseAgency()).toBe(true);
+    expect(component.canAct()).toBe(false);
+
+    component.onAgencySelected({ id: 'g2', label: 'Porto-Novo — Siège' });
+    stockRequest('g2').flush(page([]));
     expect(component.canAct()).toBe(false);
   });
 
