@@ -1,0 +1,46 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <p class="intro">
+    Ouverte à {{ dayClosing().startTime.slice(0, 5) }} avec un fond de caisse de
+    {{ formatMoney(dayClosing().openingCashAmount) }}.<br />
+    Théorique actuel (fond de caisse + espèces encaissées) :
+    <strong>{{ formatMoney(dayClosing().theoreticalTotal) }}</strong>
+  </p>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="countedTotal">Montant compté en caisse</label>
+    <input
+      id="countedTotal"
+      type="number"
+      min="0"
+      step="1"
+      formControlName="countedTotal"
+      autocomplete="off" />
+    <app-field-error [control]="form.controls.countedTotal" [serverError]="fieldErrors()['countedTotal']" />
+  </div>
+
+  <p class="preview" [class.negative]="previewVariance() < 0">
+    Écart estimé : {{ previewVariance() >= 0 ? '+' : '' }}{{ formatMoney(previewVariance()) }}
+  </p>
+
+  <div class="field">
+    <label for="comment">Commentaire (optionnel)</label>
+    <textarea
+      id="comment"
+      formControlName="comment"
+      rows="3"
+      maxlength="500"
+      placeholder="Explication d'un écart, remarque sur la journée…"></textarea>
+    <app-field-error [control]="form.controls.comment" [serverError]="fieldErrors()['comment']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Clôture…' : 'Clôturer la journée' }}
+    </button>
+  </div>
+</form>

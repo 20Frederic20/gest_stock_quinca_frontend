@@ -46,6 +46,9 @@
         @if (estimate() !== null) {
           · Total HT : <strong>{{ formatMoney(estimate()!) }}</strong>
         }
+        @if (priceFromDefaultGrid(); as label) {
+          <span class="fallback-hint"> · tarif repris de la grille « {{ label }} »</span>
+        }
       }
       @if (checkStock() && article() && available() !== null) {
         <span class="stock" [class.warning]="shortage()">

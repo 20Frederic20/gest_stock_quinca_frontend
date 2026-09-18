@@ -133,4 +133,11 @@ describe('can', () => {
   it('refuses an agency-bound action when no agency is given', () => {
     expect(can(manager, 'stock.act')).toBe(false);
   });
+
+  it('reserves the day closing screen to whoever holds the till, not a plain seller', () => {
+    expect(can(admin, 'dayClosing.access')).toBe(true);
+    expect(can(manager, 'dayClosing.access')).toBe(true);
+    expect(can(cashier, 'dayClosing.access')).toBe(true);
+    expect(can(seller, 'dayClosing.access')).toBe(false);
+  });
 });

@@ -1,0 +1,26 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <p class="intro">Déclarez le montant en espèces avec lequel la caisse démarre.</p>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="openingCashAmount">Fond de caisse</label>
+    <input
+      id="openingCashAmount"
+      type="number"
+      min="0"
+      step="1"
+      formControlName="openingCashAmount"
+      autocomplete="off" />
+    <app-field-error [control]="form.controls.openingCashAmount" [serverError]="fieldErrors()['openingCashAmount']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Ouverture…' : 'Ouvrir la caisse' }}
+    </button>
+  </div>
+</form>

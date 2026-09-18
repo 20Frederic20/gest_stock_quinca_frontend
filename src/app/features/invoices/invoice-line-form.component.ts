@@ -53,6 +53,12 @@ export class InvoiceLineFormComponent {
   unitPrice = signal<number | null>(null);
   /** Why no price can be shown (no packaging, no price in the grid…). */
   priceMessage = signal<string | null>(null);
+  /**
+   * Set when the backend had no price in the customer's own grid and fell back to the
+   * default grid: holds that grid's label so the seller sees where the price actually
+   * comes from, instead of believing it is the customer's negotiated price.
+   */
+  priceFromDefaultGrid = signal<string | null>(null);
   /** Available stock in the agency, in the article's stock unit; null while unknown. */
   available = signal<number | null>(null);
   stockUnitCode = signal('');
@@ -121,6 +127,7 @@ export class InvoiceLineFormComponent {
     this.packaging.set(null);
     this.unitPrice.set(null);
     this.priceMessage.set(null);
+    this.priceFromDefaultGrid.set(null);
     this.available.set(null);
     this.stockUnitCode.set('');
     this.formError.set(null);
@@ -198,9 +205,15 @@ export class InvoiceLineFormComponent {
     this.packaging.set(packaging);
     this.unitPrice.set(null);
     this.priceMessage.set(null);
+    this.priceFromDefaultGrid.set(null);
 
     this.priceRequest = this.pricesService.getApplicable(packaging.id, this.privilegeId()).subscribe({
-      next: price => this.unitPrice.set(price.unitPrice),
+      next: price => {
+        this.unitPrice.set(price.unitPrice);
+        // The customer's own grid had nothing: the backend fell back to the default one.
+        const usedDefaultGrid = !!price.privilegeId && price.privilegeId !== this.privilegeId();
+        this.priceFromDefaultGrid.set(usedDefaultGrid ? price.privilegeLabel : null);
+      },
       error: (error: ApiError) => this.priceMessage.set(error.message),
     });
   }

@@ -58,7 +58,12 @@ export type Permission =
   /** `agencyId` = the agency the stock leaves. */
   | 'transfer.ship'
   /** `agencyId` = the requesting agency, where the stock arrives. */
-  | 'transfer.receive';
+  | 'transfer.receive'
+  /**
+   * Open, count and close the till of an agency. A seller sells, but does not hold the
+   * cash drawer: only the cashier, the manager and the admin see this screen at all.
+   */
+  | 'dayClosing.access';
 
 export function can(user: CurrentUser | null, permission: Permission, agencyId?: string): boolean {
   if (!user) return false;
@@ -101,5 +106,8 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'transfer.ship':
     case 'transfer.receive':
       return isManager && isOwnAgency;
+    // Same roles as payments.write, minus the seller: cash reconciliation is not theirs either.
+    case 'dayClosing.access':
+      return isManager || user.role === 'CASHIER';
   }
 }

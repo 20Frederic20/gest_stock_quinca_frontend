@@ -1,6 +1,11 @@
 @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
+  /* Empêche le navigateur/l'OS de "corriger" le blanc pur en gris quand le mode sombre système
+     est actif : sans cette ligne, certains navigateurs (Chrome/Edge sur Android ou Windows en
+     mode sombre) réinterprètent nos couleurs et le fond n'est plus vraiment blanc à l'écran. */
+  color-scheme: light;
+
   /* Couleurs — reprises de la maquette */
   --color-bg: #ffffff;
   --color-surface: #fdf5ee;
@@ -17,6 +22,12 @@
   --color-accent-2-100: #eaf2fb;
   --color-accent-2-700: #13558f;
   --color-accent-2-800: #0d3b64;
+
+  /* Avertissement : distinct de l'accent de marque (orange, utilisé partout ailleurs) pour qu'un
+     message qui demande une action se remarque vraiment, au lieu de se fondre dans le décor. */
+  --color-warning: #a15c00;
+  --color-warning-bg: #fff4dd;
+  --color-warning-border: #f0cd8c;
 
   /* Typographie */
   --font-body: "Source Serif 4", system-ui, sans-serif;

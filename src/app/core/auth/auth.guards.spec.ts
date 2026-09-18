@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRouteSnapshot, Router, RouterStateSnapshot, UrlTree, provideRouter } from '@angular/router';
 import { CurrentUser, Role } from '../models/user.model';
-import { authGuard, guestGuard, permissionGuard } from './auth.guards';
+import { authGuard, guestGuard, homeGuard, permissionGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 import { PERMISSIONS_ENABLED } from './permissions';
 
@@ -54,6 +54,18 @@ describe('auth guards', () => {
     auth.setUser(null);
 
     expect(run(guestGuard, '/login')).toBe(true);
+  });
+
+  it('shows the public homepage to an anonymous visitor', () => {
+    auth.setUser(null);
+
+    expect(run(homeGuard, '/')).toBe(true);
+  });
+
+  it('sends a logged-in user from the homepage straight to the dashboard', () => {
+    auth.setUser(user('SELLER'));
+
+    expect(serialize(run(homeGuard, '/'))).toBe('/dashboard');
   });
 
   it('only opens a screen to the roles allowed on it', () => {

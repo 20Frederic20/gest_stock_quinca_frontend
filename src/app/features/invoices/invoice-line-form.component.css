@@ -55,6 +55,11 @@ h3 {
   color: #a11;
 }
 
+/* A note, not a warning: the price is correct, just not the customer's own negotiated one. */
+.fallback-hint {
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
 .form-error {
   color: #a11;
   background: #fdecec;

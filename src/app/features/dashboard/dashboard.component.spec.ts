@@ -7,6 +7,7 @@ import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Agency } from '../../core/models/agency.model';
 import { Dashboard } from '../../core/models/dashboard.model';
+import { DayClosing } from '../../core/models/day-closing.model';
 import { Invoice } from '../../core/models/invoice.model';
 import { AgencyStock, StockMovement } from '../../core/models/stock.model';
 import { Role } from '../../core/models/user.model';
@@ -21,6 +22,13 @@ const figures: Dashboard = {
   agencyId: 'g1', agencyLabel: 'Cotonou — Siège', date: '2026-09-17',
   invoicesToday: 4, salesToday: 268000, collectedToday: 150000, cashCollectedToday: 90000,
   draftDocuments: 2, invoicesToDeliver: 3, outstandingTotal: 420000, ordersToReceive: 1, stockAlerts: 5,
+};
+
+const openDayClosing: DayClosing = {
+  id: 'dc1', agencyId: 'g1', agencyLabel: 'Cotonou — Siège', closingDate: '2026-09-17', startTime: '08:00:00',
+  endTime: null, closed: false, openingCashAmount: 20000, theoreticalTotal: 20000, countedTotal: null,
+  variance: null, comment: null, openedByUserId: 'u1', openedByUserName: 'Awa Dossou',
+  closedByUserId: null, closedByUserName: null, createdAt: at,
 };
 
 describe('DashboardComponent', () => {
@@ -51,8 +59,19 @@ describe('DashboardComponent', () => {
     return { component: fixture.componentInstance, element, refresh, text };
   }
 
-  /** The three supplementary panels the dashboard also loads alongside the main figures. */
-  function flushPanels(agencyId: string) {
+  /** No cash session open for the agency: what a fresh day looks like before anyone opens the till. */
+  function flushNoDayClosing(agencyId: string) {
+    httpTesting.expectOne(`/api/v1/agencies/${agencyId}/day-closings/current`).flush(
+      { status: 404, message: 'Aucune journée de caisse ouverte pour cette agence', fieldErrors: null },
+      { status: 404, statusText: 'Not Found' },
+    );
+  }
+
+  /**
+   * The three supplementary panels the dashboard also loads alongside the main figures, plus the
+   * day-closing status — only a role that holds the till (not a seller) triggers that last call.
+   */
+  function flushPanels(agencyId: string, expectDayClosing = true) {
     httpTesting.expectOne(`/api/v1/agencies/${agencyId}/stock/alerts`).flush([]);
     httpTesting.expectOne(r => r.url === `/api/v1/agencies/${agencyId}/stock-movements`).flush({
       content: [], totalElements: 0, totalPages: 0, number: 0, size: 5,
@@ -60,6 +79,9 @@ describe('DashboardComponent', () => {
     httpTesting.expectOne(r => r.url === `/api/v1/agencies/${agencyId}/invoices`).flush({
       content: [], totalElements: 0, totalPages: 0, number: 0, size: 20,
     });
+    if (expectDayClosing) {
+      flushNoDayClosing(agencyId);
+    }
   }
 
   afterEach(() => httpTesting.verify());
@@ -116,7 +138,7 @@ describe('DashboardComponent', () => {
   it('keeps a seller on their own agency', () => {
     const { component } = setup('SELLER');
     httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
-    flushPanels('g1');
+    flushPanels('g1', false);
 
     expect(component.canChooseAgency()).toBe(false);
   });
@@ -142,6 +164,7 @@ describe('DashboardComponent', () => {
     httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([alert]);
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 5 });
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    flushNoDayClosing('g1');
     refresh();
 
     expect(text()).toContain('Fer à béton HA 12 mm');
@@ -161,6 +184,7 @@ describe('DashboardComponent', () => {
     httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([]);
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [movement], totalElements: 1, totalPages: 1, number: 0, size: 5 });
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+    flushNoDayClosing('g1');
     refresh();
 
     expect(text()).toContain('Fer à béton HA 12 mm');
@@ -180,6 +204,7 @@ describe('DashboardComponent', () => {
     httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([]);
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 5 });
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [invoice], totalElements: 1, totalPages: 1, number: 0, size: 20 });
+    flushNoDayClosing('g1');
     refresh();
 
     expect(text()).toContain('FAC-000125');
@@ -198,5 +223,56 @@ describe('DashboardComponent', () => {
     flushPanels('g1');
 
     expect(component.error()).toBe('Erreur interne du serveur');
+  });
+
+  describe('day-closing banner', () => {
+    it('offers to open the till when none is open yet, for a role that holds it', () => {
+      const { component, text, refresh } = setup('CASHIER');
+      httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+      flushPanels('g1');
+      refresh();
+
+      expect(component.showOpenBanner()).toBe(true);
+      expect(text()).toContain('Aucune caisse n’est ouverte');
+      expect(text()).toContain('Ouvrir la caisse');
+    });
+
+    it('hides the banner once a session is open, and drops it from the figures request', () => {
+      const { component, text, refresh } = setup('CASHIER');
+      httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+      httpTesting.expectOne('/api/v1/agencies/g1/stock/alerts').flush([]);
+      httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 5 });
+      httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 20 });
+      httpTesting.expectOne('/api/v1/agencies/g1/day-closings/current').flush(openDayClosing);
+      refresh();
+
+      expect(component.showOpenBanner()).toBe(false);
+      expect(text()).not.toContain('Aucune caisse n’est ouverte');
+    });
+
+    it('never asks about the till for a seller, who does not hold it', () => {
+      const { component } = setup('SELLER');
+      httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+      flushPanels('g1', false);
+
+      expect(component.canOpenDayClosing()).toBe(false);
+      expect(component.showOpenBanner()).toBe(false);
+    });
+
+    it('opens the drawer from the banner and hides it once the till is declared open', () => {
+      const { component, refresh } = setup('CASHIER');
+      httpTesting.expectOne('/api/v1/agencies/g1/dashboard').flush(figures);
+      flushPanels('g1');
+      refresh();
+
+      component.openDayClosingDrawer();
+      expect(component.showOpenDrawer()).toBe(true);
+
+      component.onDayClosingOpened(openDayClosing);
+      refresh();
+
+      expect(component.showOpenDrawer()).toBe(false);
+      expect(component.showOpenBanner()).toBe(false);
+    });
   });
 });

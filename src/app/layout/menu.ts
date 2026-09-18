@@ -51,7 +51,7 @@ export const MENU: MenuGroup[] = [
   ]},
   { title: 'Caisse', items: [
     { label: 'Règlements',         route: '/payments',    ready: true },
-    { label: 'Clôture de journée', route: '/day-closing', ready: false },
+    { label: 'Clôture de journée', route: '/day-closing', ready: true, permission: 'dayClosing.access' },
   ]},
   { title: 'Analyse', items: [
     { label: 'Rapports et exports', route: '/reports', ready: false },

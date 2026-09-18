@@ -15,6 +15,10 @@ export const authGuard: CanActivateFn = (_route, state) => {
 export const guestGuard: CanActivateFn = () =>
   inject(AuthService).user() ? inject(Router).createUrlTree(['/']) : true;
 
+/** The site root: a visitor sees the public homepage; a logged-in user goes straight to the dashboard. */
+export const homeGuard: CanActivateFn = () =>
+  inject(AuthService).user() ? inject(Router).createUrlTree(['/dashboard']) : true;
+
 /** A screen reserved to some roles, e.g. users management. */
 export function permissionGuard(permission: Permission): CanActivateFn {
   return () => (inject(AuthService).can(permission) ? true : inject(Router).createUrlTree(['/']));

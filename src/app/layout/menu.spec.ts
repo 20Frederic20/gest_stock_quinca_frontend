@@ -28,6 +28,12 @@ describe('visibleMenu', () => {
 
     expect(users?.permission).toBe('users.manage');
   });
+
+  it('reserves the day closing screen to the roles who hold the till', () => {
+    const dayClosing = MENU.flatMap(g => g.items).find(i => i.route === '/day-closing');
+
+    expect(dayClosing?.permission).toBe('dayClosing.access');
+  });
 });
 
 describe('MENU', () => {
@@ -53,11 +59,11 @@ describe('MENU', () => {
     }
   });
 
-  it('marks exactly the 5 referential screens and the agencies as ready', () => {
+  it('marks exactly the ready screens, day closing included', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/agencies', '/articles', '/customers', '/dashboard', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/purchase-orders', '/receptions', '/stock', '/stock-movements', '/suppliers', '/units-of-measure', '/users'],
+      ['/agencies', '/articles', '/customers', '/dashboard', '/day-closing', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/purchase-orders', '/receptions', '/stock', '/stock-movements', '/suppliers', '/units-of-measure', '/users'],
     );
   });
 });

@@ -1,9 +1,16 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, homeGuard, permissionGuard } from './core/auth/auth.guards';
 import { ComingSoonComponent } from './features/coming-soon/coming-soon.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
+  // Public entry point: the marketing homepage for visitors; a logged-in user is sent straight to the dashboard.
+  {
+    path: '',
+    pathMatch: 'full',
+    canActivate: [homeGuard],
+    loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
+  },
   // Outside the frame: no sidebar nor header before logging in.
   {
     path: 'login',
@@ -119,7 +126,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/payments/payment-list.component').then(m => m.PaymentListComponent),
       },
-      { path: 'day-closing',     component: ComingSoonComponent, data: { title: 'Clôture de journée' } },
+      {
+        path: 'day-closing',
+        canActivate: [permissionGuard('dayClosing.access')],
+        loadComponent: () =>
+          import('./features/day-closing/day-closing.component').then(m => m.DayClosingComponent),
+      },
       { path: 'reports',         component: ComingSoonComponent, data: { title: 'Rapports et exports' } },
       {
         path: 'agencies',

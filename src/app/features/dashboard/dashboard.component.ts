@@ -5,14 +5,18 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Agency } from '../../core/models/agency.model';
 import { Dashboard } from '../../core/models/dashboard.model';
+import { DayClosing } from '../../core/models/day-closing.model';
 import { Invoice } from '../../core/models/invoice.model';
 import { AgencyStock, MOVEMENT_TYPE_LABELS, StockMovement } from '../../core/models/stock.model';
 import { BadgeComponent, BadgeTone } from '../../shared/badge/badge.component';
+import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
 import { StateViewComponent } from '../../shared/state-view/state-view.component';
 import { AgenciesService } from '../agencies/agencies.service';
 import { formatDate } from '../articles/article-format';
+import { DayClosingOpenFormComponent } from '../day-closing/day-closing-open-form.component';
+import { DayClosingService } from '../day-closing/day-closing.service';
 import { InvoicesService } from '../invoices/invoices.service';
 import { formatMoney } from '../pricing/price-rules';
 import { formatDateTime, formatQuantity, formatSignedQuantity } from '../stock/stock-format';
@@ -34,7 +38,15 @@ const RETRAIT_LABELS: Record<Invoice['deliveryStatus'], string> = {
  */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink, PageHeaderComponent, SelectSearchComponent, StateViewComponent, BadgeComponent],
+  imports: [
+    RouterLink,
+    PageHeaderComponent,
+    SelectSearchComponent,
+    StateViewComponent,
+    BadgeComponent,
+    DrawerComponent,
+    DayClosingOpenFormComponent,
+  ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
@@ -44,9 +56,12 @@ export class DashboardComponent implements OnInit {
   private agenciesService = inject(AgenciesService);
   private stockService = inject(StockService);
   private invoicesService = inject(InvoicesService);
+  private dayClosingService = inject(DayClosingService);
 
   /** Other agencies are for managers and administrators. */
   canChooseAgency = computed(() => this.auth.can('sales.viewAll'));
+  /** A seller doesn't hold the till: no banner, no cash-opening drawer for them. */
+  canOpenDayClosing = computed(() => this.auth.can('dayClosing.access'));
 
   agencies = signal<Agency[]>([]);
   agencyOptions = computed<SelectOption[]>(() =>
@@ -64,6 +79,15 @@ export class DashboardComponent implements OnInit {
   stockAlerts = signal<AgencyStock[]>([]);
   recentMovements = signal<StockMovement[]>([]);
   recentInvoices = signal<Invoice[]>([]);
+
+  /** null tant que le point n'est pas fait : ni "ouverte" ni "à ouvrir" avant l'arrivée de la réponse. */
+  currentDayClosing = signal<DayClosing | null>(null);
+  dayClosingLoading = signal(false);
+  /** La bannière ne s'affiche qu'une fois sûr qu'aucune caisse n'est ouverte, jamais pendant le chargement. */
+  showOpenBanner = computed(
+    () => this.canOpenDayClosing() && !this.dayClosingLoading() && this.currentDayClosing() === null,
+  );
+  showOpenDrawer = signal(false);
 
   /** Nothing in draft, nothing to deliver, nothing to receive, no shortage: the day is clear. */
   nothingWaiting = computed(() => {
@@ -95,6 +119,7 @@ export class DashboardComponent implements OnInit {
   private stockAlertsRequest?: Subscription;
   private movementsRequest?: Subscription;
   private invoicesRequest?: Subscription;
+  private dayClosingRequest?: Subscription;
 
   ngOnInit(): void {
     this.agenciesService.getActive().subscribe({
@@ -111,6 +136,7 @@ export class DashboardComponent implements OnInit {
     this.stockAlertsRequest?.unsubscribe();
     this.movementsRequest?.unsubscribe();
     this.invoicesRequest?.unsubscribe();
+    this.dayClosingRequest?.unsubscribe();
     this.loading.set(true);
     this.error.set(null);
 
@@ -141,11 +167,48 @@ export class DashboardComponent implements OnInit {
       next: page => this.recentInvoices.set(page.content.slice(0, RECENT_COUNT)),
       error: () => this.recentInvoices.set([]),
     });
+
+    this.loadDayClosing(agencyId);
+  }
+
+  /** Seul un rôle qui tient la caisse déclenche cet appel : un vendeur n'a pas le droit de le faire. */
+  private loadDayClosing(agencyId: string): void {
+    if (!this.canOpenDayClosing()) {
+      this.currentDayClosing.set(null);
+      return;
+    }
+
+    this.dayClosingLoading.set(true);
+    this.dayClosingRequest = this.dayClosingService.getCurrent(agencyId).subscribe({
+      next: dayClosing => {
+        this.currentDayClosing.set(dayClosing);
+        this.dayClosingLoading.set(false);
+      },
+      error: () => {
+        // 404 (aucune caisse ouverte) comme tout autre échec : la bannière propose d'en ouvrir une.
+        // Un vrai problème réseau ne doit pas bloquer le reste du tableau de bord pour autant.
+        this.currentDayClosing.set(null);
+        this.dayClosingLoading.set(false);
+      },
+    });
   }
 
   onAgencySelected(option: SelectOption | null): void {
     if (!option) return;
     this.agencyId.set(option.id);
     this.load();
+  }
+
+  openDayClosingDrawer(): void {
+    this.showOpenDrawer.set(true);
+  }
+
+  closeDayClosingDrawer(): void {
+    this.showOpenDrawer.set(false);
+  }
+
+  onDayClosingOpened(dayClosing: DayClosing): void {
+    this.currentDayClosing.set(dayClosing);
+    this.showOpenDrawer.set(false);
   }
 }

@@ -3,18 +3,7 @@
 
   <div class="agency">
     <span class="text-muted">Agence</span>
-    @if (canSwitchAgency()) {
-      <div class="agency-switch" (click)="$event.stopPropagation()">
-        <app-select-search
-          [options]="agencyOptions()"
-          [value]="viewedAgencyId()"
-          [label]="viewedAgencyLabel()"
-          placeholder="Choisir une agence"
-          (selected)="onAgencySelected($event)" />
-      </div>
-    } @else {
-      <span class="tag">{{ viewedAgencyLabel() }}</span>
-    }
+    <span class="tag">{{ user()?.agencyLabel }}</span>
 
     <div class="user-wrap" (click)="$event.stopPropagation()">
       <button

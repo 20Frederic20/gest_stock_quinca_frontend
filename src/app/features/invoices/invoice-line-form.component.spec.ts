@@ -130,6 +130,36 @@ describe('InvoiceLineFormComponent', () => {
     expect(component.canAdd()).toBe(false);
   });
 
+  it('says nothing extra when the price comes from the customer’s own grid', () => {
+    const { component } = setup();
+
+    component.onArticleSelected({ id: 'a1', label: 'CIM-32R — Ciment CIM II 32.5R' });
+    httpTesting.expectOne('/api/v1/articles/a1/packagings').flush([bag, kilo]);
+    httpTesting.expectOne('/api/v1/articles/a1').flush(cement);
+    httpTesting.expectOne('/api/v1/agencies/g1/stock/a1').flush(stock);
+    httpTesting
+      .expectOne(r => r.url === '/api/v1/packagings/k1/prices/applicable')
+      .flush({ unitPrice: 5000, privilegeId: 'p1', privilegeLabel: 'Détail' });
+
+    expect(component.unitPrice()).toBe(5000);
+    expect(component.priceFromDefaultGrid()).toBeNull();
+  });
+
+  it('signals when the customer’s grid had nothing and the default grid’s price was used instead', () => {
+    const { component } = setup();
+
+    component.onArticleSelected({ id: 'a1', label: 'CIM-32R — Ciment CIM II 32.5R' });
+    httpTesting.expectOne('/api/v1/articles/a1/packagings').flush([bag, kilo]);
+    httpTesting.expectOne('/api/v1/articles/a1').flush(cement);
+    httpTesting.expectOne('/api/v1/agencies/g1/stock/a1').flush(stock);
+    httpTesting
+      .expectOne(r => r.url === '/api/v1/packagings/k1/prices/applicable')
+      .flush({ unitPrice: 5000, privilegeId: 'default-privilege', privilegeLabel: 'Détail' });
+
+    expect(component.unitPrice()).toBe(5000);
+    expect(component.priceFromDefaultGrid()).toBe('Détail');
+  });
+
   it('hands the composed line over and gets ready for the next article', () => {
     const { component, composed } = setup();
     chooseCement(component);
