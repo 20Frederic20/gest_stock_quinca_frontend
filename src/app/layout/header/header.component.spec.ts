@@ -85,6 +85,17 @@ describe('HeaderComponent', () => {
     expect(menu()).toBeNull();
   });
 
+  it('lets a logged-in user go back to the public site', () => {
+    const { element, trigger, refresh } = setup();
+
+    trigger().click();
+    refresh();
+
+    const link = element.querySelector<HTMLAnchorElement>('.user-menu a.site-link');
+    expect(link?.textContent?.trim()).toBe('Voir le site');
+    expect(link?.getAttribute('href')).toBe('/');
+  });
+
   it('logs out from the menu and returns to the login page', async () => {
     const { fixture, auth, navigate, element, trigger, refresh } = setup();
 

@@ -1,14 +1,13 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, homeGuard, permissionGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, permissionGuard } from './core/auth/auth.guards';
 import { ComingSoonComponent } from './features/coming-soon/coming-soon.component';
 import { MainLayoutComponent } from './layout/main-layout/main-layout.component';
 
 export const routes: Routes = [
-  // Public entry point: the marketing homepage for visitors; a logged-in user is sent straight to the dashboard.
+  // Public homepage: open to everyone, logged in or not, and shown at once (no session check awaited).
   {
     path: '',
     pathMatch: 'full',
-    canActivate: [homeGuard],
     loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
   },
   // Outside the frame: no sidebar nor header before logging in.
@@ -25,12 +24,16 @@ export const routes: Routes = [
       import('./features/invoices/invoice-print.component').then(m => m.InvoicePrintComponent),
   },
   {
+    path: 'transfers/:id/print',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/transfers/transfer-print.component').then(m => m.TransferPrintComponent),
+  },
+  {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],
     children: [
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-
       // --- Referential: real screens, plugged in one by one in the next steps ---
       {
         path: 'articles',
@@ -120,7 +123,16 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/stock-movements/movement-list.component').then(m => m.MovementListComponent),
       },
-      { path: 'transfers',       component: ComingSoonComponent, data: { title: 'Transferts entre agences' } },
+      {
+        path: 'transfers',
+        loadComponent: () =>
+          import('./features/transfers/transfer-list.component').then(m => m.TransferListComponent),
+      },
+      {
+        path: 'transfers/:id',
+        loadComponent: () =>
+          import('./features/transfers/transfer-page.component').then(m => m.TransferPageComponent),
+      },
       {
         path: 'payments',
         loadComponent: () =>

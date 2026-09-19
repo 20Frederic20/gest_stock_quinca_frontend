@@ -23,7 +23,7 @@ export class AuthService {
   /** Set when the session check failed for another reason than "not logged in" (server down…). */
   startupError = signal<string | null>(null);
 
-  /** Called once before the first navigation, so that the guards know the answer. Never fails. */
+  /** Checks the session with the backend. Never fails; prefer ensureRestored(), which runs it only once. */
   restore(): Promise<void> {
     return new Promise(resolve => {
       this.csrfCookie()
@@ -40,6 +40,17 @@ export class AuthService {
           },
         });
     });
+  }
+
+  private restoration: Promise<void> | null = null;
+
+  /**
+   * Waits for the session check, starting it if nobody has yet. The guards of the private screens
+   * wait here; the public homepage does not, so it is shown at once instead of after two round trips.
+   */
+  ensureRestored(): Promise<void> {
+    if (this.status() !== 'unknown') return Promise.resolve();
+    return (this.restoration ??= this.restore());
   }
 
   /** The backend answers with the access cookie and no body: /me tells who is logged in. */

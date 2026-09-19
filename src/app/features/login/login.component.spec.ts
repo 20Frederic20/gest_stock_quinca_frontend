@@ -75,14 +75,14 @@ describe('LoginComponent', () => {
     expect(navigate).toHaveBeenCalledWith('/articles?page=2');
   });
 
-  it('opens the home page when no page was requested', () => {
+  it('opens the dashboard when no page was requested', () => {
     const { component } = setup();
     component.form.setValue({ username: 'awa.dossou', password: 'secret-123' });
 
     component.submit();
     acceptLogin();
 
-    expect(navigate).toHaveBeenCalledWith('/');
+    expect(navigate).toHaveBeenCalledWith('/dashboard');
   });
 
   it('never redirects outside the application', () => {
@@ -94,7 +94,7 @@ describe('LoginComponent', () => {
       component.submit();
       acceptLogin();
 
-      expect(navigate).toHaveBeenCalledWith('/');
+      expect(navigate).toHaveBeenCalledWith('/dashboard');
     }
   });
 

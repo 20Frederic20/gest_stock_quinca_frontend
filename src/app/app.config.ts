@@ -17,7 +17,10 @@ export const appConfig: ApplicationConfig = {
       // Angular's defaults, written out because the backend must use the same names (see the API contract).
       withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
     ),
-    // The session is known before the first navigation, so that the guards can decide.
-    provideAppInitializer(() => inject(AuthService).restore()),
+    // The session check starts right away but is not awaited: the public homepage must not wait for it.
+    // The guards of the private screens wait for it (see auth.guards.ts).
+    provideAppInitializer(() => {
+      void inject(AuthService).ensureRestored();
+    }),
   ],
 };

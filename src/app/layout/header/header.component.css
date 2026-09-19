@@ -105,10 +105,18 @@
   font-size: 12px;
 }
 
-.logout {
+.logout,
+.site-link {
   width: 100%;
   font-size: 12px;
   padding-inline: var(--space-2);
+}
+
+.site-link {
+  display: block;
+  margin-bottom: var(--space-1);
+  text-align: center;
+  text-decoration: none;
 }
 
 /* On a phone the name would eat the bar: the initials say enough. */

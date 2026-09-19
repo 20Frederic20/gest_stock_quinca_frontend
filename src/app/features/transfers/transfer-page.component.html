@@ -1,0 +1,125 @@
+<a routerLink="/transfers" class="back">← Transferts</a>
+
+<app-state-view [loading]="loading() && !transfer()" [error]="error()" (retry)="load()" />
+
+@if (transfer(); as tr) {
+  <div class="head">
+    <div>
+      <h1>{{ heading() }}</h1>
+      <p class="meta text-muted">{{ formatDate(tr.transferDate) }} · créé par {{ tr.createdByName }}</p>
+    </div>
+    <div class="head-tags">
+      <app-badge [text]="statusLabels[tr.status]" [tone]="statusTones[tr.status]" />
+    </div>
+  </div>
+
+  @if (notice()) {
+    <div class="notice" role="status">
+      <span>{{ notice() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="notice.set(null)">✕</button>
+    </div>
+  }
+
+  @if (actionError()) {
+    <div class="action-error" role="alert">
+      <span>{{ actionError() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+    </div>
+  }
+
+  @if (tr.status === 'CANCELLED') {
+    <p class="cancelled">Transfert annulé{{ tr.cancellationReason ? ' : ' + tr.cancellationReason : '.' }}</p>
+  }
+
+  <div class="layout">
+    <section class="main">
+      <dl class="parties">
+        <dt>Agence source</dt>
+        <dd>{{ tr.sourceAgencyLabel }}</dd>
+
+        <dt>Agence destinataire</dt>
+        <dd>{{ tr.destinationAgencyLabel }}</dd>
+
+        @if (tr.receptionDate) {
+          <dt>Réceptionné le</dt>
+          <dd>{{ formatDate(tr.receptionDate) }}{{ tr.receivedByName ? ' par ' + tr.receivedByName : '' }}</dd>
+        }
+
+        @if (tr.comment) {
+          <dt>Commentaire</dt>
+          <dd>{{ tr.comment }}</dd>
+        }
+      </dl>
+
+      <app-transfer-lines
+        [transferId]="tr.id"
+        [lines]="tr.lines"
+        [editable]="editable()"
+        [showReceived]="tr.status === 'RECEIVED'"
+        (changed)="onTransferChanged($event)"
+        (failed)="onActionFailed($event)" />
+
+      @if (editable()) {
+        <app-transfer-line-form [busy]="addingLine()" (composed)="addLine($event)" />
+      }
+    </section>
+
+    <aside class="side">
+      <div class="actions">
+        @if (editable()) {
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="tr.lines.length === 0 || sending()"
+            (click)="askSend()">
+            {{ sending() ? 'Envoi…' : 'Envoyer' }}
+          </button>
+          <button type="button" class="btn btn-danger" (click)="askDelete()">Supprimer le brouillon</button>
+        }
+        @if (receivable()) {
+          <button type="button" class="btn btn-primary" (click)="openReceive()">Réceptionner</button>
+        }
+        @if (cancellable()) {
+          <button type="button" class="btn btn-danger" (click)="openCancel()">Annuler le transfert</button>
+        }
+        <a class="btn" [routerLink]="['/transfers', tr.id, 'print']" target="_blank">Bon de transfert (PDF)</a>
+      </div>
+    </aside>
+  </div>
+
+  <app-drawer [open]="receiveOpen()" heading="Réceptionner le transfert" (closed)="closeReceive()">
+    @if (receiveOpen()) {
+      <app-transfer-receive-form
+        [transferId]="tr.id"
+        [transferNumber]="tr.number"
+        [lines]="tr.lines"
+        (received)="onReceived($event)"
+        (cancelled)="closeReceive()" />
+    }
+  </app-drawer>
+
+  <app-drawer [open]="cancelOpen()" heading="Annuler le transfert" (closed)="closeCancel()">
+    @if (cancelOpen()) {
+      <app-cancel-transfer-form
+        [transferId]="tr.id"
+        [summary]="tr.number + ' — ' + tr.sourceAgencyLabel + ' → ' + tr.destinationAgencyLabel"
+        (saved)="onCancelled($event)"
+        (cancelled)="closeCancel()" />
+    }
+  </app-drawer>
+}
+
+<app-confirm-dialog
+  [open]="askingSend()"
+  heading="Envoyer ce transfert ?"
+  [message]="sendMessage()"
+  confirmLabel="Envoyer"
+  (confirmed)="sendTransfer()"
+  (cancelled)="askingSend.set(false)" />
+
+<app-confirm-dialog
+  [open]="askingDelete()"
+  heading="Supprimer ce brouillon ?"
+  [message]="deleteMessage()"
+  (confirmed)="deleteDraft()"
+  (cancelled)="askingDelete.set(false)" />

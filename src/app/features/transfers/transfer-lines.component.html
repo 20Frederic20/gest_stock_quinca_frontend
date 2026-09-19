@@ -1,0 +1,41 @@
+@if (lines().length === 0) {
+  <p class="empty text-muted">
+    Aucune ligne pour l’instant.
+    @if (editable()) {
+      Ajoutez un article ci-dessous.
+    }
+  </p>
+} @else {
+  <div class="table-scroll">
+    <table class="table lines">
+      <thead>
+        <tr>
+          <th>Article</th>
+          <th class="number">Quantité</th>
+          @if (showReceived()) {
+            <th class="number">Reçu</th>
+          }
+          @if (editable()) {
+            <th><span class="visually-hidden">Actions</span></th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines(); track line.id) {
+          <tr>
+            <td><span class="code">{{ line.articleCode }}</span> {{ line.designation }}</td>
+            <td class="number">{{ formatNumber(line.quantity) }} <span class="unit">{{ line.unitLabel }}</span></td>
+            @if (showReceived()) {
+              <td class="number">{{ formatNumber(line.receivedQuantity) }}</td>
+            }
+            @if (editable()) {
+              <td class="row-actions">
+                <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="remove(line)">Retirer</button>
+              </td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}

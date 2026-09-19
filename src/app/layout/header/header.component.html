@@ -29,6 +29,8 @@
             </div>
           </div>
 
+          <a class="btn btn-ghost site-link" routerLink="/" (click)="close()">Voir le site</a>
+
           <button type="button" class="btn btn-ghost logout" [disabled]="loggingOut()" (click)="logout()">
             {{ loggingOut() ? 'Déconnexion…' : 'Se déconnecter' }}
           </button>

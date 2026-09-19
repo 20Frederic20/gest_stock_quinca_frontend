@@ -1,0 +1,49 @@
+.intro {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.form-error {
+  color: #a11;
+  background: #fdecec;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--space-3);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+}
+
+.table tbody tr:hover {
+  background: transparent;
+  cursor: default;
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.unit {
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.cell-input {
+  width: 90px;
+  font: inherit;
+  padding: 2px 6px;
+  text-align: right;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}

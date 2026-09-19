@@ -5,9 +5,12 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
 
+/** Where to go when no page was requested: the site root is the public homepage, not the application. */
+const DEFAULT_PAGE = '/dashboard';
+
 /** Only a path inside the application: `?redirect=https://…` must not send the user elsewhere. */
 function safeRedirect(url: string | undefined): string {
-  return url && url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\') ? url : '/';
+  return url && url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\') ? url : DEFAULT_PAGE;
 }
 
 @Component({

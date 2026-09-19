@@ -6,9 +6,9 @@
         <a href="#services">Espace pro</a>
       </div>
       <div class="utility-actions">
-        <a routerLink="/login" style="display:flex;align-items:center;gap:6px;color:inherit;text-decoration:none;">
+        <a [routerLink]="loggedIn() ? '/dashboard' : '/login'" style="display:flex;align-items:center;gap:6px;color:inherit;text-decoration:none;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.8-4 5-6 8-6s6.2 2 8 6"/></svg>
-          Se connecter
+          {{ loggedIn() ? 'Mon espace' : 'Se connecter' }}
         </a>
       </div>
     </div>
@@ -111,8 +111,8 @@
 </section>
 
 <div class="gallery-strip">
-  <figure><img src="images/home/timber.jpg" alt="Bois de coffrage Trinity JJP" /><figcaption>Bois de coffrage</figcaption></figure>
-  <figure><img src="images/home/site.jpg" alt="Chantier suivi par Trinity JJP" /><figcaption>Sur le chantier</figcaption></figure>
+  <figure><img src="images/home/image_1.jpg" alt="Bois de coffrage Trinity JJP" /></figure>
+  <figure><img src="images/home/image_2.jpeg" alt="Chantier suivi par Trinity JJP" /></figure>
 </div>
 
 <section id="services">
@@ -177,6 +177,6 @@
 <footer class="site">
   <div class="wrap">
     <p class="tagline">Trinity JJP, tout pour bâtir avec vous et pour vous.</p>
-    <p class="meta">© 2026 Trinity JJP — <a routerLink="/login">Accéder à l'espace de gestion</a></p>
+    <p class="meta">© 2026 Trinity JJP — <a [routerLink]="loggedIn() ? '/dashboard' : '/login'">Accéder à l'espace de gestion</a></p>
   </div>
 </footer>

@@ -146,6 +146,28 @@ describe('AuthService', () => {
     expect(service.can('users.manage')).toBe(false);
     expect(service.can('stock.act', 'other')).toBe(false);
   });
+
+  it('checks the session only once, however many callers wait for it', async () => {
+    const first = service.ensureRestored();
+    const second = service.ensureRestored();
+
+    httpTesting.expectOne('/api/v1/auth/csrf').flush(...noContent);
+    httpTesting.expectOne('/api/v1/auth/me').flush(manager);
+    await Promise.all([first, second]);
+
+    expect(service.user()).toEqual(manager);
+    // Once known, asking again does not call the backend any more.
+    await service.ensureRestored();
+    httpTesting.expectNone('/api/v1/auth/me');
+  });
+
+  it('does not check the session again when the user is already known', async () => {
+    service.setUser(manager);
+
+    await service.ensureRestored();
+
+    httpTesting.expectNone('/api/v1/auth/csrf');
+  });
 });
 
 describe('AuthService with permissions enabled', () => {

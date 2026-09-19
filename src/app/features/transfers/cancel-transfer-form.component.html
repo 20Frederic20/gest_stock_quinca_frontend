@@ -1,0 +1,28 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  <p class="intro">
+    Annulation de : <strong>{{ summary() }}</strong><br />
+    La marchandise déjà sortie — et déjà entrée, si le transfert était réceptionné — revient dans son stock d’origine.
+  </p>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="cancelTransferReason">Motif de l’annulation</label>
+    <input
+      id="cancelTransferReason"
+      formControlName="reason"
+      maxlength="255"
+      autocomplete="off"
+      placeholder="Erreur de saisie, transfert en double…" />
+    <app-field-error [control]="form.controls.reason" [serverError]="fieldErrors()['reason']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Retour</button>
+    <button type="submit" class="btn btn-danger" [disabled]="saving()">
+      {{ saving() ? 'Annulation…' : 'Annuler le transfert' }}
+    </button>
+  </div>
+</form>

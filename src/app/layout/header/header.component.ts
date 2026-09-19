@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
 import { ROLE_LABELS } from '../../core/models/user.model';
@@ -16,6 +16,7 @@ function initialsOf(name: string): string {
 
 @Component({
   selector: 'app-header',
+  imports: [RouterLink],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
   host: {

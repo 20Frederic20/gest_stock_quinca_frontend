@@ -1,0 +1,48 @@
+<form (ngSubmit)="submit()">
+  <p class="intro">
+    Réception du transfert <strong>{{ transferNumber() }}</strong><br />
+    Les quantités proposées sont celles qui ont été expédiées. Réduisez ce qui n’est pas arrivé.
+  </p>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="table-scroll" [formGroup]="quantities">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Article</th>
+          <th class="number">Expédié</th>
+          <th class="number">Reçu</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (line of lines(); track line.id) {
+          <tr>
+            <td>{{ line.designation }} <span class="unit">({{ line.unitLabel }})</span></td>
+            <td class="number">{{ formatNumber(line.quantity) }}</td>
+            <td class="number">
+              <input
+                class="cell-input"
+                type="number"
+                min="0"
+                [max]="line.quantity"
+                step="any"
+                [attr.aria-label]="'Quantité reçue pour ' + line.designation"
+                [formControlName]="line.id" />
+              <app-field-error [control]="quantities.controls[line.id]" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Retour</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Réception…' : 'Réceptionner' }}
+    </button>
+  </div>
+</form>
