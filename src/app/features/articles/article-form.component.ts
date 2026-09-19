@@ -52,6 +52,9 @@ export class ArticleFormComponent {
     vatRate: [DEFAULT_VAT_PERCENT, [Validators.required, Validators.min(0), Validators.max(100)]],
     familyId: ['', [Validators.required]],
     stockUnitId: ['', [Validators.required]],
+    // Only asked at creation (see the template): the price of the base packaging created with
+    // the article, at the default ("Détail") tariff.
+    price: [0, [Validators.min(0)]],
   });
 
   familyOptions = computed<SelectOption[]>(() =>
@@ -76,6 +79,7 @@ export class ArticleFormComponent {
         vatRate: article ? rateToPercent(article.vatRate) : DEFAULT_VAT_PERCENT,
         familyId: article?.familyId ?? '',
         stockUnitId: article?.stockUnitId ?? '',
+        price: 0,
       });
     });
   }
@@ -98,18 +102,29 @@ export class ArticleFormComponent {
       return;
     }
 
+    const article = this.article();
+
+    // Every article needs a price to be sellable: asked once, right here, rather than sending
+    // the seller to the pricing screen straight after creating a still-unsellable article.
+    if (!article && this.form.controls.price.value <= 0) {
+      this.form.controls.price.markAsTouched();
+      this.formError.set('Le prix de vente est obligatoire pour un nouvel article.');
+      return;
+    }
+
     this.saving.set(true);
     this.formError.set(null);
     this.fieldErrors.set({});
 
-    const value = this.form.getRawValue();
+    const { price, ...value } = this.form.getRawValue();
     const body = {
       ...value,
       // The backend treats a blank barcode as none, but null states it plainly.
       barcode: value.barcode.trim() || null,
       vatRate: percentToRate(value.vatRate),
+      // Ignored by the update endpoint: an existing article may already have several packagings.
+      ...(article ? {} : { price }),
     };
-    const article = this.article();
     const request = article ? this.service.update(article.id, body) : this.service.create(body);
 
     request.subscribe({

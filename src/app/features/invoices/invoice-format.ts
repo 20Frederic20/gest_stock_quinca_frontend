@@ -112,9 +112,14 @@ export function previewTotals(lines: PendingLine[], transportAmount: number) {
   };
 }
 
-/** Of a composed line, the backend only accepts these three: it sets the price itself. */
+/** The price composed with the line is sent along: the seller may have raised it above the grid price. */
 export function toLineRequest(line: PendingLine): InvoiceLineRequest {
-  return { packagingId: line.packagingId, quantity: line.quantity, discountRate: line.discountRate };
+  return {
+    packagingId: line.packagingId,
+    quantity: line.quantity,
+    discountRate: line.discountRate,
+    unitPrice: line.unitPrice,
+  };
 }
 
 /** What validating commits to, in one sentence: shown before the seller confirms, wherever they confirm. */

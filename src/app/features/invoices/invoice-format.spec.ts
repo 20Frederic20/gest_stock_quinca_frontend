@@ -78,7 +78,7 @@ describe('invoice format', () => {
       unitLabel: 'Sac', appliedCoefficient: 50, quantity: 10, discountRate: 5, unitPrice: 5000, vatRate: 0.18,
     };
 
-    expect(toLineRequest(cement)).toEqual({ packagingId: 'k1', quantity: 10, discountRate: 5 });
+    expect(toLineRequest(cement)).toEqual({ packagingId: 'k1', quantity: 10, discountRate: 5, unitPrice: 5000 });
   });
 
   it('allows cancelling only an untouched validated document', () => {

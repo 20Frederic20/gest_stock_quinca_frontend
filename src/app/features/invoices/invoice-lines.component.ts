@@ -35,6 +35,9 @@ export class InvoiceLinesComponent {
   form = this.fb.nonNullable.group({
     quantity: [1, [Validators.required, Validators.min(0.0001)]],
     discountRate: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
+    // Kept at the line's current price unless the seller changes it: the backend refuses
+    // anything below the packaging's own price, whichever grid it comes from.
+    unitPrice: [0, [Validators.required, Validators.min(0)]],
   });
 
   protected formatMoney = formatMoney;
@@ -43,7 +46,7 @@ export class InvoiceLinesComponent {
 
   edit(line: InvoiceLine): void {
     this.editingId.set(line.id);
-    this.form.reset({ quantity: line.quantity, discountRate: line.discountRate });
+    this.form.reset({ quantity: line.quantity, discountRate: line.discountRate, unitPrice: line.unitPrice });
   }
 
   cancelEdit(): void {

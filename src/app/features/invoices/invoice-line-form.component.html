@@ -35,6 +35,18 @@
       <label for="lineDiscount">Remise (%)</label>
       <input id="lineDiscount" type="number" min="0" max="100" step="0.01" formControlName="discountRate" />
     </div>
+
+    <div class="field">
+      <label for="linePrice">Prix unitaire</label>
+      <input
+        id="linePrice"
+        type="number"
+        min="0"
+        step="any"
+        [disabled]="unitPrice() === null"
+        [value]="effectivePrice() ?? ''"
+        (input)="onPriceChanged($any($event.target).value)" />
+    </div>
   </div>
 
   <div class="footer">
@@ -42,7 +54,7 @@
       @if (priceMessage()) {
         <span class="warning">{{ priceMessage() }}</span>
       } @else if (unitPrice() !== null) {
-        Prix unitaire : <strong>{{ formatMoney(unitPrice()!) }}</strong>
+        Tarif : <strong>{{ formatMoney(unitPrice()!) }}</strong>
         @if (estimate() !== null) {
           · Total HT : <strong>{{ formatMoney(estimate()!) }}</strong>
         }

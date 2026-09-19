@@ -32,7 +32,9 @@
               <td class="number" [formGroup]="form">
                 <input class="cell-input" type="number" min="0.0001" step="any" formControlName="quantity" aria-label="Quantité" />
               </td>
-              <td class="number">{{ formatMoney(line.unitPrice) }}</td>
+              <td class="number" [formGroup]="form">
+                <input class="cell-input" type="number" min="0" step="any" formControlName="unitPrice" aria-label="Prix unitaire" />
+              </td>
               <td class="number" [formGroup]="form">
                 <input class="cell-input" type="number" min="0" max="100" step="0.01" formControlName="discountRate" aria-label="Remise (%)" />
                 %

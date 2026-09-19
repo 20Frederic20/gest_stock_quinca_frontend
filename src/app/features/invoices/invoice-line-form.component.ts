@@ -50,7 +50,10 @@ export class InvoiceLineFormComponent {
   chosen = signal<Article | null>(null);
   packagings = signal<Packaging[]>([]);
   packaging = signal<Packaging | null>(null);
+  /** The price grid's price for this packaging: shown as the floor, never sent as-is if the seller raises it. */
   unitPrice = signal<number | null>(null);
+  /** What is actually typed in the price field, seeded from `unitPrice` and freely raisable from there. */
+  effectivePrice = signal<number | null>(null);
   /** Why no price can be shown (no packaging, no price in the grid…). */
   priceMessage = signal<string | null>(null);
   /**
@@ -92,13 +95,13 @@ export class InvoiceLineFormComponent {
   });
 
   estimate = computed(() => {
-    const price = this.unitPrice();
+    const price = this.effectivePrice();
     const { quantity, discountRate } = this.value();
     return price === null || !quantity ? null : lineNetAmount(quantity, price, discountRate ?? 0);
   });
 
   /** Without a price the backend would refuse the line anyway. */
-  canAdd = computed(() => this.packaging() !== null && this.unitPrice() !== null && this.chosen() !== null && !this.busy());
+  canAdd = computed(() => this.packaging() !== null && this.effectivePrice() !== null && this.chosen() !== null && !this.busy());
 
   searchArticles = (term: string): Observable<SelectOption[]> => searchArticleOptions(this.articlesService, term);
 
@@ -126,6 +129,7 @@ export class InvoiceLineFormComponent {
     this.packagings.set([]);
     this.packaging.set(null);
     this.unitPrice.set(null);
+    this.effectivePrice.set(null);
     this.priceMessage.set(null);
     this.priceFromDefaultGrid.set(null);
     this.available.set(null);
@@ -167,15 +171,25 @@ export class InvoiceLineFormComponent {
     if (packaging) this.choosePackaging(packaging);
   }
 
+  onPriceChanged(value: string): void {
+    this.effectivePrice.set(value === '' ? null : Number(value));
+  }
+
   submit(): void {
     const packaging = this.packaging();
     const article = this.chosen();
-    const unitPrice = this.unitPrice();
-    if (!packaging || !article || unitPrice === null) return;
+    const floor = this.unitPrice();
+    const price = this.effectivePrice();
+    if (!packaging || !article || floor === null || price === null) return;
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.formError.set('La quantité doit être positive et la remise comprise entre 0 et 100 %.');
+      return;
+    }
+
+    if (price < floor) {
+      this.formError.set(`Le prix ne peut pas être inférieur au prix du conditionnement (${formatMoney(floor)}).`);
       return;
     }
 
@@ -191,7 +205,7 @@ export class InvoiceLineFormComponent {
       appliedCoefficient: packaging.quantity,
       quantity,
       discountRate,
-      unitPrice,
+      unitPrice: price,
       vatRate: article.vatRate,
     });
 
@@ -204,12 +218,14 @@ export class InvoiceLineFormComponent {
     this.priceRequest?.unsubscribe();
     this.packaging.set(packaging);
     this.unitPrice.set(null);
+    this.effectivePrice.set(null);
     this.priceMessage.set(null);
     this.priceFromDefaultGrid.set(null);
 
     this.priceRequest = this.pricesService.getApplicable(packaging.id, this.privilegeId()).subscribe({
       next: price => {
         this.unitPrice.set(price.unitPrice);
+        this.effectivePrice.set(price.unitPrice);
         // The customer's own grid had nothing: the backend fell back to the default one.
         const usedDefaultGrid = !!price.privilegeId && price.privilegeId !== this.privilegeId();
         this.priceFromDefaultGrid.set(usedDefaultGrid ? price.privilegeLabel : null);

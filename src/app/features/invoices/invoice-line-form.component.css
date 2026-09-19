@@ -18,7 +18,8 @@ h3 {
 
 .grid {
   display: grid;
-  grid-template-columns: minmax(200px, 2fr) minmax(150px, 1.2fr) minmax(90px, 0.6fr) minmax(90px, 0.6fr);
+  grid-template-columns:
+    minmax(200px, 2fr) minmax(150px, 1.2fr) minmax(90px, 0.6fr) minmax(90px, 0.6fr) minmax(110px, 0.8fr);
   gap: var(--space-3);
 }
 

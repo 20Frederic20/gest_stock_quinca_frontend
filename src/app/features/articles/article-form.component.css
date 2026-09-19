@@ -11,6 +11,12 @@
   letter-spacing: 0;
 }
 
+.hint {
+  font-size: 12px;
+  margin: var(--space-1) 0 0;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
 .row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

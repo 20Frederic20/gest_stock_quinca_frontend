@@ -22,4 +22,6 @@ export interface ArticleRequest {
   vatRate: number;
   familyId: string;
   stockUnitId: string;
+  /** Sale price of the base packaging created with the article. Required to create, ignored to update. */
+  price?: number;
 }

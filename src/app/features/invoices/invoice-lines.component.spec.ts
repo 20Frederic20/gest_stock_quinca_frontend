@@ -53,13 +53,13 @@ describe('InvoiceLinesComponent', () => {
   it('saves a new quantity and discount, keeping the packaging of the line', () => {
     const { component, changed } = setup();
     component.edit(line);
-    component.form.setValue({ quantity: 12, discountRate: 5 });
+    component.form.setValue({ quantity: 12, discountRate: 5, unitPrice: 5000 });
 
     component.save(line);
 
     const req = httpTesting.expectOne('/api/v1/invoices/i1/lines/l1');
     expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ packagingId: 'k1', quantity: 12, discountRate: 5 });
+    expect(req.request.body).toEqual({ packagingId: 'k1', quantity: 12, discountRate: 5, unitPrice: 5000 });
     req.flush(updated);
     expect(changed).toHaveBeenCalledWith(updated);
     expect(component.editingId()).toBeNull();
@@ -68,7 +68,7 @@ describe('InvoiceLinesComponent', () => {
   it('refuses invalid values without calling the backend', () => {
     const { component, failed } = setup();
     component.edit(line);
-    component.form.setValue({ quantity: 0, discountRate: 120 });
+    component.form.setValue({ quantity: 0, discountRate: 120, unitPrice: 5000 });
 
     component.save(line);
 
@@ -90,7 +90,7 @@ describe('InvoiceLinesComponent', () => {
   it('passes on the backend refusal, e.g. a discount above the seller’s limit', () => {
     const { component, failed } = setup();
     component.edit(line);
-    component.form.setValue({ quantity: 10, discountRate: 30 });
+    component.form.setValue({ quantity: 10, discountRate: 30, unitPrice: 5000 });
 
     component.save(line);
 

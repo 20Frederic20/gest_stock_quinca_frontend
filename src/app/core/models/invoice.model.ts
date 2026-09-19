@@ -24,7 +24,7 @@ export interface InvoiceLine {
   quantity: number;
   deliveredQuantity: number;
   remainingToDeliver: number;
-  /** Set by the backend from the customer's price grid, never sent by the front. */
+  /** The customer's price grid by default; the seller may raise it, never below the packaging's own price. */
   unitPrice: number;
   /** In percent, 0 to 100. */
   discountRate: number;
@@ -106,4 +106,6 @@ export interface InvoiceLineRequest {
   packagingId: string;
   quantity: number;
   discountRate: number;
+  /** Override of the price grid; refused below the packaging's own price. Null/absent = grid price. */
+  unitPrice?: number | null;
 }
