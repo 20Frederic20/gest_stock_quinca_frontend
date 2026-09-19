@@ -1,48 +1,187 @@
+/* Écran scindé : panneau de marque à gauche, formulaire à droite. */
 .page {
   min-height: 100vh;
   display: grid;
-  place-items: center;
-  padding: var(--space-4);
+  grid-template-columns: 1.05fr 1fr;
   background: var(--color-bg);
-  box-sizing: border-box;
 }
 
-.card {
-  width: 100%;
-  max-width: 380px;
-  background: var(--color-bg);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  padding: var(--space-6);
-  box-sizing: border-box;
+/* --- Panneau de marque --- */
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding: 48px 56px 0;
+  overflow: hidden;
+  color: #fff;
+  background-color: var(--color-accent-2-800);
+  background-image: repeating-linear-gradient(135deg, rgb(255 255 255 / 3.5%) 0 2px, transparent 2px 22px);
 }
 
-/* The card is light, so the badge needs nothing behind it. */
-.brand .logo {
-  width: 72px;
-  height: 72px;
+.panel-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* The logo is a round badge drawn on white: a white disc keeps it readable on the dark panel. */
+.logo {
+  flex: none;
+  width: 58px;
+  height: 58px;
   border-radius: 50%;
+  background: #fff;
   object-fit: cover;
-  margin-bottom: var(--space-2);
 }
 
 .brand-name {
-  font: 600 18px/1.2 var(--font-heading);
+  font: 600 22px/1 var(--font-heading);
+  letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
-.brand-subtitle {
-  font-size: 11px;
-  letter-spacing: 0.1em;
+.brand-tagline {
+  margin-top: 5px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: color-mix(in srgb, var(--color-text) 55%, transparent);
-  margin-top: var(--space-1);
+  color: rgb(255 255 255 / 72%);
+}
+
+.pitch {
+  margin-top: 64px;
+}
+
+.headline {
+  max-width: 16ch;
+  margin: 0 0 12px;
+  font: 600 34px/1.15 var(--font-heading);
+  letter-spacing: -0.015em;
+}
+
+.headline em {
+  font-style: italic;
+  font-weight: 400;
+  color: #ffb27a;
+}
+
+.lede {
+  max-width: 42ch;
+  margin: 0 0 30px;
+  color: rgb(255 255 255 / 78%);
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.features li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 14.5px;
+}
+
+.ico {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: rgb(255 255 255 / 10%);
+  color: #ffb27a;
+}
+
+.ico svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Bandeau produits en pied de panneau, fondu dans le bleu. */
+.band {
+  position: relative;
+  height: 128px;
+  margin: auto -56px 0;
+}
+
+.band img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--color-accent-2-800) 0%,
+    color-mix(in srgb, var(--color-accent-2-800) 35%, transparent) 60%,
+    color-mix(in srgb, var(--color-accent-2-800) 15%, transparent) 100%
+  );
+}
+
+/* --- Formulaire --- */
+.access {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 26px 32px 22px;
+}
+
+.back {
+  align-self: flex-start;
+  font-size: 13px;
+  color: var(--color-accent-2-700);
+  text-decoration: none;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+.form-wrap {
+  width: 100%;
+  max-width: 340px;
+  margin-block: auto;
+  padding-block: var(--space-6);
 }
 
 h1 {
-  font: 600 22px/1.2 var(--font-heading);
-  margin: var(--space-6) 0 var(--space-4);
+  font: 600 26px/1.15 var(--font-heading);
+  margin: 0 0 4px;
+}
+
+.hello {
+  margin: 0 0 24px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 12px var(--font-body);
+  color: var(--color-accent-2-700);
+  cursor: pointer;
+}
+
+.toggle:hover {
+  text-decoration: underline;
 }
 
 .notice {
@@ -65,4 +204,44 @@ h1 {
   width: 100%;
   margin-top: var(--space-2);
   padding-block: var(--space-2);
+}
+
+.foot {
+  margin: 0;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+/* Tablette / mobile : le panneau devient un en-tête compact au-dessus du formulaire. */
+@media (max-width: 900px) {
+  .page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .panel {
+    padding: 18px var(--space-4);
+  }
+
+  .pitch,
+  .band {
+    display: none;
+  }
+
+  .logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .brand-name {
+    font-size: 19px;
+  }
+
+  .access {
+    padding: var(--space-4) var(--space-4) var(--space-3);
+  }
+
+  .back {
+    align-self: flex-start;
+  }
 }

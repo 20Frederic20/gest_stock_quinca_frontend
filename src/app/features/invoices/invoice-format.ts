@@ -133,3 +133,18 @@ export function validationSummary(invoice: Invoice): string {
 export function isCancellable(invoice: Invoice): boolean {
   return invoice.status === 'VALIDATED' && invoice.paidAmount === 0 && invoice.deliveryStatus === 'NOT_DELIVERED';
 }
+
+/**
+ * Pulls the filename the backend suggested for a download out of a `Content-Disposition` header,
+ * e.g. `inline; filename*=UTF-8''FAC-COT-2026-00001.pdf`. `null` when the header is missing or
+ * in a shape this app never sends (there is no third party to be lenient for here).
+ */
+export function filenameFromContentDisposition(header: string | null): string | null {
+  if (!header) return null;
+
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (encoded) return decodeURIComponent(encoded[1]);
+
+  const plain = /filename="?([^";]+)"?/i.exec(header);
+  return plain ? plain[1] : null;
+}

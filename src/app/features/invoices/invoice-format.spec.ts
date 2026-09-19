@@ -2,6 +2,7 @@ import { CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, InvoiceLine, PendingLine } from '../../core/models/invoice.model';
 import {
   creditOverrun,
+  filenameFromContentDisposition,
   isCancellable,
   lineNetAmount,
   previewTotals,
@@ -86,5 +87,22 @@ describe('invoice format', () => {
     expect(isCancellable({ ...validated, status: 'CANCELLED' })).toBe(false);
     expect(isCancellable({ ...validated, paidAmount: 1000 })).toBe(false);
     expect(isCancellable({ ...validated, deliveryStatus: 'PARTIALLY_DELIVERED' })).toBe(false);
+  });
+
+  describe('filenameFromContentDisposition', () => {
+    it('decodes the RFC 5987 form the backend sends', () => {
+      expect(filenameFromContentDisposition("inline; filename*=UTF-8''FAC-COT-2026-00001.pdf")).toBe(
+        'FAC-COT-2026-00001.pdf',
+      );
+    });
+
+    it('falls back to a plain filename parameter', () => {
+      expect(filenameFromContentDisposition('attachment; filename="devis.pdf"')).toBe('devis.pdf');
+    });
+
+    it('gives null when there is nothing to read', () => {
+      expect(filenameFromContentDisposition(null)).toBeNull();
+      expect(filenameFromContentDisposition('inline')).toBeNull();
+    });
   });
 });

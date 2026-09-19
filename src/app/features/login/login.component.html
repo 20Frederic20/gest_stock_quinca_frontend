@@ -1,37 +1,83 @@
 <main class="page">
-  <div class="card">
-    <div class="brand">
-      <img class="logo" src="/images/logo.jpeg" alt="Quincaillerie Le Chantier" width="72" height="72" />
-      <div class="brand-name">Quincaillerie Le Chantier</div>
-      <div class="brand-subtitle">Gestion de stock</div>
+  <aside class="panel">
+    <div class="panel-brand">
+      <img class="logo" src="/images/logo.jpeg" alt="Logo TRINITY JJP" width="58" height="58" />
+      <div>
+        <div class="brand-name">TRINITY JJP</div>
+        <div class="brand-tagline">Tout pour bâtir</div>
+      </div>
     </div>
 
-    <h1>Connexion</h1>
+    <div class="pitch">
+      <p class="headline">Votre stock, vos ventes, <em>vos livraisons.</em></p>
+      <p class="lede">L'espace de gestion de la quincaillerie : un seul outil pour suivre le stock, facturer et livrer.</p>
 
-    @if (startupError()) {
-      <p class="notice" role="status">{{ startupError() }}</p>
-    }
+      <ul class="features">
+        <li>
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z" /><path d="M3 8v8l9 5 9-5V8" /></svg>
+          </span>
+          Stock en temps réel, agence par agence
+        </li>
+        <li>
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l4 4v16H6z" /><path d="M9 12h7M9 16h7M9 8h3" /></svg>
+          </span>
+          Factures, paiements et encaissements
+        </li>
+        <li>
+          <span class="ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 6h13v10H1zM14 10h5l3 3v3h-8z" /><circle cx="6" cy="18" r="2" /><circle cx="18" cy="18" r="2" /></svg>
+          </span>
+          Livraisons et clôture de journée
+        </li>
+      </ul>
+    </div>
 
-    <form [formGroup]="form" (ngSubmit)="submit()">
-      @if (formError()) {
-        <p class="form-error" role="alert">{{ formError() }}</p>
+    <div class="band" aria-hidden="true">
+      <img src="/images/home/hero.jpg" alt="" />
+    </div>
+  </aside>
+
+  <section class="access">
+    <a class="back" routerLink="/">← Retour au site</a>
+
+    <div class="form-wrap">
+      <h1>Connexion</h1>
+      <p class="hello">Bon retour. Entrez vos identifiants pour continuer.</p>
+
+      @if (startupError()) {
+        <p class="notice" role="status">{{ startupError() }}</p>
       }
 
-      <div class="field">
-        <label for="username">Identifiant</label>
-        <input id="username" formControlName="username" autocomplete="username" autocapitalize="none" spellcheck="false" />
-        <app-field-error [control]="form.controls.username" />
-      </div>
+      <form [formGroup]="form" (ngSubmit)="submit()">
+        @if (formError()) {
+          <p class="form-error" role="alert">{{ formError() }}</p>
+        }
 
-      <div class="field">
-        <label for="password">Mot de passe</label>
-        <input id="password" type="password" formControlName="password" autocomplete="current-password" />
-        <app-field-error [control]="form.controls.password" />
-      </div>
+        <div class="field">
+          <label for="username">Identifiant</label>
+          <input id="username" formControlName="username" autocomplete="username" autocapitalize="none" spellcheck="false" />
+          <app-field-error [control]="form.controls.username" />
+        </div>
 
-      <button type="submit" class="btn btn-primary submit" [disabled]="submitting()">
-        {{ submitting() ? 'Connexion…' : 'Se connecter' }}
-      </button>
-    </form>
-  </div>
+        <div class="field">
+          <div class="label-row">
+            <label for="password">Mot de passe</label>
+            <button type="button" class="toggle" (click)="togglePassword()" [attr.aria-pressed]="showPassword()" aria-controls="password">
+              {{ showPassword() ? 'Masquer' : 'Afficher' }}
+            </button>
+          </div>
+          <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password" autocomplete="current-password" />
+          <app-field-error [control]="form.controls.password" />
+        </div>
+
+        <button type="submit" class="btn btn-primary submit" [disabled]="submitting()">
+          {{ submitting() ? 'Connexion…' : 'Se connecter' }}
+        </button>
+      </form>
+    </div>
+
+    <p class="foot">© 2026 TRINITY JJP · Calavi, Kanssoukpa</p>
+  </section>
 </main>

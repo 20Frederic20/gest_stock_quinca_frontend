@@ -31,6 +31,29 @@ describe('InvoicesService', () => {
     expect(httpTesting.expectOne('/api/v1/invoices/i1').request.method).toBe('GET');
   });
 
+  it('gets the PDF, named after what the backend suggests', () => {
+    let result: { blob: Blob; filename: string } | undefined;
+    service.getPdf('i1').subscribe(pdf => (result = pdf));
+
+    const req = httpTesting.expectOne('/api/v1/invoices/i1/pdf');
+    expect(req.request.responseType).toBe('blob');
+
+    const pdf = new Blob(['%PDF'], { type: 'application/pdf' });
+    req.flush(pdf, { headers: { 'Content-Disposition': "inline; filename*=UTF-8''FAC-COT-2026-00001.pdf" } });
+
+    expect(result?.blob).toBe(pdf);
+    expect(result?.filename).toBe('FAC-COT-2026-00001.pdf');
+  });
+
+  it('falls back to the document id as a filename when the header is missing', () => {
+    let result: { blob: Blob; filename: string } | undefined;
+    service.getPdf('i1').subscribe(pdf => (result = pdf));
+
+    httpTesting.expectOne('/api/v1/invoices/i1/pdf').flush(new Blob(['%PDF'], { type: 'application/pdf' }));
+
+    expect(result?.filename).toBe('i1.pdf');
+  });
+
   it('creates a document with its lines and its transport in one call', () => {
     const body = {
       customerId: 'c1',

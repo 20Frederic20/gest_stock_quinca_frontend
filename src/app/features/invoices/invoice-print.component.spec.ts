@@ -3,31 +3,14 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
 import { errorInterceptor } from '../../core/http/error.interceptor';
-import { Agency } from '../../core/models/agency.model';
-import { Customer } from '../../core/models/customer.model';
-import { Invoice } from '../../core/models/invoice.model';
 import { InvoicePrintComponent } from './invoice-print.component';
-
-const at = '2026-09-15T08:00:00';
-const invoice = {
-  id: 'i1', number: 'FAC-COT-2026-00001', type: 'INVOICE', status: 'VALIDATED', documentDate: '2026-09-15', dueDate: null,
-  grossAmount: 50000, discountAmount: 0, netAmount: 50000, vatAmount: 9000, totalAmount: 59000, creditMode: false,
-  cancellationReason: null, customerId: 'c1', agencyId: 'g1', userName: 'Awa Dossou', createdAt: at,
-  lines: [{
-    id: 'l1', articleCode: 'CIM-32R', designation: 'Ciment CIM II 32.5R', unitLabel: 'Sac', quantity: 10,
-    unitPrice: 5000, discountRate: 0, netAmount: 50000,
-  }],
-} as unknown as Invoice;
-const agency: Agency = {
-  id: 'g1', code: 'COT', label: 'Cotonou — Siège', address: 'Rue 12, Akpakpa', phone: '+229 21 00 00 00',
-  taxId: '3201800000001', active: true, createdAt: at, updatedAt: at,
-};
-const customer = { id: 'c1', code: 'CLI-001', name: 'Bâtiments Houngbo', address: null, phone: null, taxId: null } as Customer;
 
 describe('InvoicePrintComponent', () => {
   let httpTesting: HttpTestingController;
+  let createObjectUrl: ReturnType<typeof vi.spyOn>;
+  let revokeObjectUrl: ReturnType<typeof vi.spyOn>;
 
-  function setup(document: Invoice = invoice) {
+  function setup() {
     TestBed.configureTestingModule({
       providers: [provideRouter([]), provideHttpClient(withInterceptors([errorInterceptor])), provideHttpClientTesting()],
     });
@@ -38,66 +21,77 @@ describe('InvoicePrintComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
-    const load = () => {
-      httpTesting.expectOne('/api/v1/invoices/i1').flush(document);
-      httpTesting.expectOne('/api/v1/agencies/g1').flush(agency);
-      httpTesting.expectOne('/api/v1/customers/c1').flush(customer);
+    const flushPdf = (headers: Record<string, string> = { 'Content-Disposition': "inline; filename*=UTF-8''FAC-COT-2026-00001.pdf" }) => {
+      const pdf = new Blob(['%PDF-1.4 …'], { type: 'application/pdf' });
+      httpTesting.expectOne('/api/v1/invoices/i1/pdf').flush(pdf, { headers });
       fixture.detectChanges();
     };
 
-    return { component: fixture.componentInstance, element, fixture, load };
+    return { component: fixture.componentInstance, element, fixture, flushPdf };
   }
 
-  afterEach(() => httpTesting.verify());
-
-  it('prints the transport charges in the totals', () => {
-    const { element, load } = setup({ ...invoice, transportAmount: 5000, totalAmount: 64000 });
-    load();
-    const totals = element.querySelector('.totals')?.textContent?.replace(/\s+/g, ' ') ?? '';
-
-    expect(totals).toContain('Transport');
-    expect(totals).toContain('5 000');
+  beforeEach(() => {
+    createObjectUrl = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:mock-url');
+    revokeObjectUrl = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
   });
 
-  it('lays out the seller, the customer, the lines and the totals', () => {
-    const { element, load } = setup();
-    load();
-    const text = element.textContent?.replace(/\s+/g, ' ') ?? '';
-
-    expect(text).toContain('Cotonou — Siège');
-    expect(text).toContain('IFU 3201800000001');
-    expect(text).toContain('N° FAC-COT-2026-00001');
-    expect(text).toContain('Bâtiments Houngbo');
-    expect(text).toContain('CIM-32R — Ciment CIM II 32.5R');
-    expect(element.querySelector('.banner')).toBeNull();
+  afterEach(() => {
+    httpTesting.verify();
+    createObjectUrl.mockRestore();
+    revokeObjectUrl.mockRestore();
   });
 
-  it('marks a draft so that it is not taken for a real invoice', () => {
-    const { element, load } = setup({ ...invoice, status: 'DRAFT' });
-    load();
+  it('shows a loading message while the PDF is generated', () => {
+    const { element } = setup();
 
-    expect(element.querySelector('.banner')?.textContent).toContain('Brouillon');
+    expect(element.textContent).toContain('Génération du PDF');
   });
 
-  it('prints through the browser', () => {
-    const { component, load } = setup();
-    load();
-    const print = vi.spyOn(window, 'print').mockImplementation(() => undefined);
+  it('shows the real backend PDF in an embedded viewer once it arrives', () => {
+    const { element, flushPdf } = setup();
 
-    component.print();
+    flushPdf();
 
-    expect(print).toHaveBeenCalledTimes(1);
+    expect(createObjectUrl).toHaveBeenCalledTimes(1);
+    const frame = element.querySelector('iframe.pdf-frame');
+    expect(frame?.getAttribute('src')).toBe('blob:mock-url');
   });
 
-  it('shows the error when the document cannot be loaded', () => {
+  it('shows the error when the PDF cannot be generated', () => {
     const { component } = setup();
 
-    httpTesting.expectOne('/api/v1/invoices/i1').flush(
-      { status: 404, message: 'Document introuvable', fieldErrors: null },
+    httpTesting.expectOne('/api/v1/invoices/i1/pdf').flush(
+      new Blob([JSON.stringify({ message: 'Document introuvable', fieldErrors: null })], { type: 'application/json' }),
       { status: 404, statusText: 'Not Found' },
     );
 
     expect(component.error()).toBe('Document introuvable');
-    expect(component.data()).toBeNull();
+    expect(component.pdfUrl()).toBeNull();
+  });
+
+  it('names the download after the file the backend suggested', () => {
+    const { component, flushPdf } = setup();
+    flushPdf();
+
+    const link = { href: '', download: '', click: vi.fn() } as unknown as HTMLAnchorElement;
+    const createElement = vi.spyOn(document, 'createElement').mockReturnValue(link);
+
+    component.download();
+
+    expect(link.href).toBe('blob:mock-url');
+    expect(link.download).toBe('FAC-COT-2026-00001.pdf');
+    expect(link.click).toHaveBeenCalledTimes(1);
+    createElement.mockRestore();
+  });
+
+  it('revokes the blob URL once a new document is loaded, so nothing piles up unused', () => {
+    const { fixture, flushPdf } = setup();
+    flushPdf();
+
+    fixture.componentRef.setInput('id', 'i2');
+    fixture.detectChanges();
+    httpTesting.expectOne('/api/v1/invoices/i2/pdf').flush(new Blob(['%PDF'], { type: 'application/pdf' }));
+
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:mock-url');
   });
 });

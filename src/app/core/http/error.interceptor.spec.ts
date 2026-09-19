@@ -70,4 +70,17 @@ describe('errorInterceptor', () => {
       fieldErrors: {},
     });
   });
+
+  it('reads the backend message back out when a blob request fails, e.g. a PDF download', async () => {
+    const result = firstValueFrom(http.get('/api/v1/invoices/i1/pdf', { responseType: 'blob' }));
+
+    // With `responseType: 'blob'`, the browser hands back the error body as a Blob too,
+    // whatever the server actually sent: the JSON has to be read back out of it.
+    const body = new Blob([JSON.stringify({ message: 'Document introuvable', fieldErrors: null })], {
+      type: 'application/json',
+    });
+    httpTesting.expectOne('/api/v1/invoices/i1/pdf').flush(body, { status: 404, statusText: 'Not Found' });
+
+    await expect(result).rejects.toEqual({ status: 404, message: 'Document introuvable', fieldErrors: {} });
+  });
 });

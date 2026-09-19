@@ -115,4 +115,35 @@ describe('LoginComponent', () => {
     expect(component.submitting()).toBe(false);
     expect(navigate).not.toHaveBeenCalled();
   });
+
+  it('offers a way back to the public site', () => {
+    const { element } = setup();
+
+    const back = element.querySelector<HTMLAnchorElement>('a.back');
+
+    expect(back?.getAttribute('href')).toBe('/');
+  });
+
+  it('shows the TRINITY JJP brand', () => {
+    const { element } = setup();
+
+    expect(element.querySelector('.brand-name')?.textContent?.trim()).toBe('TRINITY JJP');
+  });
+
+  it('shows and hides the password on demand', async () => {
+    const { fixture, element } = setup();
+    const input = element.querySelector<HTMLInputElement>('#password')!;
+    const toggle = element.querySelector<HTMLButtonElement>('button.toggle')!;
+    expect(input.type).toBe('password');
+
+    toggle.click();
+    await fixture.whenStable();
+    expect(input.type).toBe('text');
+    expect(toggle.textContent?.trim()).toBe('Masquer');
+
+    toggle.click();
+    await fixture.whenStable();
+    expect(input.type).toBe('password');
+    expect(toggle.textContent?.trim()).toBe('Afficher');
+  });
 });

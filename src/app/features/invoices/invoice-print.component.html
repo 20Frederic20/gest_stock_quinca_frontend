@@ -1,110 +1,12 @@
 <div class="toolbar">
   <a class="btn" [routerLink]="['/invoices', id()]">← Retour au document</a>
-  <button type="button" class="btn btn-primary" [disabled]="!data()" (click)="print()">Imprimer</button>
+  <button type="button" class="btn btn-primary" [disabled]="!pdfUrl()" (click)="download()">Télécharger le PDF</button>
 </div>
 
 @if (error()) {
   <p class="error" role="alert">{{ error() }}</p>
-} @else if (data(); as d) {
-  <article class="sheet">
-    <header class="top">
-      <div class="seller">
-        <h1>{{ d.agency.label }}</h1>
-        @if (d.agency.address) {
-          <p>{{ d.agency.address }}</p>
-        }
-        @if (d.agency.phone) {
-          <p>Tél. {{ d.agency.phone }}</p>
-        }
-        @if (d.agency.taxId) {
-          <p>IFU {{ d.agency.taxId }}</p>
-        }
-      </div>
-
-      <div class="doc">
-        <h2>{{ typeLabels[d.invoice.type] }}</h2>
-        <p class="number">N° {{ d.invoice.number }}</p>
-        <p>Date : {{ formatDate(d.invoice.documentDate) }}</p>
-        @if (d.invoice.dueDate) {
-          <p>Échéance : {{ formatDate(d.invoice.dueDate) }}</p>
-        }
-        <p>Règlement : {{ d.invoice.creditMode ? 'à crédit' : 'comptant' }}</p>
-      </div>
-    </header>
-
-    @if (d.invoice.status === 'DRAFT') {
-      <p class="banner">Brouillon — document non validé</p>
-    }
-    @if (d.invoice.status === 'CANCELLED') {
-      <p class="banner">Document annulé{{ d.invoice.cancellationReason ? ' — ' + d.invoice.cancellationReason : '' }}</p>
-    }
-
-    <section class="buyer">
-      <p class="label">Client</p>
-      <p><strong>{{ d.customer.name }}</strong></p>
-      <p>Code {{ d.customer.code }}</p>
-      @if (d.customer.address) {
-        <p>{{ d.customer.address }}</p>
-      }
-      @if (d.customer.phone) {
-        <p>Tél. {{ d.customer.phone }}</p>
-      }
-      @if (d.customer.taxId) {
-        <p>IFU {{ d.customer.taxId }}</p>
-      }
-    </section>
-
-    <table class="table lines">
-      <thead>
-        <tr>
-          <th>Désignation</th>
-          <th>Unité</th>
-          <th class="number">Qté</th>
-          <th class="number">Prix unitaire</th>
-          <th class="number">Remise</th>
-          <th class="number">Montant HT</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (line of d.invoice.lines; track line.id) {
-          <tr>
-            <td>{{ line.articleCode }} — {{ line.designation }}</td>
-            <td>{{ line.unitLabel }}</td>
-            <td class="number">{{ formatNumber(line.quantity) }}</td>
-            <td class="number">{{ formatMoney(line.unitPrice) }}</td>
-            <td class="number">{{ line.discountRate > 0 ? formatNumber(line.discountRate) + ' %' : '—' }}</td>
-            <td class="number">{{ formatMoney(line.netAmount) }}</td>
-          </tr>
-        }
-      </tbody>
-    </table>
-
-    <dl class="totals">
-      <dt>Total brut</dt>
-      <dd>{{ formatMoney(d.invoice.grossAmount) }}</dd>
-
-      @if (d.invoice.discountAmount > 0) {
-        <dt>Remise</dt>
-        <dd>− {{ formatMoney(d.invoice.discountAmount) }}</dd>
-      }
-
-      <dt>Total HT</dt>
-      <dd>{{ formatMoney(d.invoice.netAmount) }}</dd>
-
-      <dt>TVA</dt>
-      <dd>{{ formatMoney(d.invoice.vatAmount) }}</dd>
-
-      @if (d.invoice.transportAmount > 0) {
-        <dt>Transport</dt>
-        <dd>{{ formatMoney(d.invoice.transportAmount) }}</dd>
-      }
-
-      <dt class="grand">Total TTC</dt>
-      <dd class="grand">{{ formatMoney(d.invoice.totalAmount) }}</dd>
-    </dl>
-
-    <footer class="foot">Établi par {{ d.invoice.userName }} le {{ formatDate(d.invoice.createdAt) }}.</footer>
-  </article>
-} @else {
-  <p class="loading text-muted">Chargement…</p>
+} @else if (loading()) {
+  <p class="loading text-muted">Génération du PDF…</p>
+} @else if (pdfUrl(); as url) {
+  <iframe class="pdf-frame" [src]="url" title="Document PDF"></iframe>
 }

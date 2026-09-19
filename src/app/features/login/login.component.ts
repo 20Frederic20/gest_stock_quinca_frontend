@@ -1,6 +1,6 @@
 import { Component, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
@@ -12,7 +12,7 @@ function safeRedirect(url: string | undefined): string {
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, FieldErrorComponent],
+  imports: [ReactiveFormsModule, RouterLink, FieldErrorComponent],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
 })
@@ -25,6 +25,7 @@ export class LoginComponent {
   redirect = input<string | undefined>(undefined);
 
   submitting = signal(false);
+  showPassword = signal(false);
   formError = signal<string | null>(null);
   startupError = this.auth.startupError;
 
@@ -32,6 +33,10 @@ export class LoginComponent {
     username: ['', [Validators.required]],
     password: ['', [Validators.required]],
   });
+
+  togglePassword(): void {
+    this.showPassword.update(shown => !shown);
+  }
 
   submit(): void {
     if (this.form.invalid) {

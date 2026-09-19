@@ -1,7 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { map } from 'rxjs';
 import { Invoice, InvoiceCreateRequest, InvoiceLineRequest } from '../../core/models/invoice.model';
 import { PageResponse } from '../../core/models/page.model';
+import { filenameFromContentDisposition } from './invoice-format';
+
+/** A document's PDF, with the filename the backend suggests for the download. */
+export interface InvoicePdf {
+  blob: Blob;
+  filename: string;
+}
 
 /**
  * Calls to the backend InvoiceController. Every change to a document answers with the whole document,
@@ -24,6 +32,20 @@ export class InvoicesService {
 
   getById(id: string) {
     return this.http.get<Invoice>(`${this.url}/invoices/${id}`);
+  }
+
+  /** The document (invoice, quote or proforma) as a PDF, rendered by the backend itself. */
+  getPdf(id: string) {
+    return this.http
+      .get(`${this.url}/invoices/${id}/pdf`, { responseType: 'blob', observe: 'response' })
+      .pipe(
+        map(
+          (response): InvoicePdf => ({
+            blob: response.body as Blob,
+            filename: filenameFromContentDisposition(response.headers.get('Content-Disposition')) ?? `${id}.pdf`,
+          }),
+        ),
+      );
   }
 
   /** Creates an empty draft; its number is given right away. */
