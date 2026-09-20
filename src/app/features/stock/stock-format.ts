@@ -16,3 +16,11 @@ export function formatDateTime(iso: string | null): string {
   if (!iso) return '—';
   return `${formatDate(iso)} ${iso.slice(11, 16)}`;
 }
+
+/** Today as "yyyy-MM-dd", from local date parts so it matches the user's own day, not UTC's. */
+export function todayIso(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}

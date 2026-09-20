@@ -4,7 +4,7 @@ import { AgencyContextService } from '../../core/agency/agency-context.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { PageInfo, toPageInfo } from '../../core/models/page.model';
-import { MOVEMENT_TYPE_LABELS, StockMovement } from '../../core/models/stock.model';
+import { ArticleMovementStats, MOVEMENT_TYPE_LABELS, StockMovement } from '../../core/models/stock.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
 import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
@@ -14,14 +14,18 @@ import { StateViewComponent } from '../../shared/state-view/state-view.component
 import { formatNumber } from '../articles/article-format';
 import { searchArticleOptions } from '../articles/article-options';
 import { ArticlesService } from '../articles/articles.service';
-import { formatDateTime, formatSignedQuantity } from '../stock/stock-format';
+import { formatDateTime, formatQuantity, formatSignedQuantity, todayIso } from '../stock/stock-format';
 import { StockService } from '../stock/stock.service';
 import { MovementDetailComponent } from './movement-detail.component';
 import { ReversalFormComponent } from './reversal-form.component';
 
 type DrawerMode = 'detail' | 'reversal';
+type Tab = 'stats' | 'list';
 
-/** Stock > Mouvements: the history of one agency, newest first, the user's own by default. */
+/**
+ * Stock > Mouvements: the daily report. Lands on the per-article summary of the period
+ * (stats tab); clicking an article drills into its movements (list tab, same period).
+ */
 @Component({
   selector: 'app-movement-list',
   imports: [
@@ -54,11 +58,20 @@ export class MovementListComponent implements OnInit {
   /** Reversal: in one's own agency for a manager, anywhere for an administrator. */
   canAct = computed(() => this.auth.can('stock.act', this.agencyId()));
 
+  tab = signal<Tab>('stats');
+  /** "yyyy-MM-dd". Alone, dateFrom means that single day; both mean the whole period. */
+  dateFrom = signal(todayIso());
+  dateTo = signal('');
+
   movements = signal<StockMovement[]>([]);
   pageInfo = signal<PageInfo | null>(null);
   loading = signal(false);
   error = signal<string | null>(null);
   notice = signal<string | null>(null);
+
+  stats = signal<ArticleMovementStats[]>([]);
+  statsLoading = signal(false);
+  statsError = signal<string | null>(null);
 
   /** Movements cancelled by a reversal visible on this page. A reversal on another page is only known by the backend. */
   private reversedIds = computed(
@@ -66,8 +79,9 @@ export class MovementListComponent implements OnInit {
   );
 
   emptyMessage = computed(() =>
-    this.articleFilter() ? 'Aucun mouvement pour cet article dans cette agence.' : 'Aucun mouvement dans cette agence.',
+    this.articleFilter() ? 'Aucun mouvement pour cet article sur cette période.' : 'Aucun mouvement sur cette période.',
   );
+  statsEmptyMessage = 'Aucun article n’a bougé sur cette période.';
 
   drawerOpen = signal(false);
   drawerMode = signal<DrawerMode>('detail');
@@ -79,10 +93,12 @@ export class MovementListComponent implements OnInit {
 
   protected typeLabels = MOVEMENT_TYPE_LABELS;
   protected formatDateTime = formatDateTime;
+  protected formatQuantity = formatQuantity;
   protected formatNumber = formatNumber;
   protected formatSignedQuantity = formatSignedQuantity;
 
   private request?: Subscription;
+  private statsRequest?: Subscription;
   /** So a change this page made itself isn't reloaded a second time by the effect below. */
   private knownAgencyId: string;
 
@@ -96,12 +112,24 @@ export class MovementListComponent implements OnInit {
       const id = this.agencyId();
       if (id === this.knownAgencyId) return;
       this.knownAgencyId = id;
-      untracked(() => this.load(0));
+      untracked(() => this.reloadActiveTab(0));
     });
   }
 
   ngOnInit(): void {
-    this.load(0);
+    this.loadStats();
+  }
+
+  /** Switches tab, loading it the first time (or after a filter change) since it's shown. */
+  showTab(tab: Tab): void {
+    this.tab.set(tab);
+    if (tab === 'stats') this.loadStats();
+    else this.load(0);
+  }
+
+  private reloadActiveTab(page = 0): void {
+    if (this.tab() === 'stats') this.loadStats();
+    else this.load(page);
   }
 
   load(page = 0): void {
@@ -111,7 +139,12 @@ export class MovementListComponent implements OnInit {
     this.error.set(null);
 
     this.request = this.service
-      .getMovements(this.agencyId(), { articleId: this.articleFilter()?.id, page })
+      .getMovements(this.agencyId(), {
+        articleId: this.articleFilter()?.id,
+        startDate: this.dateFrom(),
+        endDate: this.dateTo() || undefined,
+        page,
+      })
       .subscribe({
         next: response => {
           this.movements.set(response.content);
@@ -125,17 +158,63 @@ export class MovementListComponent implements OnInit {
       });
   }
 
+  loadStats(): void {
+    this.statsRequest?.unsubscribe();
+    this.statsLoading.set(true);
+    this.statsError.set(null);
+
+    this.statsRequest = this.service
+      .getMovementStats(this.agencyId(), { startDate: this.dateFrom(), endDate: this.dateTo() || undefined })
+      .subscribe({
+        next: rows => {
+          this.stats.set(rows);
+          this.statsLoading.set(false);
+        },
+        error: (error: ApiError) => {
+          this.statsError.set(error.message);
+          this.statsLoading.set(false);
+        },
+      });
+  }
+
   onAgencySelected(option: SelectOption | null): void {
     if (!option) return;
     this.knownAgencyId = option.id;
     this.agencyContext.select(option.id);
     this.closeDrawer();
     this.notice.set(null);
-    this.load(0);
+    this.reloadActiveTab(0);
   }
 
   onArticleFilter(option: SelectOption | null): void {
     this.articleFilter.set(option);
+    this.load(0);
+  }
+
+  onDateFromChange(value: string): void {
+    this.dateFrom.set(value);
+    // The period can't end before it starts: widening dateFrom past dateTo drops dateTo instead of erroring.
+    if (this.dateTo() && this.dateTo() < value) this.dateTo.set('');
+    this.reloadActiveTab(0);
+  }
+
+  onDateToChange(value: string): void {
+    this.dateTo.set(value);
+    this.reloadActiveTab(0);
+  }
+
+  /** Back to today, no article, no end date — same defaults as landing on the page. */
+  resetFilters(): void {
+    this.articleFilter.set(null);
+    this.dateFrom.set(todayIso());
+    this.dateTo.set('');
+    this.reloadActiveTab(0);
+  }
+
+  /** A row of the stats tab: drills into that article's movements, same agency and period. */
+  openArticleStats(row: ArticleMovementStats): void {
+    this.articleFilter.set({ id: row.articleId, label: `${row.articleCode} — ${row.articleDesignation}` });
+    this.tab.set('list');
     this.load(0);
   }
 

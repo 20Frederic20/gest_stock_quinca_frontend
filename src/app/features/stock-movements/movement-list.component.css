@@ -1,3 +1,32 @@
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-divider);
+  margin-bottom: var(--space-4);
+}
+
+.tabs button {
+  font: inherit;
+  font-size: 13px;
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  cursor: pointer;
+}
+
+.tabs button:hover {
+  color: var(--color-text);
+}
+
+/* The open tab carries the accent, so the eye knows where it is. */
+.tabs button.active {
+  color: var(--color-text);
+  font-weight: 600;
+  border-bottom-color: var(--color-accent);
+}
+
 .toolbar {
   display: flex;
   align-items: center;

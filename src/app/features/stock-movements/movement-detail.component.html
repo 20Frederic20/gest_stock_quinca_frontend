@@ -26,7 +26,15 @@
   <dd>{{ m.reason || '—' }}</dd>
 
   <dt>Pièce</dt>
-  <dd>{{ m.documentType ? m.documentType + ' ' + m.documentId : '—' }}</dd>
+  <dd>
+    @if (documentClickable()) {
+      <button type="button" class="link-btn" [disabled]="navigatingDocument()" (click)="goToDocument()">
+        {{ m.documentType }} {{ m.documentId }}
+      </button>
+    } @else {
+      {{ m.documentType ? m.documentType + ' ' + m.documentId : '—' }}
+    }
+  </dd>
 </dl>
 
 @if (m.type === 'REVERSAL') {

@@ -28,7 +28,7 @@ const cement: Article = {
 
 const valid = {
   code: 'FER-12', barcode: '', designation: 'Fer à béton 12 mm', alertThreshold: 50,
-  vatRate: 18, familyId: 'f1', stockUnitId: 'u2',
+  vatRate: 18, familyId: 'f1', stockUnitId: 'u2', price: 5000,
 };
 
 describe('ArticleFormComponent', () => {
@@ -61,7 +61,7 @@ describe('ArticleFormComponent', () => {
     const { component } = setup(null);
 
     expect(component.form.getRawValue()).toEqual({
-      code: '', barcode: '', designation: '', alertThreshold: 0, vatRate: 18, familyId: '', stockUnitId: '',
+      code: '', barcode: '', designation: '', alertThreshold: 0, vatRate: 18, familyId: '', stockUnitId: '', price: 0,
     });
     expect(component.form.valid).toBe(false);
   });
@@ -71,7 +71,7 @@ describe('ArticleFormComponent', () => {
 
     expect(component.form.getRawValue()).toEqual({
       code: 'CIM-32R', barcode: '6181100234567', designation: 'Ciment CIM II 32.5R',
-      alertThreshold: 2000, vatRate: 18, familyId: 'f2', stockUnitId: 'u1',
+      alertThreshold: 2000, vatRate: 18, familyId: 'f2', stockUnitId: 'u1', price: 0,
     });
     expect(component.familyLabel()).toBe('Ciment et liants');
     expect(component.unitLabel()).toBe('KG — Kilogramme');

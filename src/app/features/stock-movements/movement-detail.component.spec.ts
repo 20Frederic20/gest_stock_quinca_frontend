@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Router, provideRouter } from '@angular/router';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { StockMovement } from '../../core/models/stock.model';
 import { MovementDetailComponent } from './movement-detail.component';
@@ -15,6 +16,9 @@ const reversal: StockMovement = {
   ...count, id: 'm2', type: 'REVERSAL', quantity: -8400, resultingQuantity: 0, reason: 'Saisie en double',
   reversedMovementId: 'm1', movementDate: '2026-09-15T09:02:00',
 };
+const transferMovement: StockMovement = { ...count, id: 'm3', documentType: 'TRANSFER', documentId: 't1' };
+const receiptMovement: StockMovement = { ...count, id: 'm4', documentType: 'RECEIPT', documentId: 'r1' };
+const deliveryMovement: StockMovement = { ...count, id: 'm5', documentType: 'DELIVERY', documentId: 'd1' };
 
 const plain = (text: string | null | undefined) => text?.replace(/\s+/g, ' ').trim();
 
@@ -23,9 +27,14 @@ describe('MovementDetailComponent', () => {
 
   function setup(movement: StockMovement, options: { canReverse?: boolean; alreadyReversed?: boolean } = {}) {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(withInterceptors([errorInterceptor])), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(withInterceptors([errorInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+      ],
     });
     httpTesting = TestBed.inject(HttpTestingController);
+    const navigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
 
     const fixture = TestBed.createComponent(MovementDetailComponent);
     fixture.componentRef.setInput('movement', movement);
@@ -41,8 +50,9 @@ describe('MovementDetailComponent', () => {
     const value = (term: string) =>
       plain([...element.querySelectorAll('dt')].find(dt => dt.textContent?.trim() === term)?.nextElementSibling?.textContent);
     const buttons = () => [...element.querySelectorAll<HTMLButtonElement>('.actions button')];
+    const documentLink = () => element.querySelector<HTMLButtonElement>('.link-btn');
 
-    return { element, render, value, buttons, reverseRequested };
+    return { element, render, value, buttons, documentLink, reverseRequested, navigateSpy };
   }
 
   /** The movement has no unit: it is read on the article. */
@@ -107,5 +117,35 @@ describe('MovementDetailComponent', () => {
     render();
 
     expect(value('Quantité')).toBe('+8 400');
+  });
+
+  it('shows the piece as a link for a transfer, and opens it directly', () => {
+    const { render, value, documentLink, navigateSpy } = setup(transferMovement);
+    flushUnit();
+    render();
+
+    expect(value('Pièce')).toBe('TRANSFER t1');
+    documentLink()!.click();
+    expect(navigateSpy).toHaveBeenCalledWith(['/transfers', 't1']);
+  });
+
+  it('shows the piece as a link for a reception, and opens its purchase order once resolved', () => {
+    const { render, documentLink, navigateSpy } = setup(receiptMovement);
+    flushUnit();
+    render();
+
+    documentLink()!.click();
+    httpTesting.expectOne('/api/v1/receptions/r1').flush({ id: 'r1', purchaseOrderId: 'o1' });
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/purchase-orders', 'o1']);
+  });
+
+  it('keeps the piece as plain text for a delivery: no by-id endpoint to resolve it yet', () => {
+    const { render, value, documentLink } = setup(deliveryMovement);
+    flushUnit();
+    render();
+
+    expect(value('Pièce')).toBe('DELIVERY d1');
+    expect(documentLink()).toBeNull();
   });
 });

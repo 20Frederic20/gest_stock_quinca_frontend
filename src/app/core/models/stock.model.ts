@@ -59,6 +59,26 @@ export interface StockMovement {
   userName: string;
 }
 
+/**
+ * One article's movement summary over a chosen period: the daily stock-movement report's
+ * landing view. Only articles that moved at least once in the period are returned.
+ */
+export interface ArticleMovementStats {
+  articleId: string;
+  articleCode: string;
+  articleDesignation: string;
+  unitLabel: string;
+  /** Sum of positive movements over the period. */
+  totalIn: number;
+  /** Sum of negative movements over the period, as a positive number. */
+  totalOut: number;
+  /** totalIn − totalOut, signed. */
+  net: number;
+  movementCount: number;
+  /** The article's stock right now, shown as a reference point next to the period's totals. */
+  currentStock: number;
+}
+
 /** Inventory: the counted quantity is typed, the backend computes the difference. The user comes from the session. */
 export interface StockAdjustmentRequest {
   articleId: string;

@@ -68,6 +68,29 @@ describe('StockService', () => {
     one.flush(emptyPage);
   });
 
+  it('filters movements by a single day or a period', () => {
+    service.getMovements('g1', { startDate: '2026-09-20' }).subscribe();
+    const day = httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements');
+    expect(day.request.params.get('startDate')).toBe('2026-09-20');
+    expect(day.request.params.has('endDate')).toBe(false);
+    day.flush(emptyPage);
+
+    service.getMovements('g1', { startDate: '2026-09-01', endDate: '2026-09-20' }).subscribe();
+    const period = httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements');
+    expect(period.request.params.get('startDate')).toBe('2026-09-01');
+    expect(period.request.params.get('endDate')).toBe('2026-09-20');
+    period.flush(emptyPage);
+  });
+
+  it('gets the per-article movement stats of a period', () => {
+    service.getMovementStats('g1', { startDate: '2026-09-20' }).subscribe();
+
+    const req = httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements/stats');
+    expect(req.request.params.get('startDate')).toBe('2026-09-20');
+    expect(req.request.params.has('endDate')).toBe(false);
+    req.flush([]);
+  });
+
   it('records an inventory count', () => {
     const body = { articleId: 'a1', countedQuantity: 132, reason: 'Inventaire de septembre' };
     service.adjust('g1', body).subscribe();

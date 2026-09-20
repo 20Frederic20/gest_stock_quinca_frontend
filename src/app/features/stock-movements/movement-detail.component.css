@@ -33,3 +33,18 @@
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-divider);
 }
+
+.link-btn {
+  font: inherit;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
