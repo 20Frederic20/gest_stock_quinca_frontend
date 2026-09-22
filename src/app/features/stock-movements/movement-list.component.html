@@ -1,25 +1,6 @@
 <app-page-header
   heading="Mouvements de stock"
-  subtitle="Résumé par article ou historique détaillé, sur la période choisie." />
-
-<div class="tabs" role="tablist">
-  <button
-    type="button"
-    role="tab"
-    [class.active]="tab() === 'stats'"
-    [attr.aria-selected]="tab() === 'stats'"
-    (click)="showTab('stats')">
-    Résumé par article
-  </button>
-  <button
-    type="button"
-    role="tab"
-    [class.active]="tab() === 'list'"
-    [attr.aria-selected]="tab() === 'list'"
-    (click)="showTab('list')">
-    Liste des mouvements
-  </button>
-</div>
+  subtitle="Historique des mouvements, filtrable par article et par période." />
 
 <div class="toolbar">
   <div class="filter">
@@ -50,18 +31,16 @@
       (change)="onDateToChange($any($event.target).value)" />
   </div>
 
-  @if (tab() === 'list') {
-    <div class="filter">
-      <span class="toolbar-label">Article</span>
-      <app-select-search
-        [remoteSearch]="searchArticles"
-        [value]="articleFilter()?.id ?? null"
-        [label]="articleFilter()?.label ?? ''"
-        placeholder="Tous les articles"
-        [allowEmpty]="true"
-        (selected)="onArticleFilter($event)" />
-    </div>
-  }
+  <div class="filter">
+    <span class="toolbar-label">Article</span>
+    <app-select-search
+      [remoteSearch]="searchArticles"
+      [value]="articleFilter()?.id ?? null"
+      [label]="articleFilter()?.label ?? ''"
+      placeholder="Tous les articles"
+      [allowEmpty]="true"
+      (selected)="onArticleFilter($event)" />
+  </div>
 
   <button type="button" class="btn btn-ghost" (click)="resetFilters()">Réinitialiser les filtres</button>
 </div>
@@ -73,92 +52,54 @@
   </div>
 }
 
-@if (tab() === 'stats') {
-  <app-state-view
-    [loading]="statsLoading()"
-    [error]="statsError()"
-    [empty]="stats().length === 0"
-    [emptyMessage]="statsEmptyMessage"
-    (retry)="loadStats()" />
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="movements().length === 0"
+  [emptyMessage]="emptyMessage()"
+  (retry)="load(pageInfo()?.page ?? 0)" />
 
-  @if (!statsLoading() && !statsError() && stats().length > 0) {
-    <div class="table-scroll">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Article</th>
-            <th class="number">Entrées</th>
-            <th class="number">Sorties</th>
-            <th class="number">Net</th>
-            <th class="number">Opérations</th>
-            <th class="number">Stock actuel</th>
+@if (!loading() && !error() && movements().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Article</th>
+          <th>Type</th>
+          <th class="number">Quantité</th>
+          <th class="number">Stock après</th>
+          <th>Par</th>
+          <th>Motif</th>
+          <th><span class="visually-hidden">État</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (movement of movements(); track movement.id) {
+          <tr
+            [class.selected]="selectedMovement()?.id === movement.id"
+            [class.reversed]="isReversed(movement)"
+            (click)="openDetail(movement)">
+            <td class="nowrap">{{ formatDateTime(movement.movementDate) }}</td>
+            <td>{{ movement.articleDesignation }}</td>
+            <td class="nowrap">{{ typeLabels[movement.type] }}</td>
+            <td class="number" [class.negative]="movement.quantity < 0">{{ formatSignedQuantity(movement.quantity, '') }}</td>
+            <td class="number">{{ formatNumber(movement.resultingQuantity) }}</td>
+            <td class="nowrap">{{ movement.userName }}</td>
+            <td class="reason">{{ movement.reason || '—' }}</td>
+            <td>
+              @if (isReversed(movement)) {
+                <app-badge text="Annulé" tone="muted" />
+              }
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          @for (row of stats(); track row.articleId) {
-            <tr (click)="openArticleStats(row)">
-              <td>{{ row.articleCode }} — {{ row.articleDesignation }}</td>
-              <td class="number">{{ formatQuantity(row.totalIn, row.unitLabel) }}</td>
-              <td class="number">{{ formatQuantity(row.totalOut, row.unitLabel) }}</td>
-              <td class="number" [class.negative]="row.net < 0">{{ formatSignedQuantity(row.net, row.unitLabel) }}</td>
-              <td class="number">{{ row.movementCount }}</td>
-              <td class="number">{{ formatQuantity(row.currentStock, row.unitLabel) }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
-} @else {
-  <app-state-view
-    [loading]="loading()"
-    [error]="error()"
-    [empty]="movements().length === 0"
-    [emptyMessage]="emptyMessage()"
-    (retry)="load(pageInfo()?.page ?? 0)" />
-
-  @if (!loading() && !error() && movements().length > 0) {
-    <div class="table-scroll">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Article</th>
-            <th>Type</th>
-            <th class="number">Quantité</th>
-            <th class="number">Stock après</th>
-            <th>Par</th>
-            <th>Motif</th>
-            <th><span class="visually-hidden">État</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (movement of movements(); track movement.id) {
-            <tr
-              [class.selected]="selectedMovement()?.id === movement.id"
-              [class.reversed]="isReversed(movement)"
-              (click)="openDetail(movement)">
-              <td class="nowrap">{{ formatDateTime(movement.movementDate) }}</td>
-              <td>{{ movement.articleDesignation }}</td>
-              <td class="nowrap">{{ typeLabels[movement.type] }}</td>
-              <td class="number" [class.negative]="movement.quantity < 0">{{ formatSignedQuantity(movement.quantity, '') }}</td>
-              <td class="number">{{ formatNumber(movement.resultingQuantity) }}</td>
-              <td class="nowrap">{{ movement.userName }}</td>
-              <td class="reason">{{ movement.reason || '—' }}</td>
-              <td>
-                @if (isReversed(movement)) {
-                  <app-badge text="Annulé" tone="muted" />
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  }
-
-  <app-pagination [info]="pageInfo()" itemsLabel="mouvements" (pageChange)="load($event)" />
+        }
+      </tbody>
+    </table>
+  </div>
 }
+
+<app-pagination [info]="pageInfo()" itemsLabel="mouvements" (pageChange)="load($event)" />
 
 <app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" width="640px" (closed)="closeDrawer()">
   @if (drawerOpen()) {

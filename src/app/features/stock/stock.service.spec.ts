@@ -82,15 +82,6 @@ describe('StockService', () => {
     period.flush(emptyPage);
   });
 
-  it('gets the per-article movement stats of a period', () => {
-    service.getMovementStats('g1', { startDate: '2026-09-20' }).subscribe();
-
-    const req = httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/stock-movements/stats');
-    expect(req.request.params.get('startDate')).toBe('2026-09-20');
-    expect(req.request.params.has('endDate')).toBe(false);
-    req.flush([]);
-  });
-
   it('records an inventory count', () => {
     const body = { articleId: 'a1', countedQuantity: 132, reason: 'Inventaire de septembre' };
     service.adjust('g1', body).subscribe();

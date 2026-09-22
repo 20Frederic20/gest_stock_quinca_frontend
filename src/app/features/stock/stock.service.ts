@@ -3,7 +3,6 @@ import { Injectable, inject } from '@angular/core';
 import { PageResponse } from '../../core/models/page.model';
 import {
   AgencyStock,
-  ArticleMovementStats,
   ReversalRequest,
   StockAdjustmentRequest,
   StockMovement,
@@ -55,18 +54,6 @@ export class StockService {
     if (options.startDate) params['startDate'] = options.startDate;
     if (options.endDate) params['endDate'] = options.endDate;
     return this.http.get<PageResponse<StockMovement>>(`${this.url}/agencies/${agencyId}/stock-movements`, { params });
-  }
-
-  /**
-   * Per-article totals over a period: the report's landing view. Only articles that moved
-   * are returned. startDate is required; endDate alone widens it to a period.
-   */
-  getMovementStats(agencyId: string, options: { startDate: string; endDate?: string }) {
-    const params: Record<string, string> = { startDate: options.startDate };
-    if (options.endDate) params['endDate'] = options.endDate;
-    return this.http.get<ArticleMovementStats[]>(`${this.url}/agencies/${agencyId}/stock-movements/stats`, {
-      params,
-    });
   }
 
   /** Inventory count: the backend records the difference with the current stock as an ADJUSTMENT. */

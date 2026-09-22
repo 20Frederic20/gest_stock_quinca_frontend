@@ -12,6 +12,8 @@ import { Component, input, output } from '@angular/core';
 export class DrawerComponent {
   open = input(false);
   heading = input('');
+  /** Overrides the panel's default width (e.g. '640px') for screens that need more room. */
+  width = input<string | null>(null);
   closed = output<void>();
 
   onEscape(): void {
