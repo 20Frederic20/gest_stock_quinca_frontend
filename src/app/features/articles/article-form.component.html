@@ -15,11 +15,37 @@
     <app-field-error [control]="form.controls.designation" [serverError]="fieldErrors()['designation']" />
   </div>
 
+  <!-- CHAMP CODE-BARRES MODIFIÉ -->
   <div class="field">
     <label for="barcode">Code-barres <span class="optional">(facultatif)</span></label>
-    <input id="barcode" formControlName="barcode" maxlength="50" autocomplete="off" />
+
+    <div class="barcode-row" style="display: flex; gap: 8px; align-items: center;">
+      <input id="barcode" formControlName="barcode" maxlength="50" autocomplete="off" style="flex-grow: 1;" />
+
+      <!-- Bouton pour démarrer/arrêter la caméra -->
+      <button type="button" class="btn" (click)="toggleScanner()">
+        {{ isScanning() ? 'Arrêter' : 'Scanner' }}
+      </button>
+    </div>
+
     <app-field-error [control]="form.controls.barcode" [serverError]="fieldErrors()['barcode']" />
+
+    <!-- Composant Scanner qui apparaît seulement si isScanning est vrai -->
+    @if (isScanning()) {
+      <div class="scanner-container" style="margin-top: 15px; max-width: 300px;">
+        <!-- On limite les formats aux codes-barres courants pour accélérer la détection -->
+        <zxing-scanner
+          [formats]="allowedFormats"
+          (scanSuccess)="onBarcodeScanned($event)"
+          style="width: 100%; border: 1px solid #ccc; border-radius: 4px;"
+        ></zxing-scanner>
+        <p class="hint" style="margin-top: 5px; text-align: center;">
+          Visez le code-barres avec la caméra...
+        </p>
+      </div>
+    }
   </div>
+  <!-- FIN DES MODIFICATIONS CODE-BARRES -->
 
   <div class="field">
     <label>Famille</label>
