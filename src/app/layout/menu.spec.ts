@@ -34,6 +34,16 @@ describe('visibleMenu', () => {
 
     expect(dayClosing?.permission).toBe('dayClosing.access');
   });
+
+  it('reserves the achats screens to managers and administrators, hidden from a seller', () => {
+    const achats = MENU.find(g => g.title === 'Achats')!;
+
+    expect(achats.items.map(i => i.permission)).toEqual([
+      'purchases.write',
+      'purchases.write',
+      'suppliers.write',
+    ]);
+  });
 });
 
 describe('MENU', () => {

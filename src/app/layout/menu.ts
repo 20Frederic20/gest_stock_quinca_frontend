@@ -33,9 +33,9 @@ export const MENU: MenuGroup[] = [
     { label: 'Historique',          route: '/sales-history', ready: false },
   ]},
   { title: 'Achats', items: [
-    { label: 'Commandes fournisseurs', route: '/purchase-orders', ready: true },
-    { label: 'Réceptions',             route: '/receptions',      ready: true },
-    { label: 'Fournisseurs',           route: '/suppliers',       ready: true },
+    { label: 'Commandes fournisseurs', route: '/purchase-orders', ready: true, permission: 'purchases.write' },
+    { label: 'Réceptions',             route: '/receptions',      ready: true, permission: 'purchases.write' },
+    { label: 'Fournisseurs',           route: '/suppliers',       ready: true, permission: 'suppliers.write' },
   ]},
   { title: 'Stock', items: [
     { label: 'État du stock', route: '/stock',           ready: true },

@@ -96,21 +96,25 @@ export const routes: Routes = [
       { path: 'sales-history',   component: ComingSoonComponent, data: { title: 'Historique des ventes' } },
       {
         path: 'purchase-orders',
+        canActivate: [permissionGuard('purchases.write')],
         loadComponent: () =>
           import('./features/purchases/purchase-order-list.component').then(m => m.PurchaseOrderListComponent),
       },
       {
         path: 'purchase-orders/:id',
+        canActivate: [permissionGuard('purchases.write')],
         loadComponent: () =>
           import('./features/purchases/purchase-order-page.component').then(m => m.PurchaseOrderPageComponent),
       },
       {
         path: 'receptions',
+        canActivate: [permissionGuard('purchases.write')],
         loadComponent: () =>
           import('./features/purchases/reception-list.component').then(m => m.ReceptionListComponent),
       },
       {
         path: 'suppliers',
+        canActivate: [permissionGuard('suppliers.write')],
         loadComponent: () =>
           import('./features/suppliers/supplier-list.component').then(m => m.SupplierListComponent),
       },
@@ -144,9 +148,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/day-closing/day-closing.component').then(m => m.DayClosingComponent),
       },
-      { path: 'reports',         component: ComingSoonComponent, data: { title: 'Rapports et exports' } },
+      {
+        path: 'reports',
+        canActivate: [permissionGuard('agencies.write')],
+        component: ComingSoonComponent,
+        data: { title: 'Rapports et exports' },
+      },
       {
         path: 'agencies',
+        canActivate: [permissionGuard('agencies.write')],
         loadComponent: () =>
           import('./features/agencies/agency-list.component').then(m => m.AgencyListComponent),
       },
@@ -155,8 +165,18 @@ export const routes: Routes = [
         canActivate: [permissionGuard('users.manage')],
         loadComponent: () => import('./features/users/user-list.component').then(m => m.UserListComponent),
       },
-      { path: 'roles',           component: ComingSoonComponent, data: { title: 'Rôles et permissions' } },
-      { path: 'audit-log',       component: ComingSoonComponent, data: { title: "Journal d'audit" } },
+      {
+        path: 'roles',
+        canActivate: [permissionGuard('agencies.write')],
+        component: ComingSoonComponent,
+        data: { title: 'Rôles et permissions' },
+      },
+      {
+        path: 'audit-log',
+        canActivate: [permissionGuard('agencies.write')],
+        component: ComingSoonComponent,
+        data: { title: "Journal d'audit" },
+      },
 
       { path: '**', component: ComingSoonComponent, data: { title: 'Page introuvable' } },
     ],
