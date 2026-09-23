@@ -45,6 +45,12 @@ describe('visibleMenu', () => {
     ]);
   });
 
+  it('reserves the sales history to the administrator only', () => {
+    const historique = MENU.flatMap(g => g.items).find(i => i.route === '/sales-history');
+
+    expect(historique?.permission).toBe('agencies.write');
+  });
+
   it('reserves administration and analyse to the administrator only, users management included', () => {
     const analyse = MENU.find(g => g.title === 'Analyse')!;
     const administration = MENU.find(g => g.title === 'Administration')!;

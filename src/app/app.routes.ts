@@ -93,7 +93,12 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/deliveries/delivery-list.component').then(m => m.DeliveryListComponent),
       },
-      { path: 'sales-history',   component: ComingSoonComponent, data: { title: 'Historique des ventes' } },
+      {
+        path: 'sales-history',
+        canActivate: [permissionGuard('agencies.write')],
+        component: ComingSoonComponent,
+        data: { title: 'Historique des ventes' },
+      },
       {
         path: 'purchase-orders',
         canActivate: [permissionGuard('purchases.write')],

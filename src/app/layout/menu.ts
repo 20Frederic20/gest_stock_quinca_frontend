@@ -30,7 +30,7 @@ export const MENU: MenuGroup[] = [
     { label: 'Factures',            route: '/invoices',      ready: true },
     { label: 'Livraisons',          route: '/deliveries',    ready: true },
     { label: 'Clients et créances', route: '/customers',     ready: true },
-    { label: 'Historique',          route: '/sales-history', ready: false },
+    { label: 'Historique',          route: '/sales-history', ready: false, permission: 'agencies.write' },
   ]},
   { title: 'Achats', items: [
     { label: 'Commandes fournisseurs', route: '/purchase-orders', ready: true, permission: 'purchases.write' },
