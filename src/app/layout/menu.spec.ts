@@ -44,6 +44,19 @@ describe('visibleMenu', () => {
       'suppliers.write',
     ]);
   });
+
+  it('reserves administration and analyse to the administrator only, users management included', () => {
+    const analyse = MENU.find(g => g.title === 'Analyse')!;
+    const administration = MENU.find(g => g.title === 'Administration')!;
+
+    expect(analyse.items.map(i => i.permission)).toEqual(['agencies.write']);
+    expect(administration.items.map(i => i.permission)).toEqual([
+      'agencies.write',
+      'users.manage',
+      'agencies.write',
+      'agencies.write',
+    ]);
+  });
 });
 
 describe('MENU', () => {

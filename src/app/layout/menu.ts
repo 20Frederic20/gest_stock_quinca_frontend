@@ -54,12 +54,12 @@ export const MENU: MenuGroup[] = [
     { label: 'Clôture de journée', route: '/day-closing', ready: true, permission: 'dayClosing.access' },
   ]},
   { title: 'Analyse', items: [
-    { label: 'Rapports et exports', route: '/reports', ready: false },
+    { label: 'Rapports et exports', route: '/reports', ready: false, permission: 'agencies.write' },
   ]},
   { title: 'Administration', items: [
-    { label: 'Agences',              route: '/agencies',  ready: true },
-    { label: 'Utilisateurs',         route: '/users',     ready: true, permission: 'users.manage' },
-    { label: 'Rôles et permissions', route: '/roles',     ready: false },
-    { label: "Journal d'audit",      route: '/audit-log', ready: false },
+    { label: 'Agences',              route: '/agencies',  ready: true,  permission: 'agencies.write' },
+    { label: 'Utilisateurs',         route: '/users',     ready: true,  permission: 'users.manage' },
+    { label: 'Rôles et permissions', route: '/roles',     ready: false, permission: 'agencies.write' },
+    { label: "Journal d'audit",      route: '/audit-log', ready: false, permission: 'agencies.write' },
   ]},
 ];

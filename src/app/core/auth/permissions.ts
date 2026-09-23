@@ -17,6 +17,7 @@ export const PERMISSIONS_ENABLED = new InjectionToken<boolean>('PERMISSIONS_ENAB
  */
 export type Permission =
   | 'referential.write'
+  /** Also gates the wider Administration/Analyse menu screens that have no permission of their own yet. */
   | 'agencies.write'
   | 'users.manage'
   /** Register a new customer. */
