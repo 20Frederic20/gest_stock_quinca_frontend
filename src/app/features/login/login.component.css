@@ -165,23 +165,38 @@ h1 {
   color: color-mix(in srgb, var(--color-text) 55%, transparent);
 }
 
-.label-row {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+.password-field {
+  position: relative;
 }
 
-.toggle {
+.password-field input {
+  width: 100%;
+  padding-right: 36px;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 0;
   background: none;
-  font: 400 12px var(--font-body);
-  color: var(--color-accent-2-700);
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
   cursor: pointer;
 }
 
-.toggle:hover {
-  text-decoration: underline;
+.password-toggle:hover {
+  color: var(--color-text);
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .notice {

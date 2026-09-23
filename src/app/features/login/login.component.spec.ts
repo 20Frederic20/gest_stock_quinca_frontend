@@ -133,17 +133,17 @@ describe('LoginComponent', () => {
   it('shows and hides the password on demand', async () => {
     const { fixture, element } = setup();
     const input = element.querySelector<HTMLInputElement>('#password')!;
-    const toggle = element.querySelector<HTMLButtonElement>('button.toggle')!;
+    const toggle = element.querySelector<HTMLButtonElement>('button.password-toggle')!;
     expect(input.type).toBe('password');
 
     toggle.click();
     await fixture.whenStable();
     expect(input.type).toBe('text');
-    expect(toggle.textContent?.trim()).toBe('Masquer');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
 
     toggle.click();
     await fixture.whenStable();
     expect(input.type).toBe('password');
-    expect(toggle.textContent?.trim()).toBe('Afficher');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
   });
 });

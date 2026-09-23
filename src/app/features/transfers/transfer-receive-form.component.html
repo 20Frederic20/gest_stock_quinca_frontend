@@ -1,4 +1,4 @@
-<form (ngSubmit)="submit()">
+<form [formGroup]="quantities" (ngSubmit)="submit()">
   <p class="intro">
     Réception du transfert <strong>{{ transferNumber() }}</strong><br />
     Les quantités proposées sont celles qui ont été expédiées. Réduisez ce qui n’est pas arrivé.
@@ -8,7 +8,7 @@
     <p class="form-error">{{ formError() }}</p>
   }
 
-  <div class="table-scroll" [formGroup]="quantities">
+  <div class="table-scroll">
     <table class="table">
       <thead>
         <tr>
