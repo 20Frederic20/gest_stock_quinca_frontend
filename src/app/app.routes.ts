@@ -172,18 +172,18 @@ export const routes: Routes = [
         canActivate: [permissionGuard('users.manage')],
         loadComponent: () => import('./features/users/user-list.component').then(m => m.UserListComponent),
       },
-      {
-        path: 'roles',
-        canActivate: [permissionGuard('agencies.write')],
-        component: ComingSoonComponent,
-        data: { title: 'Rôles et permissions' },
-      },
-      {
-        path: 'audit-log',
-        canActivate: [permissionGuard('agencies.write')],
-        component: ComingSoonComponent,
-        data: { title: "Journal d'audit" },
-      },
+      // {
+      //   path: 'roles',
+      //   canActivate: [permissionGuard('agencies.write')],
+      //   component: ComingSoonComponent,
+      //   data: { title: 'Rôles et permissions' },
+      // },
+      // {
+      //   path: 'audit-log',
+      //   canActivate: [permissionGuard('agencies.write')],
+      //   component: ComingSoonComponent,
+      //   data: { title: "Journal d'audit" },
+      // },
 
       { path: '**', component: ComingSoonComponent, data: { title: 'Page introuvable' } },
     ],
