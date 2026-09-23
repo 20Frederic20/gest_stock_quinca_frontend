@@ -60,6 +60,8 @@ export type Permission =
   | 'transfer.ship'
   /** `agencyId` = the requesting agency, where the stock arrives. */
   | 'transfer.receive'
+  /** See the transfers screen at all. Not a seller or cashier job, for now the same for both. */
+  | 'transfer.view'
   /**
    * Open, count and close the till of an agency. A seller sells, but does not hold the
    * cash drawer: only the cashier, the manager and the admin see this screen at all.
@@ -79,6 +81,7 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'suppliers.write':
     case 'purchases.write':
     case 'sales.cancel':
+    case 'transfer.view':
       return isManager;
     case 'customers.create':
     case 'sales.write':

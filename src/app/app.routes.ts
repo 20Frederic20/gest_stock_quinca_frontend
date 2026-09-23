@@ -134,11 +134,13 @@ export const routes: Routes = [
       },
       {
         path: 'transfers',
+        canActivate: [permissionGuard('transfer.view')],
         loadComponent: () =>
           import('./features/transfers/transfer-list.component').then(m => m.TransferListComponent),
       },
       {
         path: 'transfers/:id',
+        canActivate: [permissionGuard('transfer.view')],
         loadComponent: () =>
           import('./features/transfers/transfer-page.component').then(m => m.TransferPageComponent),
       },

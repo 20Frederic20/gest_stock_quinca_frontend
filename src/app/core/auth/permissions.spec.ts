@@ -130,6 +130,13 @@ describe('can', () => {
     expect(can(manager, 'transfer.receive', OTHER)).toBe(false);
   });
 
+  it('keeps the transfers screen for a manager or an administrator, seller and cashier treated the same for now', () => {
+    expect(can(admin, 'transfer.view')).toBe(true);
+    expect(can(manager, 'transfer.view')).toBe(true);
+    expect(can(seller, 'transfer.view')).toBe(false);
+    expect(can(cashier, 'transfer.view')).toBe(false);
+  });
+
   it('refuses an agency-bound action when no agency is given', () => {
     expect(can(manager, 'stock.act')).toBe(false);
   });

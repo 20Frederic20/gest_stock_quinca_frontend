@@ -45,6 +45,12 @@ describe('visibleMenu', () => {
     ]);
   });
 
+  it('reserves the transfers screen to managers and administrators, hidden from a seller or cashier', () => {
+    const transferts = MENU.flatMap(g => g.items).find(i => i.route === '/transfers');
+
+    expect(transferts?.permission).toBe('transfer.view');
+  });
+
   it('reserves the sales history to the administrator only', () => {
     const historique = MENU.flatMap(g => g.items).find(i => i.route === '/sales-history');
 
