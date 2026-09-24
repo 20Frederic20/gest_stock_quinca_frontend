@@ -10,13 +10,13 @@
           step="any"
           aria-label="Frais de transport"
           [formControl]="field" />
-        <button type="button" class="btn btn-primary" [disabled]="saving()" (click)="save()">OK</button>
-        <button type="button" class="btn" (click)="cancelEdit()">Annuler</button>
+        <button type="button" class="btn btn-primary icon-confirm" [disabled]="saving()" (click)="save()">OK</button>
+        <button type="button" class="btn icon-cancel" (click)="cancelEdit()">Annuler</button>
       </span>
     } @else {
       {{ amount() > 0 ? formatMoney(amount()) : '—' }}
       @if (editable()) {
-        <button type="button" class="btn btn-ghost" (click)="edit()">Modifier</button>
+        <button type="button" class="btn btn-ghost icon-edit" (click)="edit()">Modifier</button>
       }
     }
   </dd>

@@ -4,7 +4,7 @@
     <p class="subtitle text-muted">Les grilles tarifaires. Celle par défaut s’applique aux clients sans privilège.</p>
   </div>
   @if (canWrite()) {
-    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau privilège</button>
+    <button type="button" class="btn btn-primary icon-add" (click)="openCreate()">Nouveau privilège</button>
   }
 </div>
 
@@ -49,7 +49,7 @@
             }
             <button
               type="button"
-              class="btn btn-ghost btn-danger"
+              class="btn btn-ghost btn-danger icon-delete"
               [disabled]="privilege.isDefault"
               [attr.title]="privilege.isDefault ? 'Définissez d’abord un autre privilège par défaut' : null"
               (click)="askDelete(privilege, $event)">

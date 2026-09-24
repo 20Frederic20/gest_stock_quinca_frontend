@@ -51,11 +51,11 @@
             @if (editable()) {
               <td class="row-actions">
                 @if (editingId() === line.id) {
-                  <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="save(line)">OK</button>
-                  <button type="button" class="btn" (click)="cancelEdit()">Annuler</button>
+                  <button type="button" class="btn btn-primary icon-confirm" [disabled]="busy()" (click)="save(line)">OK</button>
+                  <button type="button" class="btn icon-cancel" (click)="cancelEdit()">Annuler</button>
                 } @else {
-                  <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="edit(line)">Modifier</button>
-                  <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="remove(line)">Retirer</button>
+                  <button type="button" class="btn btn-ghost icon-edit" [disabled]="busy()" (click)="edit(line)">Modifier</button>
+                  <button type="button" class="btn btn-ghost icon-delete" [disabled]="busy()" (click)="remove(line)">Retirer</button>
                 }
               </td>
             }

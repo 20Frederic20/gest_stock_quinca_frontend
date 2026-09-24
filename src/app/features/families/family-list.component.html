@@ -34,7 +34,7 @@
           <td class="text-muted">{{ row.family.parentLabel ?? '—' }}</td>
           <td class="actions-column">
             @if (canWrite()) {
-              <button type="button" class="btn btn-ghost btn-danger" (click)="askDelete(row.family, $event)">
+              <button type="button" class="btn btn-ghost btn-danger icon-delete" (click)="askDelete(row.family, $event)">
                 Supprimer
               </button>
             }

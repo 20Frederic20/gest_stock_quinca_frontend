@@ -74,15 +74,15 @@
             (click)="askSend()">
             {{ sending() ? 'Envoi…' : 'Envoyer' }}
           </button>
-          <button type="button" class="btn btn-danger" (click)="askDelete()">Supprimer le brouillon</button>
+          <button type="button" class="btn btn-danger icon-delete" (click)="askDelete()">Supprimer le brouillon</button>
         }
         @if (receivable()) {
           <button type="button" class="btn btn-primary" (click)="openReceive()">Réceptionner</button>
         }
         @if (cancellable()) {
-          <button type="button" class="btn btn-danger" (click)="openCancel()">Annuler le transfert</button>
+          <button type="button" class="btn btn-danger icon-cancel" (click)="openCancel()">Annuler le transfert</button>
         }
-        <a class="btn" [routerLink]="['/transfers', tr.id, 'print']" target="_blank">Bon de transfert (PDF)</a>
+        <a class="btn icon-document" [routerLink]="['/transfers', tr.id, 'print']" target="_blank">Bon de transfert (PDF)</a>
       </div>
     </aside>
   </div>

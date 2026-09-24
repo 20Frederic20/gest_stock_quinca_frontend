@@ -51,10 +51,8 @@
             <td class="number">{{ formatMoney(order.totalAmount) }}</td>
             <td><app-badge [text]="statusLabels[order.status]" [tone]="statusTones[order.status]" /></td>
             <td class="row-actions">
-              <button type="button" class="icon-btn" aria-label="Voir le contenu"
-                (click)="openPreview(order, $event)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-              </button>
+              <button type="button" class="btn btn-ghost icon-view"
+                (click)="openPreview(order, $event)">Voir</button>
             </td>
           </tr>
         }

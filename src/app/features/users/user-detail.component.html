@@ -27,11 +27,11 @@
 </dl>
 
 <div class="actions">
-  <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
-  <button type="button" class="btn" (click)="resetPassword.emit()">Réinitialiser le mot de passe</button>
+  <button type="button" class="btn btn-primary icon-edit" (click)="edit.emit()">Modifier</button>
+  <button type="button" class="btn icon-retry" (click)="resetPassword.emit()">Réinitialiser le mot de passe</button>
   @if (!isSelf()) {
     <button type="button" class="btn" (click)="toggleActive.emit()">{{ u.active ? 'Désactiver' : 'Activer' }}</button>
-    <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+    <button type="button" class="btn btn-danger icon-delete" (click)="delete.emit()">Supprimer</button>
   }
 </div>
 

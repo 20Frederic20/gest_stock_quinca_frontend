@@ -42,7 +42,7 @@
   <p class="hint">Le mouvement enregistré ne pourra pas être supprimé, seulement annulé depuis l’historique.</p>
 
   <div class="actions">
-    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="button" class="btn icon-cancel" (click)="cancelled.emit()">Annuler</button>
     <button type="submit" class="btn btn-primary" [disabled]="saving()">
       {{ saving() ? 'Enregistrement…' : 'Enregistrer l’inventaire' }}
     </button>

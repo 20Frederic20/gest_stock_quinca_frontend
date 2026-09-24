@@ -4,7 +4,7 @@
     <p class="subtitle text-muted">Un prix par grille tarifaire et par conditionnement, avec sa date de prise d’effet.</p>
   </div>
   @if (selectedPackaging() && canWrite()) {
-    <button type="button" class="btn btn-primary" (click)="openCreate()">Nouveau prix</button>
+    <button type="button" class="btn btn-primary icon-add" (click)="openCreate()">Nouveau prix</button>
   }
 </div>
 

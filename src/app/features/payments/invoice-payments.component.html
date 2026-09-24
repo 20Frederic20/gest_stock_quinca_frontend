@@ -2,7 +2,7 @@
   <div class="head">
     <h2>Règlements</h2>
     @if (payable()) {
-      <button type="button" class="btn btn-primary" (click)="openForm()">Encaisser</button>
+      <button type="button" class="btn btn-primary icon-cash" (click)="openForm()">Encaisser</button>
     }
   </div>
 
@@ -42,7 +42,7 @@
               @if (canCancelPayment()) {
                 <td class="row-actions">
                   @if (!payment.cancelled) {
-                    <button type="button" class="btn btn-ghost" (click)="openCancel(payment)">Annuler</button>
+                    <button type="button" class="btn btn-ghost icon-cancel" (click)="openCancel(payment)">Annuler</button>
                   }
                 </td>
               }

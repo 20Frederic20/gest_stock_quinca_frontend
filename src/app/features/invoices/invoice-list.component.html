@@ -58,24 +58,22 @@
             <td class="number">{{ formatMoney(invoice.totalAmount) }}</td>
             <td><app-badge [text]="statusLabels[invoice.status]" [tone]="statusTones[invoice.status]" /></td>
             <td class="row-actions">
-              <button type="button" class="icon-btn" aria-label="Voir le contenu"
-                (click)="openPreview(invoice, $event)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
-              </button>
+              <button type="button" class="btn btn-ghost icon-view"
+                (click)="openPreview(invoice, $event)">Voir</button>
               @if (canValidate(invoice)) {
-                <button type="button" class="btn btn-primary" [disabled]="busy()"
+                <button type="button" class="btn btn-primary icon-confirm" [disabled]="busy()"
                   (click)="askValidation(invoice); $event.stopPropagation()">Valider</button>
               }
               @if (canCollect(invoice)) {
-                <button type="button" class="btn btn-primary" [disabled]="busy()"
+                <button type="button" class="btn btn-primary icon-cash" [disabled]="busy()"
                   (click)="openPayment(invoice); $event.stopPropagation()">Encaisser</button>
               }
               @if (canDelete(invoice)) {
-                <button type="button" class="btn btn-ghost" [disabled]="busy()"
+                <button type="button" class="btn btn-ghost icon-delete" [disabled]="busy()"
                   (click)="askDelete(invoice); $event.stopPropagation()">Supprimer</button>
               }
               @if (canCancelDocument(invoice)) {
-                <button type="button" class="btn btn-ghost" [disabled]="busy()"
+                <button type="button" class="btn btn-ghost icon-cancel" [disabled]="busy()"
                   (click)="openCancel(invoice); $event.stopPropagation()">Annuler</button>
               }
             </td>

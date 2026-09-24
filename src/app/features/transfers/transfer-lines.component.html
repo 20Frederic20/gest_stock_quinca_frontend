@@ -30,7 +30,7 @@
             }
             @if (editable()) {
               <td class="row-actions">
-                <button type="button" class="btn btn-ghost" [disabled]="busy()" (click)="remove(line)">Retirer</button>
+                <button type="button" class="btn btn-ghost icon-delete" [disabled]="busy()" (click)="remove(line)">Retirer</button>
               </td>
             }
           </tr>

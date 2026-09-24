@@ -55,7 +55,7 @@
             @if (canCancelDelivery()) {
               <td class="row-actions">
                 @if (!delivery.cancelled) {
-                  <button type="button" class="btn btn-ghost" (click)="openCancel(delivery); $event.stopPropagation()">
+                  <button type="button" class="btn btn-ghost icon-cancel" (click)="openCancel(delivery); $event.stopPropagation()">
                     Annuler
                   </button>
                 }

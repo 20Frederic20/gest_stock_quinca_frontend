@@ -140,12 +140,12 @@
             {{ validating() ? 'Validation…' : 'Valider' }}
           </button>
         }
-        <a class="btn" [routerLink]="['/invoices', inv.id, 'print']">Imprimer</a>
+        <a class="btn icon-document" [routerLink]="['/invoices', inv.id, 'print']">Imprimer</a>
         @if (isDraft() && canCancel()) {
-          <button type="button" class="btn btn-danger" (click)="askDelete()">Supprimer le brouillon</button>
+          <button type="button" class="btn btn-danger icon-delete" (click)="askDelete()">Supprimer le brouillon</button>
         }
         @if (cancellable()) {
-          <button type="button" class="btn btn-danger" (click)="openCancel()">Annuler le document</button>
+          <button type="button" class="btn btn-danger icon-cancel" (click)="openCancel()">Annuler le document</button>
         }
       </div>
     </aside>

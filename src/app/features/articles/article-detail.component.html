@@ -34,8 +34,8 @@
 
 @if (canEdit()) {
   <div class="actions">
-    <button type="button" class="btn btn-primary" (click)="edit.emit()">Modifier</button>
+    <button type="button" class="btn btn-primary icon-edit" (click)="edit.emit()">Modifier</button>
     <button type="button" class="btn" (click)="toggleActive.emit()">{{ a.active ? 'Désactiver' : 'Activer' }}</button>
-    <button type="button" class="btn btn-danger" (click)="delete.emit()">Supprimer</button>
+    <button type="button" class="btn btn-danger icon-delete" (click)="delete.emit()">Supprimer</button>
   </div>
 }

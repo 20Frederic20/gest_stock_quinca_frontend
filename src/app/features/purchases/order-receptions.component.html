@@ -43,7 +43,7 @@
                 <app-badge [text]="statusLabels[reception.status]" [tone]="statusTones[reception.status]" />
               </td>
               <td class="documents">
-                <a class="btn btn-ghost" [routerLink]="['/receptions', reception.id, 'print']" target="_blank">
+                <a class="btn btn-ghost icon-document" [routerLink]="['/receptions', reception.id, 'print']" target="_blank">
                   Bon (PDF)
                 </a>
                 @if (reception.hasSupplierInvoice) {
@@ -66,11 +66,11 @@
               @if (canWrite()) {
                 <td class="row-actions">
                   @if (reception.status === 'DRAFT') {
-                    <button type="button" class="btn btn-primary" (click)="confirm(reception)">Confirmer</button>
-                    <button type="button" class="btn btn-ghost" (click)="askDelete(reception)">Supprimer</button>
+                    <button type="button" class="btn btn-primary icon-confirm" (click)="confirm(reception)">Confirmer</button>
+                    <button type="button" class="btn btn-ghost icon-delete" (click)="askDelete(reception)">Supprimer</button>
                   }
                   @if (reception.status === 'CONFIRMED') {
-                    <button type="button" class="btn btn-ghost" (click)="openCancel(reception)">Annuler</button>
+                    <button type="button" class="btn btn-ghost icon-cancel" (click)="openCancel(reception)">Annuler</button>
                   }
                 </td>
               }

@@ -107,7 +107,7 @@
                         <td class="number">{{ line.discountRate > 0 ? formatNumber(line.discountRate) + ' %' : '—' }}</td>
                         <td class="number">{{ formatMoney(lineNet(line)) }}</td>
                         <td class="row-actions">
-                          <button type="button" class="btn btn-ghost" (click)="removeLine($index)">Retirer</button>
+                          <button type="button" class="btn btn-ghost icon-delete" (click)="removeLine($index)">Retirer</button>
                         </td>
                       </tr>
                     }
@@ -162,7 +162,7 @@
         }
 
         <div class="actions">
-          <button type="button" class="btn" (click)="cancel()">Annuler</button>
+          <button type="button" class="btn icon-cancel" (click)="cancel()">Annuler</button>
           <button type="button" class="btn" [disabled]="saving()" (click)="submit()">
             {{ saving() ? 'Création…' : 'Créer le document' }}
           </button>

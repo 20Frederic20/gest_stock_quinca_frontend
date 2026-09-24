@@ -55,7 +55,7 @@
   </div>
 
   <div class="actions">
-    <button type="button" class="btn" (click)="cancelled.emit()">Retour</button>
+    <button type="button" class="btn icon-back" (click)="cancelled.emit()">Retour</button>
     <button type="submit" class="btn btn-primary" [disabled]="saving()">
       {{ saving() ? 'Sortie du stock…' : 'Livrer et sortir du stock' }}
     </button>

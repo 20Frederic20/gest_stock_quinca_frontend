@@ -20,7 +20,7 @@
         <span class="number">{{ delivery.number }}</span>
         <span class="text-muted">{{ formatDate(delivery.deliveryDate) }} · établi par {{ delivery.createdByName }}</span>
         @if (canCancelDelivery() && !delivery.cancelled) {
-          <button type="button" class="btn btn-ghost" (click)="openCancel(delivery)">Annuler</button>
+          <button type="button" class="btn btn-ghost icon-cancel" (click)="openCancel(delivery)">Annuler</button>
         }
       </div>
 

@@ -4,7 +4,7 @@
   } @else {
     <span></span>
   }
-  <button type="button" class="btn btn-primary" [disabled]="!pdfUrl()" (click)="download()">Télécharger le PDF</button>
+  <button type="button" class="btn btn-primary icon-document" [disabled]="!pdfUrl()" (click)="download()">Télécharger le PDF</button>
 </div>
 
 @if (error()) {

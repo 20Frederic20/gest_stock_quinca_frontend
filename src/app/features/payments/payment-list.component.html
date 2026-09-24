@@ -53,7 +53,7 @@
             @if (canCancelPayment()) {
               <td class="row-actions">
                 @if (!payment.cancelled) {
-                  <button type="button" class="btn btn-ghost" (click)="openCancel(payment); $event.stopPropagation()">
+                  <button type="button" class="btn btn-ghost icon-cancel" (click)="openCancel(payment); $event.stopPropagation()">
                     Annuler
                   </button>
                 }
