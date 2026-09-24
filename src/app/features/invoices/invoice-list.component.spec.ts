@@ -52,9 +52,9 @@ describe('InvoiceListComponent', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     const refresh = () => fixture.detectChanges();
-    /** The action buttons of one row, in order. */
+    /** The labelled action buttons of one row, in order (the icon-only preview button is separate). */
     const rowActions = (row = 0) =>
-      [...element.querySelectorAll('tbody tr')[row].querySelectorAll('.row-actions button')]
+      [...element.querySelectorAll('tbody tr')[row].querySelectorAll('.row-actions button:not(.icon-btn)')]
         .map(button => button.textContent?.trim());
 
     return { component: fixture.componentInstance, element, refresh, rowActions, navigate };
@@ -211,6 +211,21 @@ describe('InvoiceListComponent', () => {
     expect(component.collecting()).toBeNull();
     expect(component.invoices()[0].paidAmount).toBe(50000);
     expect(component.invoices()[0].remainingToPay).toBe(9000);
+  });
+
+  it('previews a document’s content in the drawer without leaving the list, already loaded', () => {
+    const { component, navigate } = setup();
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
+
+    const event = new Event('click');
+    const stopPropagation = vi.spyOn(event, 'stopPropagation');
+    component.openPreview(draft, event);
+
+    // No round trip: the invoice, lines included, was already in the list.
+    httpTesting.verify();
+    expect(stopPropagation).toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(component.previewing()).toBe(draft);
   });
 
   it('shows the error message when loading fails', () => {

@@ -7,12 +7,14 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { DocumentType, Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Privilege } from '../../core/models/privilege.model';
 import { Payment } from '../../core/models/payment.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
 import { paymentTermLabel } from '../customers/customer-detail.component';
 import { CustomersService } from '../customers/customers.service';
+import { PrivilegesService } from '../pricing/privileges.service';
 import { formatMoney } from '../pricing/price-rules';
 import { formatNumber } from '../articles/article-format';
 import { DrawerComponent } from '../../shared/drawer/drawer.component';
@@ -49,6 +51,7 @@ export class SaleStartComponent {
   private auth = inject(AuthService);
   private service = inject(InvoicesService);
   private customersService = inject(CustomersService);
+  private privilegesService = inject(PrivilegesService);
   private router = inject(Router);
 
   canCreate = computed(() => this.auth.can('sales.write'));
@@ -59,6 +62,12 @@ export class SaleStartComponent {
   customer = signal<SelectOption | null>(null);
   /** The customer itself: its price grid is what prices every line. */
   chosen = signal<Customer | null>(null);
+  /** Ticked for a sale to a customer with no account: cash only, name optional. */
+  otherCustomer = signal(false);
+  /** Price grid used for a walk-in sale, which has no customer of its own. */
+  defaultPrivilege = signal<Privilege | null>(null);
+  /** What prices a line: the chosen customer's grid, or the default one for a walk-in sale. */
+  activePrivilegeId = computed(() => this.chosen()?.privilegeId ?? this.defaultPrivilege()?.id ?? null);
   /** Lines being typed. They reach the backend only when the sale is created. */
   lines = signal<PendingLine[]>([]);
   /** Credit situation of the chosen customer: decides whether a credit sale is possible. */
@@ -75,6 +84,8 @@ export class SaleStartComponent {
 
   form = this.fb.nonNullable.group({
     customerId: ['', [Validators.required]],
+    // Only used for a walk-in sale (otherCustomer): free text, may be left blank.
+    walkInCustomerName: [''],
     type: [DEFAULT_TYPE, [Validators.required]],
     // Disabled until a customer allowed to credit is chosen.
     creditMode: [{ value: false, disabled: true }],
@@ -125,6 +136,43 @@ export class SaleStartComponent {
   /** Amount before VAT of one line, discount deducted. */
   lineNet(line: PendingLine): number {
     return line.quantity * line.unitPrice - (line.quantity * line.unitPrice * line.discountRate) / 100;
+  }
+
+  /**
+   * "Autre" : a sale to someone with no customer record. Cash only — there is no account to
+   * extend credit against — priced from the default grid ({@link Privilege.isDefault}) instead
+   * of a chosen customer's.
+   */
+  toggleOtherCustomer(checked: boolean): void {
+    this.otherCustomer.set(checked);
+    const { customerId, walkInCustomerName, creditMode } = this.form.controls;
+
+    if (checked) {
+      this.customer.set(null);
+      this.chosen.set(null);
+      this.credit.set(null);
+      this.creditError.set(null);
+      this.creditRequest?.unsubscribe();
+      this.customerRequest?.unsubscribe();
+      this.lines.set([]);
+      customerId.clearValidators();
+      customerId.setValue('');
+      creditMode.setValue(false);
+      creditMode.disable();
+
+      if (!this.defaultPrivilege()) {
+        this.privilegesService.getDefault().subscribe({
+          next: privilege => this.defaultPrivilege.set(privilege),
+          error: (error: ApiError) => this.formError.set(`Grille tarifaire par défaut indisponible : ${error.message}`),
+        });
+      }
+    } else {
+      walkInCustomerName.setValue('');
+      customerId.setValidators([Validators.required]);
+      this.defaultPrivilege.set(null);
+      this.lines.set([]);
+    }
+    customerId.updateValueAndValidity();
   }
 
   onCustomerSelected(option: SelectOption | null): void {
@@ -205,11 +253,13 @@ export class SaleStartComponent {
     this.formError.set(null);
     this.created.set(null);
 
-    const { customerId, type, creditMode, transportAmount } = this.form.getRawValue();
+    const { customerId, walkInCustomerName, type, creditMode, transportAmount } = this.form.getRawValue();
+    const otherCustomer = this.otherCustomer();
 
     this.service
       .create({
-        customerId,
+        customerId: otherCustomer ? null : customerId,
+        walkInCustomerName: otherCustomer ? walkInCustomerName || null : null,
         type,
         creditMode,
         transportAmount: transportAmount || 0,

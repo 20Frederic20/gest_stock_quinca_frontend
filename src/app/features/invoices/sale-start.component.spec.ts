@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Privilege } from '../../core/models/privilege.model';
 import { Payment } from '../../core/models/payment.model';
 import { SaleStartComponent } from './sale-start.component';
 
@@ -55,7 +56,7 @@ describe('SaleStartComponent', () => {
     const { component } = setup();
 
     expect(component.form.getRawValue()).toEqual({
-      customerId: '', type: 'INVOICE', creditMode: false, transportAmount: 0,
+      customerId: '', walkInCustomerName: '', type: 'INVOICE', creditMode: false, transportAmount: 0,
     });
     expect(component.typeLabel()).toBe('Facture');
     expect(component.form.controls.creditMode.disabled).toBe(true);
@@ -109,7 +110,7 @@ describe('SaleStartComponent', () => {
     const req = httpTesting.expectOne('/api/v1/invoices');
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({
-      customerId: 'c1', type: 'PROFORMA', creditMode: true, transportAmount: 0, lines: [],
+      customerId: 'c1', walkInCustomerName: null, type: 'PROFORMA', creditMode: true, transportAmount: 0, lines: [],
     });
     req.flush({ id: 'i1' });
     expect(navigate).toHaveBeenCalledWith(['/invoices', 'i1'], { replaceUrl: true });
@@ -127,6 +128,7 @@ describe('SaleStartComponent', () => {
     // Only the three fields the backend accepts per line: it prices the sale itself.
     expect(httpTesting.expectOne('/api/v1/invoices').request.body).toEqual({
       customerId: 'c1',
+      walkInCustomerName: null,
       type: 'INVOICE',
       creditMode: false,
       transportAmount: 5000,
@@ -236,5 +238,85 @@ describe('SaleStartComponent', () => {
     expect(component.saving()).toBe(false);
     expect(component.lines()).toEqual([cement]);
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  describe('walk-in customer ("Autre")', () => {
+    const defaultPrivilege: Privilege = { id: 'p9', label: 'Grand public', isDefault: true } as Privilege;
+
+    it('unblocks the articles from the default price grid, cash only, once toggled on', () => {
+      const { component } = setup();
+
+      component.toggleOtherCustomer(true);
+      httpTesting.expectOne('/api/v1/privileges/default').flush(defaultPrivilege);
+
+      expect(component.activePrivilegeId()).toBe('p9');
+      expect(component.form.controls.customerId.valid).toBe(true);
+      expect(component.form.controls.creditMode.disabled).toBe(true);
+    });
+
+    it('drops the chosen customer and its lines when switched to a walk-in sale', () => {
+      const { component } = setup();
+      chooseHoungbo(component, true);
+      component.addLine(cement);
+
+      component.toggleOtherCustomer(true);
+      httpTesting.expectOne('/api/v1/privileges/default').flush(defaultPrivilege);
+
+      expect(component.chosen()).toBeNull();
+      expect(component.lines()).toEqual([]);
+      expect(component.credit()).toBeNull();
+    });
+
+    it('restores the customer field, required again, when switched back off', () => {
+      const { component } = setup();
+
+      component.toggleOtherCustomer(true);
+      httpTesting.expectOne('/api/v1/privileges/default').flush(defaultPrivilege);
+      component.toggleOtherCustomer(false);
+
+      expect(component.activePrivilegeId()).toBeNull();
+      component.submit();
+      expect(component.form.controls.customerId.touched).toBe(true);
+      httpTesting.expectNone('/api/v1/invoices');
+    });
+
+    it('sends no customer, an optional name, and forces a cash sale', () => {
+      const { component, navigate } = setup();
+
+      component.toggleOtherCustomer(true);
+      httpTesting.expectOne('/api/v1/privileges/default').flush(defaultPrivilege);
+      component.form.controls.walkInCustomerName.setValue('Amina D.');
+      component.addLine(cement);
+
+      component.submit();
+
+      const req = httpTesting.expectOne('/api/v1/invoices');
+      expect(req.request.body).toEqual({
+        customerId: null,
+        walkInCustomerName: 'Amina D.',
+        type: 'INVOICE',
+        creditMode: false,
+        transportAmount: 0,
+        lines: [{ packagingId: 'k1', quantity: 10, discountRate: 0 }],
+      });
+      req.flush({ id: 'i9', customerId: null, customerName: 'Amina D.' });
+      expect(navigate).toHaveBeenCalledWith(['/invoices', 'i9'], { replaceUrl: true });
+    });
+
+    it('leaves the name empty when none is given', () => {
+      const { component } = setup();
+
+      component.toggleOtherCustomer(true);
+      httpTesting.expectOne('/api/v1/privileges/default').flush(defaultPrivilege);
+      component.addLine(cement);
+
+      component.submit();
+
+      const req = httpTesting.expectOne('/api/v1/invoices');
+      expect(req.request.body).toEqual(
+        expect.objectContaining({ customerId: null, walkInCustomerName: null }),
+      );
+      req.flush({ id: 'i9', customerId: null, customerName: 'Client de passage' });
+    });
   });
 });

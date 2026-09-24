@@ -5,6 +5,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { ApiError } from '../../core/http/api-error.model';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, PendingLine } from '../../core/models/invoice.model';
+import { Privilege } from '../../core/models/privilege.model';
 import { Delivery } from '../../core/models/delivery.model';
 import { Payment } from '../../core/models/payment.model';
 import { BadgeComponent } from '../../shared/badge/badge.component';
@@ -13,6 +14,7 @@ import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { StateViewComponent } from '../../shared/state-view/state-view.component';
 import { formatDate } from '../articles/article-format';
 import { CustomersService } from '../customers/customers.service';
+import { PrivilegesService } from '../pricing/privileges.service';
 import { InvoiceDeliveriesComponent } from '../deliveries/invoice-deliveries.component';
 import { InvoicePaymentsComponent } from '../payments/invoice-payments.component';
 import { formatMoney } from '../pricing/price-rules';
@@ -58,6 +60,7 @@ import { InvoicesService } from './invoices.service';
 export class InvoicePageComponent {
   private service = inject(InvoicesService);
   private customersService = inject(CustomersService);
+  private privilegesService = inject(PrivilegesService);
   private auth = inject(AuthService);
   private router = inject(Router);
 
@@ -65,8 +68,12 @@ export class InvoicePageComponent {
   id = input.required<string>();
 
   invoice = signal<Invoice | null>(null);
-  /** Gives the price grid of the new lines and the contact details. */
+  /** Gives the price grid of the new lines and the contact details. Null for a walk-in sale. */
   customer = signal<Customer | null>(null);
+  /** Price grid used for a walk-in sale, which has no customer of its own. */
+  defaultPrivilege = signal<Privilege | null>(null);
+  /** What prices a new line: the customer's grid, or the default one for a walk-in sale. */
+  activePrivilegeId = computed(() => this.customer()?.privilegeId ?? this.defaultPrivilege()?.id ?? null);
   /** Credit situation of the customer, for the warnings of a draft. Null while unknown. */
   credit = signal<CustomerCredit | null>(null);
   loading = signal(false);
@@ -139,9 +146,16 @@ export class InvoicePageComponent {
       next: invoice => {
         this.invoice.set(invoice);
         this.loading.set(false);
-        this.loadCustomer(invoice.customerId);
-        // Only a draft can still be fixed: on a locked document the warnings would be noise.
-        if (invoice.status === 'DRAFT') this.loadCredit(invoice.customerId);
+        if (invoice.customerId) {
+          this.loadCustomer(invoice.customerId);
+          // Only a draft can still be fixed: on a locked document the warnings would be noise.
+          if (invoice.status === 'DRAFT') this.loadCredit(invoice.customerId);
+        } else {
+          // A walk-in sale has no customer record: no credit to check, but still a price grid.
+          this.customer.set(null);
+          this.credit.set(null);
+          this.loadDefaultPrivilege();
+        }
       },
       error: (error: ApiError) => {
         this.error.set(error.message);
@@ -283,6 +297,15 @@ export class InvoicePageComponent {
     this.customersService.getById(customerId).subscribe({
       next: customer => this.customer.set(customer),
       error: (error: ApiError) => this.actionError.set(`Client indisponible : ${error.message}`),
+    });
+  }
+
+  private loadDefaultPrivilege(): void {
+    if (this.defaultPrivilege()) return;
+
+    this.privilegesService.getDefault().subscribe({
+      next: privilege => this.defaultPrivilege.set(privilege),
+      error: (error: ApiError) => this.actionError.set(`Grille tarifaire par défaut indisponible : ${error.message}`),
     });
   }
 }

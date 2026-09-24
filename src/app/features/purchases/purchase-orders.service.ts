@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { map } from 'rxjs';
 import { PageResponse } from '../../core/models/page.model';
 import {
   PurchaseOrder,
@@ -7,6 +8,13 @@ import {
   PurchaseOrderLineRequest,
   PurchaseOrderSummary,
 } from '../../core/models/purchase-order.model';
+import { filenameFromContentDisposition } from '../invoices/invoice-format';
+
+/** A document's PDF, with the filename the backend suggests for the download. */
+export interface PurchaseOrderPdf {
+  blob: Blob;
+  filename: string;
+}
 
 /**
  * Calls to the backend PurchaseOrderController. Lists carry a summary without the lines; every change
@@ -37,6 +45,20 @@ export class PurchaseOrdersService {
 
   getById(id: string) {
     return this.http.get<PurchaseOrder>(`${this.url}/purchase-orders/${id}`);
+  }
+
+  /** A draft's PDF carries no price, only articles and quantities: the backend decides from the status. */
+  getPdf(id: string) {
+    return this.http
+      .get(`${this.url}/purchase-orders/${id}/pdf`, { responseType: 'blob', observe: 'response' })
+      .pipe(
+        map(
+          (response): PurchaseOrderPdf => ({
+            blob: response.body as Blob,
+            filename: filenameFromContentDisposition(response.headers.get('Content-Disposition')) ?? `${id}.pdf`,
+          }),
+        ),
+      );
   }
 
   /** Creates a draft, with or without its lines. Refused for a deactivated supplier. */

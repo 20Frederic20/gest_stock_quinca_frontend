@@ -36,6 +36,7 @@
           <th>Livraison prévue</th>
           <th class="number">Total TTC</th>
           <th>Statut</th>
+          <th><span class="visually-hidden">Actions</span></th>
         </tr>
       </thead>
       <tbody>
@@ -49,6 +50,12 @@
             </td>
             <td class="number">{{ formatMoney(order.totalAmount) }}</td>
             <td><app-badge [text]="statusLabels[order.status]" [tone]="statusTones[order.status]" /></td>
+            <td class="row-actions">
+              <button type="button" class="icon-btn" aria-label="Voir le contenu"
+                (click)="openPreview(order, $event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
+            </td>
           </tr>
         }
       </tbody>
@@ -62,5 +69,22 @@
 <app-drawer [open]="formOpen()" heading="Nouvelle commande" (closed)="closeCreate()">
   @if (formOpen()) {
     <app-purchase-order-form (saved)="onCreated($event)" (cancelled)="closeCreate()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="previewing() !== null" [heading]="'Commande ' + (previewing()?.number ?? '')" width="720px" (closed)="closePreview()">
+  <app-state-view [loading]="previewLoading()" [error]="previewError()" />
+  @if (previewOrder(); as order) {
+    <dl class="preview-summary">
+      <dt>Fournisseur</dt>
+      <dd>{{ order.supplierName }}</dd>
+      <dt>Date</dt>
+      <dd>{{ formatDate(order.orderDate) }}</dd>
+    </dl>
+    <app-purchase-order-lines [orderId]="order.id" [lines]="order.lines" />
+    <dl class="preview-totals">
+      <dt>Total TTC</dt>
+      <dd>{{ formatMoney(order.totalAmount) }}</dd>
+    </dl>
   }
 </app-drawer>

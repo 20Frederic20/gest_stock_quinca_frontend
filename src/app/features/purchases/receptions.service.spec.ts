@@ -49,6 +49,36 @@ describe('ReceptionsService', () => {
     httpTesting.expectOne(r => r.method === 'DELETE' && r.url === '/api/v1/receptions/r1/lines/rl1');
   });
 
+  it('attaches the supplier invoice as a multipart request', () => {
+    const file = new File(['contenu'], 'facture.pdf', { type: 'application/pdf' });
+    service.setSupplierInvoice('r1', 'FA-2026-00874', file).subscribe();
+
+    const request = httpTesting.expectOne('/api/v1/receptions/r1/supplier-invoice');
+    expect(request.request.method).toBe('PUT');
+    const body = request.request.body as FormData;
+    expect(body.get('invoiceNumber')).toBe('FA-2026-00874');
+    expect(body.get('file')).toBe(file);
+  });
+
+  it('uploads the signed receipt as a multipart request', () => {
+    const file = new File(['scan'], 'bon-signe.pdf', { type: 'application/pdf' });
+    service.uploadSignedReceipt('r1', file).subscribe();
+
+    const request = httpTesting.expectOne('/api/v1/receptions/r1/signed-receipt');
+    expect(request.request.method).toBe('POST');
+    expect((request.request.body as FormData).get('file')).toBe(file);
+  });
+
+  it('downloads the supplier invoice, the signed receipt and the bon de réception PDF as blobs', () => {
+    service.downloadSupplierInvoice('r1').subscribe();
+    service.downloadSignedReceipt('r1').subscribe();
+    service.getPdf('r1').subscribe();
+
+    httpTesting.expectOne('/api/v1/receptions/r1/supplier-invoice/file').flush(new Blob());
+    httpTesting.expectOne('/api/v1/receptions/r1/signed-receipt/file').flush(new Blob());
+    httpTesting.expectOne('/api/v1/receptions/r1/pdf').flush(new Blob());
+  });
+
   it('confirms, cancels with a reason, and deletes a draft', () => {
     service.confirm('r1').subscribe();
     service.cancel('r1', 'Marchandise refusée').subscribe();

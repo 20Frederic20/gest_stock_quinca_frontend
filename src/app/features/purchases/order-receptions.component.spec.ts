@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { PurchaseOrder } from '../../core/models/purchase-order.model';
 import { Reception, ReceptionSummary } from '../../core/models/reception.model';
@@ -16,6 +17,7 @@ const order = {
 const confirmed = {
   id: 'r1', number: 'REC-COT-2026-00001', status: 'CONFIRMED', receptionDate: '2026-09-16',
   purchaseOrderId: 'o1', purchaseOrderNumber: 'CDE-COT-2026-00001', userName: 'Awa Dossou',
+  hasSupplierInvoice: true, hasSignedReceipt: false,
 } as ReceptionSummary;
 
 const draft = { ...confirmed, id: 'r2', number: 'REC-COT-2026-00002', status: 'DRAFT' } as ReceptionSummary;
@@ -27,7 +29,7 @@ describe('OrderReceptionsComponent', () => {
 
   function setup(document: PurchaseOrder = order, canWrite = true) {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(withInterceptors([errorInterceptor])), provideHttpClientTesting()],
+      providers: [provideRouter([]), provideHttpClient(withInterceptors([errorInterceptor])), provideHttpClientTesting()],
     });
     httpTesting = TestBed.inject(HttpTestingController);
 
@@ -139,5 +141,38 @@ describe('OrderReceptionsComponent', () => {
 
     expect(component.error()).toBe('Erreur interne du serveur');
     expect(component.receptions()).toEqual([]);
+  });
+
+  it('offers to download the attached supplier invoice', () => {
+    const { text, refresh } = setup();
+    httpTesting.expectOne(r => r.url === URL).flush(page([confirmed]));
+    refresh();
+
+    expect(text()).toContain('Facture');
+  });
+
+  it('offers to attach the signed receipt once confirmed, when none is attached yet', () => {
+    const { text, refresh } = setup();
+    httpTesting.expectOne(r => r.url === URL).flush(page([confirmed]));
+    refresh();
+
+    expect(text()).toContain('Joindre bon signé');
+  });
+
+  it('uploads the signed receipt selected for a given reception, then reloads', () => {
+    const { component } = setup();
+    httpTesting.expectOne(r => r.url === URL).flush(page([confirmed]));
+
+    component.askSignedReceipt(confirmed);
+    const file = new File(['scan'], 'bon-signe.pdf', { type: 'application/pdf' });
+    const input = { files: [file], value: 'bon-signe.pdf' } as unknown as HTMLInputElement;
+    component.onSignedReceiptSelected({ target: input } as unknown as Event);
+
+    const request = httpTesting.expectOne('/api/v1/receptions/r1/signed-receipt');
+    expect(request.request.method).toBe('POST');
+    request.flush({ ...confirmed, hasSignedReceipt: true } as unknown as Reception);
+
+    httpTesting.expectOne(r => r.url === URL).flush(page([{ ...confirmed, hasSignedReceipt: true }]));
+    expect(component.uploadingSignedReceipt()).toBeNull();
   });
 });

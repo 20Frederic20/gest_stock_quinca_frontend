@@ -102,6 +102,22 @@ h2 { font: 600 20px/1.2 var(--font-heading); margin: 0; }
 .btn-danger:hover { background: #fdecec; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Icon-only action, e.g. the eye button that opens a row's content in a drawer. */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  cursor: pointer;
+}
+.icon-btn:hover { color: var(--color-text); background: var(--color-accent-100); }
+.icon-btn svg { width: 18px; height: 18px; }
+
 /* --- Pastilles --- */
 .tag {
   display: inline-block;

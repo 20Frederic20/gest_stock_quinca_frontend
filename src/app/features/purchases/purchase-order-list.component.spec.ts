@@ -90,6 +90,24 @@ describe('PurchaseOrderListComponent', () => {
     expect(navigate).toHaveBeenCalledWith(['/purchase-orders', 'o1']);
   });
 
+  it('previews an order’s content in the drawer without leaving the list', () => {
+    const { component, navigate } = setup();
+    httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/purchase-orders').flush(page([order]));
+
+    const event = new Event('click');
+    const stopPropagation = vi.spyOn(event, 'stopPropagation');
+    component.openPreview(order, event);
+
+    expect(stopPropagation).toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(component.previewing()).toBe(order);
+
+    httpTesting.expectOne('/api/v1/purchase-orders/o1').flush({ ...order, lines: [] } as unknown as PurchaseOrder);
+
+    expect(component.previewOrder()?.id).toBe('o1');
+    expect(component.previewLoading()).toBe(false);
+  });
+
   it('creates an order then opens it straight away', () => {
     const { component, navigate } = setup();
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/purchase-orders').flush(page([]));

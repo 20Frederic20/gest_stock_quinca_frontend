@@ -185,6 +185,19 @@
   cursor: pointer;
 }
 
+/* The "Autre" toggle sits on the same line as the field's own label, pushed to the right. */
+.field-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.checkbox.inline {
+  font-size: 12px;
+  font-weight: normal;
+}
+
 .checkbox.disabled {
   cursor: not-allowed;
   color: color-mix(in srgb, var(--color-text) 45%, transparent);

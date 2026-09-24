@@ -1,4 +1,5 @@
-import { Component, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, input, output, signal, untracked, viewChild } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ApiError } from '../../core/http/api-error.model';
 import { PurchaseOrder } from '../../core/models/purchase-order.model';
@@ -18,7 +19,7 @@ import { ReceptionsService } from './receptions.service';
  */
 @Component({
   selector: 'app-order-receptions',
-  imports: [BadgeComponent, DrawerComponent, ConfirmDialogComponent, ReceptionFormComponent, CancelReceptionFormComponent],
+  imports: [RouterLink, BadgeComponent, DrawerComponent, ConfirmDialogComponent, ReceptionFormComponent, CancelReceptionFormComponent],
   templateUrl: './order-receptions.component.html',
   styleUrl: './order-receptions.component.css',
 })
@@ -44,6 +45,12 @@ export class OrderReceptionsComponent {
   /** Backend rules, plus the permission of the user in front of the screen. */
   receivable = computed(() => this.canWrite() && isReceivable(this.order()));
 
+  /** Set while a signed receipt is being uploaded for that row, to disable its button and show progress. */
+  uploadingSignedReceipt = signal<string | null>(null);
+  /** Which row's "attach signed receipt" button was clicked: the hidden file input reads it back on change. */
+  private signingReceptionId: string | null = null;
+  private signedFileInput = viewChild<ElementRef<HTMLInputElement>>('signedFileInput');
+
   protected statusLabels = RECEPTION_STATUS_LABELS;
   protected statusTones = RECEPTION_STATUS_TONES;
   protected formatDate = formatDate;
@@ -66,7 +73,7 @@ export class OrderReceptionsComponent {
     this.formOpen.set(false);
   }
 
-  /** Written and confirmed: the stock moved, so the order did too. */
+  /** Written, invoiced and confirmed: the stock moved, so the order did too. */
   onReceived(_: Reception): void {
     this.formOpen.set(false);
     this.refresh();
@@ -123,6 +130,62 @@ export class OrderReceptionsComponent {
 
   summaryOf(reception: ReceptionSummary): string {
     return `${reception.number} du ${formatDate(reception.receptionDate)}`;
+  }
+
+  /** The invoice was attached on the backend during creation: this only fetches and saves it locally. */
+  downloadInvoice(reception: ReceptionSummary): void {
+    this.actionError.set(null);
+
+    this.service.downloadSupplierInvoice(reception.id).subscribe({
+      next: ({ blob, filename }) => this.triggerDownload(blob, filename),
+      error: (error: ApiError) => this.actionError.set(error.message),
+    });
+  }
+
+  downloadSignedReceipt(reception: ReceptionSummary): void {
+    this.actionError.set(null);
+
+    this.service.downloadSignedReceipt(reception.id).subscribe({
+      next: ({ blob, filename }) => this.triggerDownload(blob, filename),
+      error: (error: ApiError) => this.actionError.set(error.message),
+    });
+  }
+
+  /** Opens the file picker for that row; onSignedReceiptSelected reads `signingReceptionId` back. */
+  askSignedReceipt(reception: ReceptionSummary): void {
+    this.actionError.set(null);
+    this.signingReceptionId = reception.id;
+    this.signedFileInput()?.nativeElement.click();
+  }
+
+  onSignedReceiptSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const receptionId = this.signingReceptionId;
+    input.value = ''; // lets the same file be picked again later without being ignored
+    if (!file || !receptionId) return;
+
+    this.uploadingSignedReceipt.set(receptionId);
+
+    this.service.uploadSignedReceipt(receptionId, file).subscribe({
+      next: () => {
+        this.uploadingSignedReceipt.set(null);
+        this.load(this.order().id);
+      },
+      error: (error: ApiError) => {
+        this.uploadingSignedReceipt.set(null);
+        this.actionError.set(error.message);
+      },
+    });
+  }
+
+  private triggerDownload(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   private refresh(): void {

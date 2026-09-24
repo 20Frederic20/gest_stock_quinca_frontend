@@ -27,6 +27,7 @@ import {
   isCancellable,
   validationSummary,
 } from './invoice-format';
+import { InvoiceLinesComponent } from './invoice-lines.component';
 import { InvoicesService } from './invoices.service';
 
 /** Ventes > Factures: the documents of one agency, the user's own by default. A row opens the document. */
@@ -42,6 +43,7 @@ import { InvoicesService } from './invoices.service';
     DrawerComponent,
     CancelInvoiceFormComponent,
     PaymentFormComponent,
+    InvoiceLinesComponent,
   ],
   templateUrl: './invoice-list.component.html',
   styleUrl: './invoice-list.component.css',
@@ -81,6 +83,8 @@ export class InvoiceListComponent implements OnInit {
   cancelling = signal<Invoice | null>(null);
   /** The invoice being collected, without leaving the list. */
   collecting = signal<Invoice | null>(null);
+  /** The document whose lines are shown in the drawer, without leaving the list. */
+  previewing = signal<Invoice | null>(null);
   busy = signal(false);
 
   confirmHeading = computed(() =>
@@ -252,6 +256,16 @@ export class InvoiceListComponent implements OnInit {
 
   open(invoice: Invoice): void {
     this.router.navigate(['/invoices', invoice.id]);
+  }
+
+  /** Already loaded with the list: no round trip needed to preview its lines. */
+  openPreview(invoice: Invoice, event: Event): void {
+    event.stopPropagation();
+    this.previewing.set(invoice);
+  }
+
+  closePreview(): void {
+    this.previewing.set(null);
   }
 
   newSale(): void {

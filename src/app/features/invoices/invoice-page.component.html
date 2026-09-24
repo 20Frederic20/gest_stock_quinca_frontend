@@ -42,7 +42,7 @@
         <dd>{{ customer()?.phone || '—' }}</dd>
 
         <dt>Grille tarifaire</dt>
-        <dd>{{ customer()?.privilegeLabel ?? '…' }}</dd>
+        <dd>{{ customer()?.privilegeLabel ?? defaultPrivilege()?.label ?? '…' }}</dd>
 
         @if (inv.dueDate) {
           <dt>Échéance</dt>
@@ -58,9 +58,9 @@
         (failed)="onActionFailed($event)" />
 
       @if (editable()) {
-        @if (customer(); as c) {
+        @if (activePrivilegeId(); as pid) {
           <app-invoice-line-form
-            [privilegeId]="c.privilegeId"
+            [privilegeId]="pid"
             [agencyId]="inv.agencyId"
             [checkStock]="inv.type === 'INVOICE'"
             [busy]="addingLine()"

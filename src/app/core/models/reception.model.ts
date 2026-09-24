@@ -25,6 +25,12 @@ export interface Reception {
   purchaseOrderNumber: string;
   userId: string;
   userName: string;
+  /** The supplier's own invoice number for this arrival. Null until it has been attached. */
+  supplierInvoiceNumber: string | null;
+  /** Filename of the attached supplier invoice, for display and download. Null when none is attached. */
+  supplierInvoiceFileName: string | null;
+  /** Filename of the signed receipt scan, once uploaded. Null until then. */
+  signedReceiptFileName: string | null;
   lines: ReceptionLine[];
   createdAt: string;
 }
@@ -39,6 +45,10 @@ export interface ReceptionSummary {
   purchaseOrderNumber: string;
   userId: string;
   userName: string;
+  /** True once both the supplier invoice number and its file are attached. */
+  hasSupplierInvoice: boolean;
+  /** True once the signed receipt scan has been uploaded. */
+  hasSignedReceipt: boolean;
   createdAt: string;
 }
 

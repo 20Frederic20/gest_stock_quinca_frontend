@@ -27,6 +27,7 @@
             <th>Date</th>
             <th>Reçu par</th>
             <th>Statut</th>
+            <th>Documents</th>
             @if (canWrite()) {
               <th><span class="visually-hidden">Actions</span></th>
             }
@@ -40,6 +41,27 @@
               <td>{{ reception.userName }}</td>
               <td>
                 <app-badge [text]="statusLabels[reception.status]" [tone]="statusTones[reception.status]" />
+              </td>
+              <td class="documents">
+                <a class="btn btn-ghost" [routerLink]="['/receptions', reception.id, 'print']" target="_blank">
+                  Bon (PDF)
+                </a>
+                @if (reception.hasSupplierInvoice) {
+                  <button type="button" class="btn btn-ghost" (click)="downloadInvoice(reception)">Facture</button>
+                }
+                @if (reception.hasSignedReceipt) {
+                  <button type="button" class="btn btn-ghost" (click)="downloadSignedReceipt(reception)">
+                    Bon signé
+                  </button>
+                } @else if (canWrite() && reception.status !== 'CANCELLED') {
+                  <button
+                    type="button"
+                    class="btn btn-ghost"
+                    [disabled]="uploadingSignedReceipt() === reception.id"
+                    (click)="askSignedReceipt(reception)">
+                    {{ uploadingSignedReceipt() === reception.id ? 'Envoi…' : 'Joindre bon signé' }}
+                  </button>
+                }
               </td>
               @if (canWrite()) {
                 <td class="row-actions">
@@ -59,6 +81,9 @@
     </div>
   }
 </section>
+
+<!-- Un seul input caché, reutilise pour chaque ligne : askSignedReceipt() retient quelle réception avant de l'ouvrir. -->
+<input #signedFileInput type="file" accept=".pdf,.jpg,.jpeg,.png" hidden (change)="onSignedReceiptSelected($event)" />
 
 <app-drawer [open]="formOpen()" heading="Réceptionner la marchandise" (closed)="closeForm()">
   @if (formOpen()) {

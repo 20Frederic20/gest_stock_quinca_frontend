@@ -1,0 +1,16 @@
+<div class="toolbar">
+  @if (purchaseOrderId(); as orderId) {
+    <a class="btn" [routerLink]="['/purchase-orders', orderId]">← Retour à la commande</a>
+  } @else {
+    <span></span>
+  }
+  <button type="button" class="btn btn-primary" [disabled]="!pdfUrl()" (click)="download()">Télécharger le PDF</button>
+</div>
+
+@if (error()) {
+  <p class="error" role="alert">{{ error() }}</p>
+} @else if (loading()) {
+  <p class="loading text-muted">Génération du PDF…</p>
+} @else if (pdfUrl(); as url) {
+  <iframe class="pdf-frame" [src]="url" title="Bon de réception PDF"></iframe>
+}

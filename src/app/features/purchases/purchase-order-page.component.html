@@ -91,6 +91,7 @@
         @if (cancellable()) {
           <button type="button" class="btn btn-danger" (click)="openCancel()">Annuler la commande</button>
         }
+        <a class="btn" [routerLink]="['/purchase-orders', ord.id, 'print']" target="_blank">Bon de commande (PDF)</a>
       </div>
     </aside>
   </div>

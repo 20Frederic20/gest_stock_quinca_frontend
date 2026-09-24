@@ -7,6 +7,7 @@ import { PERMISSIONS_ENABLED } from '../../core/auth/permissions';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { Customer, CustomerCredit } from '../../core/models/customer.model';
 import { Invoice, InvoiceLine } from '../../core/models/invoice.model';
+import { Privilege } from '../../core/models/privilege.model';
 import { Delivery } from '../../core/models/delivery.model';
 import { Payment } from '../../core/models/payment.model';
 import { AgencyStock } from '../../core/models/stock.model';
@@ -34,6 +35,8 @@ const credit = {
   customerId: 'c1', creditLimit: 200000, currentBalance: 150000, remainingCredit: 50000, creditAllowed: true,
 } as CustomerCredit;
 const stock = { articleId: 'a1', stockUnitCode: 'KG', availableQuantity: 5000 } as AgencyStock;
+const walkIn: Invoice = { ...draft, customerId: null as unknown as string, customerName: 'Client de passage' };
+const defaultPrivilege = { id: 'p9', label: 'Grand public', isDefault: true } as Privilege;
 
 describe('InvoicePageComponent', () => {
   let httpTesting: HttpTestingController;
@@ -301,5 +304,36 @@ describe('InvoicePageComponent', () => {
 
   it('lets a seller fill a draft but not delete it', () => {
     expect(setup(draft, 'SELLER').buttons()).toEqual(['Valider']);
+  });
+
+  it('prices a walk-in sale from the default privilege, with no customer to look up', () => {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        provideHttpClient(withInterceptors([errorInterceptor])),
+        provideHttpClientTesting(),
+        { provide: PERMISSIONS_ENABLED, useValue: true },
+      ],
+    });
+    httpTesting = TestBed.inject(HttpTestingController);
+    TestBed.inject(AuthService).setUser({
+      id: 'u9', name: 'Test', username: 'test', role: 'ADMIN', agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
+    });
+
+    const fixture = TestBed.createComponent(InvoicePageComponent);
+    fixture.componentRef.setInput('id', walkIn.id);
+    fixture.detectChanges();
+    httpTesting.expectOne('/api/v1/invoices/i1').flush(walkIn);
+    httpTesting.expectOne('/api/v1/privileges/default').flush(defaultPrivilege);
+    fixture.detectChanges();
+    httpTesting.match(r => r.url.startsWith('/api/v1/agencies/g1/stock/')).forEach(r => r.flush(stock));
+    httpTesting.match('/api/v1/invoices/i1/payments').forEach(r => r.flush([]));
+    httpTesting.match('/api/v1/invoices/i1/deliveries').forEach(r => r.flush([]));
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(fixture.componentInstance.customer()).toBeNull();
+    expect(fixture.componentInstance.activePrivilegeId()).toBe('p9');
+    expect(element.querySelector('app-invoice-line-form')).not.toBeNull();
   });
 });

@@ -58,6 +58,10 @@
             <td class="number">{{ formatMoney(invoice.totalAmount) }}</td>
             <td><app-badge [text]="statusLabels[invoice.status]" [tone]="statusTones[invoice.status]" /></td>
             <td class="row-actions">
+              <button type="button" class="icon-btn" aria-label="Voir le contenu"
+                (click)="openPreview(invoice, $event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" /><circle cx="12" cy="12" r="3" /></svg>
+              </button>
               @if (canValidate(invoice)) {
                 <button type="button" class="btn btn-primary" [disabled]="busy()"
                   (click)="askValidation(invoice); $event.stopPropagation()">Valider</button>
@@ -111,5 +115,21 @@
       [summary]="invoice.number + ' — ' + formatMoney(invoice.totalAmount)"
       (saved)="onCancelled($event)"
       (cancelled)="closeCancel()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="previewing() !== null" [heading]="'Facture ' + (previewing()?.number ?? '')" width="720px" (closed)="closePreview()">
+  @if (previewing(); as invoice) {
+    <dl class="preview-summary">
+      <dt>Client</dt>
+      <dd>{{ invoice.customerName }}</dd>
+      <dt>Date</dt>
+      <dd>{{ formatDate(invoice.documentDate) }}</dd>
+    </dl>
+    <app-invoice-lines [invoiceId]="invoice.id" [lines]="invoice.lines" />
+    <dl class="preview-totals">
+      <dt>Total TTC</dt>
+      <dd>{{ formatMoney(invoice.totalAmount) }}</dd>
+    </dl>
   }
 </app-drawer>

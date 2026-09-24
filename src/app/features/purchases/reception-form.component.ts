@@ -8,9 +8,12 @@ import { formatNumber } from '../articles/article-format';
 import { ReceptionsService } from './receptions.service';
 
 /**
- * Receives goods against an order: how much of each line actually arrived. The backend writes the
- * reception as a draft and only moves the stock on confirmation, so both follow one another here —
- * a receiving clerk does one thing, not two.
+ * Receives goods against an order: how much of each line actually arrived. The supplier's own
+ * invoice for this arrival — its number and a scan of the document — is required too, since
+ * neither the backend nor this form lets a reception be confirmed without it (even a partial
+ * one has its own supplier invoice). The backend writes the reception as a draft, attaches the
+ * invoice, then confirms it: all three follow one another here — a receiving clerk does one
+ * thing, not three.
  */
 @Component({
   selector: 'app-reception-form',
@@ -27,7 +30,7 @@ export class ReceptionFormComponent implements OnInit {
   /** The lines of the order, received ones included: the form sorts out what is left. */
   lines = input.required<PurchaseOrderLine[]>();
 
-  /** The reception, written and confirmed: the stock has moved. */
+  /** The reception, written, invoiced and confirmed: the stock has moved. */
   received = output<Reception>();
   /** Written but left in draft: the section reloads so it does not get lost. */
   failed = output<Reception>();
@@ -35,17 +38,23 @@ export class ReceptionFormComponent implements OnInit {
 
   saving = signal(false);
   formError = signal<string | null>(null);
+  fileError = signal<string | null>(null);
 
   /** Only what is still awaited: a line received in full has nothing more to bring. */
   pending = computed(() => this.lines().filter(line => line.remainingToReceive > 0));
 
-  // Same rules as ReceptionCreateRequest on the backend.
+  // Same rules as ReceptionCreateRequest on the backend, plus the invoice number (required here:
+  // the form always attaches an invoice, so there is no point letting it through without one).
   form = this.fb.nonNullable.group({
     comment: ['', [Validators.maxLength(500)]],
+    invoiceNumber: ['', [Validators.required, Validators.maxLength(100)]],
   });
 
   /** One quantity per pending line, keyed by the id of the order line. */
   quantities = new FormRecord<FormControl<number>>({});
+
+  /** The supplier invoice file, chosen through a plain file input (kept outside the reactive form). */
+  selectedFile = signal<File | null>(null);
 
   protected formatNumber = formatNumber;
 
@@ -61,10 +70,22 @@ export class ReceptionFormComponent implements OnInit {
     }
   }
 
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile.set(input.files?.[0] ?? null);
+    this.fileError.set(null);
+  }
+
   submit(): void {
     if (this.quantities.invalid || this.form.invalid) {
       this.quantities.markAllAsTouched();
       this.form.markAllAsTouched();
+      return;
+    }
+
+    const file = this.selectedFile();
+    if (!file) {
+      this.fileError.set('Joignez le fichier de la facture fournisseur (PDF ou photo).');
       return;
     }
 
@@ -81,11 +102,12 @@ export class ReceptionFormComponent implements OnInit {
 
     this.saving.set(true);
     this.formError.set(null);
+    this.fileError.set(null);
 
-    const comment = this.form.getRawValue().comment.trim();
+    const { comment, invoiceNumber } = this.form.getRawValue();
 
-    this.service.create(this.orderId(), { comment: comment || null, lines }).subscribe({
-      next: reception => this.confirm(reception),
+    this.service.create(this.orderId(), { comment: comment.trim() || null, lines }).subscribe({
+      next: reception => this.attachInvoice(reception, invoiceNumber.trim(), file),
       error: (error: ApiError) => {
         this.saving.set(false);
         this.formError.set(error.message);
@@ -93,7 +115,21 @@ export class ReceptionFormComponent implements OnInit {
     });
   }
 
-  /** The draft exists on the backend: whatever happens now, it must not be lost from sight. */
+  /** The draft exists on the backend: whatever happens from here, it must not be lost from sight. */
+  private attachInvoice(reception: Reception, invoiceNumber: string, file: File): void {
+    this.service.setSupplierInvoice(reception.id, invoiceNumber, file).subscribe({
+      next: updated => this.confirm(updated),
+      error: (error: ApiError) => {
+        this.saving.set(false);
+        this.formError.set(
+          `La réception ${reception.number} a été créée mais la facture fournisseur n’a pas pu être ` +
+            `jointe : ${error.message}`,
+        );
+        this.failed.emit(reception);
+      },
+    });
+  }
+
   private confirm(reception: Reception): void {
     this.service.confirm(reception.id).subscribe({
       next: confirmed => {

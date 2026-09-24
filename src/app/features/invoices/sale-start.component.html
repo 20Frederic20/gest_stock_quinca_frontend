@@ -17,29 +17,47 @@
     }
 
     <!-- Two columns once there is a sale to total: the document on the left, what it costs on the right. -->
-    <div class="layout" [class.two-columns]="chosen() !== null">
+    <div class="layout" [class.two-columns]="activePrivilegeId() !== null">
       <section class="main">
         <div class="field">
-          <label>Client</label>
-          <app-select-search
-            [remoteSearch]="searchCustomers"
-            [value]="customer()?.id ?? null"
-            [label]="customer()?.label ?? ''"
-            placeholder="Rechercher un client…"
-            (selected)="onCustomerSelected($event)" />
-          <app-field-error [control]="form.controls.customerId" />
+          <div class="field-label-row">
+            <label>Client</label>
+            <label class="checkbox inline">
+              <input
+                type="checkbox"
+                [checked]="otherCustomer()"
+                (change)="toggleOtherCustomer($any($event.target).checked)" />
+              Autre (client de passage)
+            </label>
+          </div>
 
-          @if (credit(); as c) {
-            <p class="hint">
-              @if (c.creditAllowed) {
-                Crédit disponible : {{ formatMoney(c.remainingCredit) }} · délai {{ paymentTermLabel(c.paymentTermDays) }}
-              } @else {
-                Ce client paie comptant uniquement.
-              }
-            </p>
-          }
-          @if (creditError()) {
-            <p class="hint warning">{{ creditError() }}</p>
+          @if (!otherCustomer()) {
+            <app-select-search
+              [remoteSearch]="searchCustomers"
+              [value]="customer()?.id ?? null"
+              [label]="customer()?.label ?? ''"
+              placeholder="Rechercher un client…"
+              (selected)="onCustomerSelected($event)" />
+            <app-field-error [control]="form.controls.customerId" />
+
+            @if (credit(); as c) {
+              <p class="hint">
+                @if (c.creditAllowed) {
+                  Crédit disponible : {{ formatMoney(c.remainingCredit) }} · délai {{ paymentTermLabel(c.paymentTermDays) }}
+                } @else {
+                  Ce client paie comptant uniquement.
+                }
+              </p>
+            }
+            @if (creditError()) {
+              <p class="hint warning">{{ creditError() }}</p>
+            }
+          } @else {
+            <input
+              type="text"
+              formControlName="walkInCustomerName"
+              placeholder="Nom et prénom du client (facultatif)" />
+            <p class="hint">Vente au comptant, sans compte client : le nom est libre et peut rester vide.</p>
           }
         </div>
 
@@ -59,7 +77,7 @@
           Vente à crédit
         </label>
 
-        @if (chosen(); as c) {
+        @if (activePrivilegeId(); as pid) {
           <section class="sale-lines">
             <h2>Articles</h2>
 
@@ -99,7 +117,7 @@
             }
 
             <app-invoice-line-form
-              [privilegeId]="c.privilegeId"
+              [privilegeId]="pid"
               [agencyId]="agencyId()"
               [checkStock]="type() === 'INVOICE'"
               (composed)="addLine($event)" />
@@ -108,7 +126,7 @@
       </section>
 
       <div class="side">
-        @if (chosen()) {
+        @if (activePrivilegeId()) {
           <aside class="sale-totals">
             <dl>
               <dt>Total brut</dt>

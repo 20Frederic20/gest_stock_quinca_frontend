@@ -54,6 +54,17 @@
   text-align: right;
 }
 
+.documents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.documents a.btn {
+  text-decoration: none;
+}
+
 .empty {
   margin: 0;
   padding: var(--space-2) 0;

@@ -74,3 +74,28 @@
   border: 1px solid var(--color-divider);
   border-radius: var(--radius-md);
 }
+
+.supplier-invoice {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.supplier-invoice legend {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  padding: 0 4px;
+}
+
+.supplier-invoice .hint {
+  margin: 0 0 var(--space-3);
+}
+
+.file-name {
+  font-size: 12px;
+  margin: 4px 0 0;
+  color: var(--color-text);
+}

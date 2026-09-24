@@ -41,6 +41,40 @@
     </table>
   </div>
 
+  <fieldset class="supplier-invoice">
+    <legend>Facture fournisseur</legend>
+    <p class="hint text-muted">
+      Obligatoire pour confirmer la réception, même partielle : le numéro de la facture et son
+      fichier (PDF ou photo).
+    </p>
+
+    <div class="field">
+      <label for="invoiceNumber">Numéro de facture</label>
+      <input
+        id="invoiceNumber"
+        formControlName="invoiceNumber"
+        maxlength="100"
+        autocomplete="off"
+        placeholder="Ex. FA-2026-00874" />
+      <app-field-error [control]="form.controls.invoiceNumber" />
+    </div>
+
+    <div class="field">
+      <label for="invoiceFile">Fichier de la facture</label>
+      <input
+        id="invoiceFile"
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        (change)="onFileSelected($event)" />
+      @if (selectedFile(); as file) {
+        <p class="file-name">{{ file.name }}</p>
+      }
+      @if (fileError()) {
+        <p class="form-error">{{ fileError() }}</p>
+      }
+    </div>
+  </fieldset>
+
   <div class="field">
     <label for="receptionComment">Commentaire</label>
     <input

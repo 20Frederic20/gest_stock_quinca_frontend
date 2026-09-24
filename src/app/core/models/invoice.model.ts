@@ -59,7 +59,9 @@ export interface Invoice {
   remainingToPay: number;
   creditMode: boolean;
   cancellationReason: string | null;
-  customerId: string;
+  /** Null for a walk-in sale, which has no customer record. */
+  customerId: string | null;
+  /** The customer's name, or the free-text name (or a generic label) for a walk-in sale. */
   customerName: string;
   /** The agency of the user who created the document. */
   agencyId: string;
@@ -93,7 +95,10 @@ export type StockConsuming = Pick<InvoiceLine, 'articleId' | 'designation' | 'qu
 
 /** The agency and the seller come from the session. */
 export interface InvoiceCreateRequest {
-  customerId: string;
+  /** Null for a walk-in sale: see walkInCustomerName. */
+  customerId: string | null;
+  /** Free-text name of the customer, used only when customerId is null. Optional, may be left blank. */
+  walkInCustomerName?: string | null;
   type: DocumentType;
   creditMode: boolean;
   /** Before VAT. Zero when the sale carries no transport charges. */

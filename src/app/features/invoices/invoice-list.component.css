@@ -54,3 +54,24 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+
+.preview-summary,
+.preview-totals {
+  display: grid;
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.preview-summary dt,
+.preview-totals dt {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  padding-top: 2px;
+}
+
+.preview-totals {
+  margin: var(--space-4) 0 0;
+}

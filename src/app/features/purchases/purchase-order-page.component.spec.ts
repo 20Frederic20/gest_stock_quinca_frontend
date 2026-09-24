@@ -155,6 +155,14 @@ describe('PurchaseOrderPageComponent', () => {
     expect(component.order()?.status).toBe('PARTIALLY_RECEIVED');
   });
 
+  it('offers the printable bon de commande, draft or confirmed alike', () => {
+    const draftLink = setup().element.querySelector<HTMLAnchorElement>('aside .actions a.btn');
+    expect(draftLink?.getAttribute('href')).toBe('/purchase-orders/o1/print');
+
+    const confirmedLink = setup(confirmed).element.querySelector<HTMLAnchorElement>('aside .actions a.btn');
+    expect(confirmedLink?.getAttribute('href')).toBe('/purchase-orders/o1/print');
+  });
+
   it('lets a seller read an order without touching it', () => {
     const { element, buttons } = setup(draft, 'SELLER');
 

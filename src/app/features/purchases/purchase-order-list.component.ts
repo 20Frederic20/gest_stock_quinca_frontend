@@ -17,6 +17,7 @@ import { formatDate } from '../articles/article-format';
 import { formatMoney } from '../pricing/price-rules';
 import { ORDER_STATUS_LABELS, ORDER_STATUS_TONES } from './purchase-format';
 import { PurchaseOrderFormComponent } from './purchase-order-form.component';
+import { PurchaseOrderLinesComponent } from './purchase-order-lines.component';
 import { PurchaseOrdersService } from './purchase-orders.service';
 
 /** Achats > Commandes fournisseurs: the orders of one agency, newest first. A row opens the order. */
@@ -30,6 +31,7 @@ import { PurchaseOrdersService } from './purchase-orders.service';
     BadgeComponent,
     DrawerComponent,
     PurchaseOrderFormComponent,
+    PurchaseOrderLinesComponent,
   ],
   templateUrl: './purchase-order-list.component.html',
   styleUrl: './purchase-order-list.component.css',
@@ -59,6 +61,13 @@ export class PurchaseOrderListComponent implements OnInit {
   error = signal<string | null>(null);
 
   formOpen = signal(false);
+
+  /** The order previewed in the drawer, without leaving the list: only its summary is loaded yet. */
+  previewing = signal<PurchaseOrderSummary | null>(null);
+  /** Fetched once the drawer opens, since the list only holds summaries. */
+  previewOrder = signal<PurchaseOrder | null>(null);
+  previewLoading = signal(false);
+  previewError = signal<string | null>(null);
 
   protected statusLabels = ORDER_STATUS_LABELS;
   protected statusTones = ORDER_STATUS_TONES;
@@ -103,6 +112,29 @@ export class PurchaseOrderListComponent implements OnInit {
 
   open(order: PurchaseOrderSummary): void {
     this.router.navigate(['/purchase-orders', order.id]);
+  }
+
+  openPreview(order: PurchaseOrderSummary, event: Event): void {
+    event.stopPropagation();
+    this.previewing.set(order);
+    this.previewOrder.set(null);
+    this.previewError.set(null);
+    this.previewLoading.set(true);
+
+    this.service.getById(order.id).subscribe({
+      next: fullOrder => {
+        this.previewOrder.set(fullOrder);
+        this.previewLoading.set(false);
+      },
+      error: (error: ApiError) => {
+        this.previewError.set(error.message);
+        this.previewLoading.set(false);
+      },
+    });
+  }
+
+  closePreview(): void {
+    this.previewing.set(null);
   }
 
   openCreate(): void {

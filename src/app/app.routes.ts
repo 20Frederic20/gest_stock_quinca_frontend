@@ -30,6 +30,18 @@ export const routes: Routes = [
       import('./features/transfers/transfer-print.component').then(m => m.TransferPrintComponent),
   },
   {
+    path: 'purchase-orders/:id/print',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/purchases/purchase-order-print.component').then(m => m.PurchaseOrderPrintComponent),
+  },
+  {
+    path: 'receptions/:id/print',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/purchases/reception-print.component').then(m => m.ReceptionPrintComponent),
+  },
+  {
     path: '',
     component: MainLayoutComponent,
     canActivate: [authGuard],

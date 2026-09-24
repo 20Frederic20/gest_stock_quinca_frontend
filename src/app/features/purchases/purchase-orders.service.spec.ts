@@ -39,6 +39,29 @@ describe('PurchaseOrdersService', () => {
     expect(httpTesting.expectOne('/api/v1/purchase-orders/o1').request.method).toBe('GET');
   });
 
+  it('gets the PDF, named after what the backend suggests', () => {
+    let result: { blob: Blob; filename: string } | undefined;
+    service.getPdf('o1').subscribe(pdf => (result = pdf));
+
+    const req = httpTesting.expectOne('/api/v1/purchase-orders/o1/pdf');
+    expect(req.request.responseType).toBe('blob');
+
+    const pdf = new Blob(['%PDF'], { type: 'application/pdf' });
+    req.flush(pdf, { headers: { 'Content-Disposition': "inline; filename*=UTF-8''CDE-COT-2026-00001.pdf" } });
+
+    expect(result?.blob).toBe(pdf);
+    expect(result?.filename).toBe('CDE-COT-2026-00001.pdf');
+  });
+
+  it('falls back to the order id as a filename when the header is missing', () => {
+    let result: { blob: Blob; filename: string } | undefined;
+    service.getPdf('o1').subscribe(pdf => (result = pdf));
+
+    httpTesting.expectOne('/api/v1/purchase-orders/o1/pdf').flush(new Blob(['%PDF'], { type: 'application/pdf' }));
+
+    expect(result?.filename).toBe('o1.pdf');
+  });
+
   it('creates an order', () => {
     const body = { supplierId: 'f1', expectedDeliveryDate: '2026-10-01', comment: null, lines: [] };
 
