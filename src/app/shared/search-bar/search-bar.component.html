@@ -1,0 +1,9 @@
+<div class="bar">
+  <input
+    type="search"
+    autocomplete="off"
+    [placeholder]="placeholder()"
+    [attr.aria-label]="placeholder()"
+    (input)="onInput($event)" />
+  <ng-content />
+</div>

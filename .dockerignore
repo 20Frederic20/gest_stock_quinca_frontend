@@ -1,0 +1,10 @@
+.git
+.github
+.angular
+.vscode
+node_modules
+dist
+docs
+graphify-out
+coverage
+*.md

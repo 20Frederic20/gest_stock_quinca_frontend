@@ -1,0 +1,117 @@
+<app-page-header heading="Clôture de journée" subtitle="Ouverture, comptage et écart de caisse de l’agence." />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view [loading]="currentLoading()" [error]="currentError()" (retry)="loadCurrent()" />
+
+@if (!currentLoading() && !currentError()) {
+  <section class="session">
+    @if (current(); as session) {
+      <article class="tile open">
+        <div class="tile-head">
+          <span class="label">Caisse ouverte</span>
+          <span class="tag tag-accent">Depuis {{ session.startTime.slice(0, 5) }}</span>
+        </div>
+        <div class="figures">
+          <div>
+            <span class="figure-label">Fond de caisse</span>
+            <span class="figure">{{ formatMoney(session.openingCashAmount) }}</span>
+          </div>
+          <div>
+            <span class="figure-label">Théorique actuel</span>
+            <span class="figure">{{ formatMoney(session.theoreticalTotal) }}</span>
+          </div>
+        </div>
+        <p class="text-muted">Ouverte par {{ session.openedByUserName }}</p>
+        <button type="button" class="btn btn-primary" (click)="openDrawer('close')">Clôturer la journée</button>
+      </article>
+    } @else {
+      <article class="tile closed">
+        <p class="text-muted">Aucune caisse ouverte pour cette agence pour l’instant.</p>
+        <button type="button" class="btn btn-primary" (click)="openDrawer('open')">Ouvrir la caisse</button>
+      </article>
+    }
+  </section>
+}
+
+<h2>Historique</h2>
+
+<app-state-view
+  [loading]="historyLoading()"
+  [error]="historyError()"
+  [empty]="history().length === 0"
+  emptyMessage="Aucune journée clôturée pour cette agence."
+  (retry)="loadHistory(pageInfo()?.page ?? 0)" />
+
+@if (!historyLoading() && !historyError() && history().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Ouverture</th>
+          <th>Fermeture</th>
+          <th class="number">Fond de caisse</th>
+          <th class="number">Théorique</th>
+          <th class="number">Compté</th>
+          <th class="number">Écart</th>
+          <th>Clôturée par</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (dayClosing of history(); track dayClosing.id) {
+          <tr>
+            <td class="nowrap">{{ formatDate(dayClosing.closingDate) }}</td>
+            <td class="nowrap">{{ dayClosing.startTime.slice(0, 5) }}</td>
+            <td class="nowrap">{{ dayClosing.endTime ? dayClosing.endTime.slice(0, 5) : '—' }}</td>
+            <td class="number">{{ formatMoney(dayClosing.openingCashAmount) }}</td>
+            <td class="number">{{ dayClosing.closed ? formatMoney(dayClosing.theoreticalTotal) : '—' }}</td>
+            <td class="number">{{ dayClosing.countedTotal !== null ? formatMoney(dayClosing.countedTotal) : '—' }}</td>
+            <td class="number" [class.negative]="(dayClosing.variance ?? 0) < 0">
+              {{ dayClosing.variance !== null ? formatMoney(dayClosing.variance) : '—' }}
+            </td>
+            <td>{{ dayClosing.closedByUserName || '—' }}</td>
+          </tr>
+          @if (dayClosing.comment) {
+            <tr class="comment-row">
+              <td colspan="8">{{ dayClosing.comment }}</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="journées" (pageChange)="loadHistory($event)" />
+
+<app-drawer
+  [open]="drawerMode() === 'open'"
+  heading="Ouvrir la caisse"
+  (closed)="closeDrawer()">
+  @if (drawerMode() === 'open') {
+    <app-day-closing-open-form [agencyId]="agencyId()" (opened)="onOpened($event)" (cancelled)="closeDrawer()" />
+  }
+</app-drawer>
+
+<app-drawer
+  [open]="drawerMode() === 'close'"
+  heading="Clôturer la journée"
+  (closed)="closeDrawer()">
+  @if (drawerMode() === 'close' && current(); as session) {
+    <app-day-closing-close-form [dayClosing]="session" (closed)="onClosed($event)" (cancelled)="closeDrawer()" />
+  }
+</app-drawer>

@@ -1,0 +1,31 @@
+@let current = info();
+@if (current && current.totalPages > 1) {
+  <nav class="pagination" aria-label="Pagination">
+    <button
+      type="button"
+      class="btn btn-ghost"
+      aria-label="Page précédente"
+      [disabled]="current.page === 0"
+      (click)="goTo(current.page - 1)">‹</button>
+
+    @for (page of pages(); track page) {
+      <button
+        type="button"
+        class="btn btn-ghost page-number"
+        [class.current]="page === current.page"
+        [attr.aria-current]="page === current.page ? 'page' : null"
+        (click)="goTo(page)">
+        {{ page + 1 }}
+      </button>
+    }
+
+    <button
+      type="button"
+      class="btn btn-ghost"
+      aria-label="Page suivante"
+      [disabled]="current.page >= current.totalPages - 1"
+      (click)="goTo(current.page + 1)">›</button>
+
+    <span class="total text-muted">{{ current.totalElements }} {{ itemsLabel() }}</span>
+  </nav>
+}

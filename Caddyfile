@@ -1,0 +1,47 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# API Spring Boot : même domaine que l'app, donc cookies JWT/XSRF sans souci de CORS
+	handle /api/* {
+		request_body {
+			max_size 16MB
+		}
+		reverse_proxy api:8080 {
+			# Pendant un redéploiement de l'API, réessaie au lieu de renvoyer 502 tout de suite
+			lb_try_duration 30s
+		}
+	}
+
+	# Application Angular (SPA)
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+
+		# Seuls les fichiers générés par Angular portent un hash (chunk-6OLSQIRr.js, styles-….css,
+		# et tout le dossier media/) : les fichiers de public/ gardent leur nom, donc pas de cache long.
+		@hashed path_regexp ^/((chunk|main|polyfills|styles)-[0-9A-Za-z_-]{8,}\.(js|css)|media/.+)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+		@index path / /index.html
+		header @index Cache-Control "no-cache"
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

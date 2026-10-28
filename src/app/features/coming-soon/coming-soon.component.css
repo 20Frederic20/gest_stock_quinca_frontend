@@ -1,0 +1,17 @@
+.notice {
+  margin-top: var(--space-8);
+  padding: var(--space-8);
+  border: 1px dashed var(--color-divider);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.icon {
+  font-size: 40px;
+}
+
+.notice-title {
+  font: 600 18px var(--font-heading);
+  margin: var(--space-2) 0;
+}

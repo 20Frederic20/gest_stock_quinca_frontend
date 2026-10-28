@@ -1,0 +1,133 @@
+<app-page-header
+  heading="Factures"
+  subtitle="Devis, proformas et factures de l’agence, du plus récent au plus ancien."
+  [actionLabel]="canCreate() ? 'Nouvelle vente' : ''"
+  (action)="newSale()" />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="invoices().length === 0"
+  emptyMessage="Aucun document dans cette agence."
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && invoices().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Client</th>
+          <th>Règlement</th>
+          <th class="number">Total TTC</th>
+          <th>Statut</th>
+          <th><span class="visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (invoice of invoices(); track invoice.id) {
+          <tr (click)="open(invoice)">
+            <td class="nowrap">{{ invoice.number }}</td>
+            <td class="nowrap">{{ formatDate(invoice.documentDate) }}</td>
+            <td>{{ typeLabels[invoice.type] }}</td>
+            <td>{{ invoice.customerName }}</td>
+            <td class="text-muted">{{ invoice.creditMode ? 'Crédit' : 'Comptant' }}</td>
+            <td class="number">{{ formatMoney(invoice.totalAmount) }}</td>
+            <td><app-badge [text]="statusLabels[invoice.status]" [tone]="statusTones[invoice.status]" /></td>
+            <td class="row-actions">
+              <button type="button" class="btn btn-ghost icon-view"
+                (click)="openPreview(invoice, $event)">Voir</button>
+              @if (canValidate(invoice)) {
+                <button type="button" class="btn btn-primary icon-confirm" [disabled]="busy()"
+                  (click)="askValidation(invoice); $event.stopPropagation()">Valider</button>
+              }
+              @if (canCollect(invoice)) {
+                <button type="button" class="btn btn-primary icon-cash" [disabled]="busy()"
+                  (click)="openPayment(invoice); $event.stopPropagation()">Encaisser</button>
+              }
+              @if (canDelete(invoice)) {
+                <button type="button" class="btn btn-ghost icon-delete" [disabled]="busy()"
+                  (click)="askDelete(invoice); $event.stopPropagation()">Supprimer</button>
+              }
+              @if (canCancelDocument(invoice)) {
+                <button type="button" class="btn btn-ghost icon-cancel" [disabled]="busy()"
+                  (click)="openCancel(invoice); $event.stopPropagation()">Annuler</button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="documents" (pageChange)="load($event)" />
+
+<app-confirm-dialog
+  [open]="pending() !== null"
+  [heading]="confirmHeading()"
+  [message]="confirmMessage()"
+  [confirmLabel]="confirmLabel()"
+  (confirmed)="confirm()"
+  (cancelled)="pending.set(null)" />
+
+<app-drawer [open]="collecting() !== null" heading="Encaisser un règlement" (closed)="closePayment()">
+  @if (collecting(); as invoice) {
+    <app-payment-form
+      [invoiceId]="invoice.id"
+      [invoiceNumber]="invoice.number"
+      [remainingToPay]="invoice.remainingToPay"
+      (taken)="onPaymentTaken($event)"
+      (cancelled)="closePayment()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="cancelling() !== null" heading="Annuler le document" (closed)="closeCancel()">
+  @if (cancelling(); as invoice) {
+    <app-cancel-invoice-form
+      [invoiceId]="invoice.id"
+      [summary]="invoice.number + ' — ' + formatMoney(invoice.totalAmount)"
+      (saved)="onCancelled($event)"
+      (cancelled)="closeCancel()" />
+  }
+</app-drawer>
+
+<app-drawer [open]="previewing() !== null" [heading]="'Facture ' + (previewing()?.number ?? '')" width="720px" (closed)="closePreview()">
+  @if (previewing(); as invoice) {
+    <dl class="preview-summary">
+      <dt>Client</dt>
+      <dd>{{ invoice.customerName }}</dd>
+      <dt>Date</dt>
+      <dd>{{ formatDate(invoice.documentDate) }}</dd>
+    </dl>
+    <app-invoice-lines [invoiceId]="invoice.id" [lines]="invoice.lines" />
+    <dl class="preview-totals">
+      <dt>Total TTC</dt>
+      <dd>{{ formatMoney(invoice.totalAmount) }}</dd>
+    </dl>
+  }
+</app-drawer>

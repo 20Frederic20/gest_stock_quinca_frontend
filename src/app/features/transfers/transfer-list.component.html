@@ -1,0 +1,62 @@
+<app-page-header
+  heading="Transferts entre agences"
+  subtitle="Les transferts de l’agence, envoyés ou reçus, du plus récent au plus ancien."
+  [actionLabel]="canCreate() ? 'Nouveau transfert' : ''"
+  (action)="openCreate()" />
+
+<div class="toolbar">
+  <span class="toolbar-label">Agence</span>
+  @if (canChooseAgency()) {
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="agencyId()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+  } @else {
+    <span class="tag">{{ agencyLabel() }}</span>
+  }
+</div>
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="transfers().length === 0"
+  emptyMessage="Aucun transfert pour cette agence."
+  (retry)="load(pageInfo()?.page ?? 0)" />
+
+@if (!loading() && !error() && transfers().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Numéro</th>
+          <th>Date</th>
+          <th>Sens</th>
+          <th>Autre agence</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (transfer of transfers(); track transfer.id) {
+          <tr (click)="open(transfer)">
+            <td class="nowrap">{{ transfer.number }}</td>
+            <td class="nowrap">{{ formatDate(transfer.transferDate) }}</td>
+            <td class="nowrap">{{ direction(transfer) === 'out' ? 'Vers' : 'Depuis' }}</td>
+            <td>{{ otherAgencyLabel(transfer) }}</td>
+            <td><app-badge [text]="statusLabels[transfer.status]" [tone]="statusTones[transfer.status]" /></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="transferts" (pageChange)="load($event)" />
+
+<app-drawer [open]="formOpen()" heading="Nouveau transfert" (closed)="closeCreate()">
+  @if (formOpen()) {
+    <app-transfer-form (saved)="onCreated($event)" (cancelled)="closeCreate()" />
+  }
+</app-drawer>

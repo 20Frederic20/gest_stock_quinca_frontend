@@ -1,0 +1,46 @@
+<form class="line-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h3>Ajouter un article</h3>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="grid">
+    <div class="field">
+      <label>Article</label>
+      <app-select-search
+        [remoteSearch]="searchArticles"
+        [value]="article()?.id ?? null"
+        [label]="article()?.label ?? ''"
+        placeholder="Rechercher un article…"
+        (selected)="onArticleSelected($event)" />
+    </div>
+
+    <div class="field">
+      <label>Conditionnement</label>
+      <app-select-search
+        [options]="packagingOptions()"
+        [value]="packaging()?.id ?? null"
+        [label]="packaging() ? packagingLabel(packaging()!) : ''"
+        placeholder="Choisir"
+        (selected)="onPackagingSelected($event)" />
+    </div>
+
+    <div class="field">
+      <label for="orderQuantity">Quantité</label>
+      <input id="orderQuantity" type="number" min="0.0001" step="any" formControlName="quantity" />
+    </div>
+
+    <div class="field">
+      <label for="orderPrice">Prix d’achat</label>
+      <input id="orderPrice" type="number" min="0" step="any" formControlName="unitPrice" />
+    </div>
+  </div>
+
+  <div class="footer">
+    <p class="info">Le prix d’achat est celui du fournisseur : rien ne le calcule.</p>
+    <button type="submit" class="btn btn-primary" [disabled]="!canAdd()">
+      {{ busy() ? 'Ajout…' : 'Ajouter la ligne' }}
+    </button>
+  </div>
+</form>

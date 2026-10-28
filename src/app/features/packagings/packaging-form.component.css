@@ -1,0 +1,42 @@
+.form-error {
+  color: #a11;
+  background: #fdecec;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  margin: 0 0 var(--space-3);
+}
+
+.defaults {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-3);
+}
+
+.defaults legend {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  margin-bottom: var(--space-2);
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 12px;
+  margin: 0;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}

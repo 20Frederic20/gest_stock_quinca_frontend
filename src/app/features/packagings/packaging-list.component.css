@@ -1,0 +1,40 @@
+.article-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 520px;
+  margin-bottom: var(--space-4);
+}
+
+.choice-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.article-choice app-select-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.prompt {
+  margin-top: var(--space-6);
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.action-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: #a11;
+  background: #fdecec;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}

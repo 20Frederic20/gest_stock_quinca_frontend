@@ -1,0 +1,95 @@
+<app-page-header heading="Utilisateurs" actionLabel="Nouvel utilisateur" (action)="openCreate()" />
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="users().length === 0"
+  emptyMessage="Aucun utilisateur enregistré."
+  (retry)="load()" />
+
+@if (!loading() && !error() && users().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Identifiant</th>
+          <th>Rôle</th>
+          <th>Agence</th>
+          <th class="number">Remise max.</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+          <tr [class.selected]="selectedUser()?.id === user.id" (click)="openDetail(user)">
+            <td>
+              {{ user.name }}
+              @if (isSelf(user)) {
+                <span class="you">(vous)</span>
+              }
+            </td>
+            <td class="nowrap text-muted">{{ user.username }}</td>
+            <td class="nowrap">{{ roleLabels[user.role] }}</td>
+            <td>{{ user.agencyLabel }}</td>
+            <td class="number">{{ formatNumber(user.discountLimit) }} %</td>
+            <td>
+              <app-badge [text]="user.active ? 'Actif' : 'Inactif'" [tone]="user.active ? 'neutral' : 'muted'" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @switch (drawerMode()) {
+      @case ('detail') {
+        @if (selectedUser(); as user) {
+          @if (notice()) {
+            <p class="notice" role="status">{{ notice() }}</p>
+          }
+          <app-user-detail
+            [user]="user"
+            [isSelf]="isSelf(user)"
+            (edit)="openEdit()"
+            (resetPassword)="openPasswordReset()"
+            (toggleActive)="toggleActive()"
+            (delete)="askDelete()" />
+        }
+      }
+      @case ('password') {
+        @if (selectedUser(); as user) {
+          <app-password-reset-form
+            [userId]="user.id"
+            [userName]="user.name"
+            (saved)="onPasswordReset()"
+            (cancelled)="onFormCancelled()" />
+        }
+      }
+      @case ('form') {
+        <app-user-form
+          [user]="selectedUser()"
+          [agencies]="agencies()"
+          (saved)="onSaved()"
+          (cancelled)="onFormCancelled()" />
+      }
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="userToDelete() !== null"
+  heading="Supprimer cet utilisateur ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

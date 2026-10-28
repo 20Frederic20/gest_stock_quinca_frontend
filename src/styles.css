@@ -1,6 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
+/* Every font of the app, the public home page's included: imported in a component stylesheet, the
+   inlined font CSS (~26 kB) broke the component style budget of the production build. */
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
 
 :root {
+  /* Empêche le navigateur/l'OS de "corriger" le blanc pur en gris quand le mode sombre système
+     est actif : sans cette ligne, certains navigateurs (Chrome/Edge sur Android ou Windows en
+     mode sombre) réinterprètent nos couleurs et le fond n'est plus vraiment blanc à l'écran. */
+  color-scheme: light;
+
   /* Couleurs — reprises de la maquette */
   --color-bg: #ffffff;
   --color-surface: #fdf5ee;
@@ -17,6 +24,12 @@
   --color-accent-2-100: #eaf2fb;
   --color-accent-2-700: #13558f;
   --color-accent-2-800: #0d3b64;
+
+  /* Avertissement : distinct de l'accent de marque (orange, utilisé partout ailleurs) pour qu'un
+     message qui demande une action se remarque vraiment, au lieu de se fondre dans le décor. */
+  --color-warning: #a15c00;
+  --color-warning-bg: #fff4dd;
+  --color-warning-border: #f0cd8c;
 
   /* Typographie */
   --font-body: "Source Serif 4", system-ui, sans-serif;
@@ -67,7 +80,7 @@ h2 { font: 600 20px/1.2 var(--font-heading); margin: 0; }
   border-bottom: 1px solid var(--color-divider);
 }
 .table tbody tr:hover { background: var(--color-accent-100); cursor: pointer; }
-.table tbody tr.selectionnee { background: var(--color-accent-200); }
+.table tbody tr.selected { background: var(--color-accent-200); }
 
 /* --- Boutons --- */
 .btn {
@@ -90,6 +103,49 @@ h2 { font: 600 20px/1.2 var(--font-heading); margin: 0; }
 .btn-danger { color: #a11; border-color: #a11; }
 .btn-danger:hover { background: #fdecec; }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Icon-only action, e.g. the eye button that opens a row's content in a drawer. */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+  cursor: pointer;
+}
+.icon-btn:hover { color: var(--color-text); background: var(--color-accent-100); }
+.icon-btn svg { width: 18px; height: 18px; }
+
+/* Icone devant le texte d'un bouton (ajouter/modifier/supprimer/...), pour repérer l'action
+   d'un coup d'oeil sans se fier qu'au libellé. Masque SVG en currentColor : suit la couleur
+   du bouton et le thème automatiquement, un seul jeu de règles pour toutes les icones. */
+.icon-add::before, .icon-edit::before, .icon-delete::before, .icon-cancel::before,
+.icon-back::before, .icon-confirm::before, .icon-document::before, .icon-retry::before,
+.icon-cash::before, .icon-view::before {
+  content: '';
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-right: 5px;
+  vertical-align: -2px;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) no-repeat center / contain;
+  mask: var(--icon) no-repeat center / contain;
+}
+.icon-add     { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 5v14'/%3E%3Cpath d='M5 12h14'/%3E%3C/svg%3E"); }
+.icon-edit    { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'/%3E%3C/svg%3E"); }
+.icon-delete  { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2'/%3E%3Cpath d='M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6'/%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3C/svg%3E"); }
+.icon-cancel  { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6L6 18'/%3E%3Cpath d='M6 6l12 12'/%3E%3C/svg%3E"); }
+.icon-back    { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 12H5'/%3E%3Cpath d='M12 19l-7-7 7-7'/%3E%3C/svg%3E"); }
+.icon-confirm { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6L9 17l-5-5'/%3E%3C/svg%3E"); }
+.icon-document{ --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2h9l5 5v15H6z'/%3E%3Cpath d='M15 2v5h5'/%3E%3Cpath d='M9 13h6M9 17h6'/%3E%3C/svg%3E"); }
+.icon-retry   { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a9 9 0 1 1-3-6.7'/%3E%3Cpath d='M21 3v6h-6'/%3E%3C/svg%3E"); }
+.icon-cash    { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='6' width='20' height='12' rx='2'/%3E%3Ccircle cx='12' cy='12' r='2.5'/%3E%3Cpath d='M6 12h.01M18 12h.01'/%3E%3C/svg%3E"); }
+.icon-view    { --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E"); }
 
 /* --- Pastilles --- */
 .tag {
@@ -121,4 +177,4 @@ h2 { font: 600 20px/1.2 var(--font-heading); margin: 0; }
   color: var(--color-text);
 }
 .field input:focus { outline: 2px solid var(--color-accent); outline-offset: -1px; }
-.field input.invalide { border-color: #a11; }
+.field input.invalid { border-color: #a11; }

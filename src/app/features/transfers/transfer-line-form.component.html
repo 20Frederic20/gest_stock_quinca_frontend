@@ -1,0 +1,31 @@
+<form class="line-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h3>Ajouter un article</h3>
+
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="grid">
+    <div class="field">
+      <label>Article</label>
+      <app-select-search
+        [remoteSearch]="searchArticles"
+        [value]="article()?.id ?? null"
+        [label]="article()?.label ?? ''"
+        placeholder="Rechercher un article…"
+        (selected)="onArticleSelected($event)" />
+    </div>
+
+    <div class="field">
+      <label for="transferQuantity">Quantité</label>
+      <input id="transferQuantity" type="number" min="0.0001" step="any" formControlName="quantity" />
+    </div>
+  </div>
+
+  <div class="footer">
+    <p class="info">La quantité s’exprime dans l’unité de stock de l’article.</p>
+    <button type="submit" class="btn btn-primary" [disabled]="!canAdd()">
+      {{ busy() ? 'Ajout…' : 'Ajouter la ligne' }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,22 @@
+:host {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  min-height: 100vh;
+  align-items: start;
+}
+
+main {
+  padding: 28px 48px 96px;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  :host {
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    padding: 18px 20px 64px;
+  }
+}

@@ -1,0 +1,85 @@
+<app-page-header heading="Clients et créances" [actionLabel]="canCreate() ? 'Nouveau client' : ''" (action)="openCreate()" />
+
+<app-search-bar placeholder="Code, nom ou téléphone" (termChange)="onSearch($event)" />
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="customers().length === 0"
+  [emptyMessage]="emptyMessage()"
+  (retry)="reload()" />
+
+@if (!loading() && !error() && customers().length > 0) {
+  <div class="table-scroll">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Nom</th>
+          <th>Type</th>
+          <th>Téléphone</th>
+          <th>Grille</th>
+          <th class="number">Plafond crédit</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (customer of customers(); track customer.id) {
+          <tr [class.selected]="selectedCustomer()?.id === customer.id" (click)="openDetail(customer)">
+            <td class="nowrap">{{ customer.code }}</td>
+            <td>{{ customer.name }}</td>
+            <td class="nowrap text-muted">{{ typeLabels[customer.type] }}</td>
+            <td class="nowrap text-muted">{{ customer.phone || '—' }}</td>
+            <td class="text-muted">{{ customer.privilegeLabel }}</td>
+            <td class="number">{{ customer.creditLimit > 0 ? formatMoney(customer.creditLimit) : 'Comptant' }}</td>
+            <td>
+              <app-badge [text]="customer.active ? 'Actif' : 'Inactif'" [tone]="customer.active ? 'neutral' : 'muted'" />
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<!-- Outside the @if so that it does not blink while the next page loads. -->
+<app-pagination [info]="pageInfo()" itemsLabel="clients" (pageChange)="load($event)" />
+
+<app-drawer [open]="drawerOpen()" [heading]="drawerHeading()" (closed)="closeDrawer()">
+  @if (drawerOpen()) {
+    @if (drawerMode() === 'detail') {
+      @if (selectedCustomer(); as customer) {
+        <app-customer-detail
+          [customer]="customer"
+          [credit]="credit()"
+          [creditLoading]="creditLoading()"
+          [creditError]="creditError()"
+          [canEdit]="canEdit()"
+          [canDelete]="canDelete()"
+          (edit)="openEdit()"
+          (toggleActive)="toggleActive()"
+          (delete)="askDelete()" />
+      }
+    } @else {
+      <app-customer-form
+        [customer]="selectedCustomer()"
+        [privileges]="privileges()"
+        (saved)="onSaved()"
+        (cancelled)="onFormCancelled()" />
+    }
+  }
+</app-drawer>
+
+<app-confirm-dialog
+  [open]="customerToDelete() !== null"
+  heading="Supprimer ce client ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

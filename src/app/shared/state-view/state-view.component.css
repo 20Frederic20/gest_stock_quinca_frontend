@@ -1,0 +1,15 @@
+.state {
+  padding: var(--space-6);
+  text-align: center;
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.error {
+  color: #a11;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}

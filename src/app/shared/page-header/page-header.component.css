@@ -1,0 +1,13 @@
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+.subtitle {
+  font-size: 13px;
+  margin: var(--space-1) 0 0;
+}
