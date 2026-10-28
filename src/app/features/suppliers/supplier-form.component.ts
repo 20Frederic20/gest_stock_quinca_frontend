@@ -29,7 +29,6 @@ export class SupplierFormComponent {
 
   // Same rules as SupplierRequest on the backend.
   form = this.fb.nonNullable.group({
-    code: ['', [Validators.required, Validators.maxLength(30)]],
     companyName: ['', [Validators.required, Validators.maxLength(200)]],
     phone: ['', [Validators.maxLength(30)]],
     address: ['', [Validators.maxLength(255)]],
@@ -44,7 +43,6 @@ export class SupplierFormComponent {
       this.formError.set(null);
       this.fieldErrors.set({});
       this.form.reset({
-        code: supplier?.code ?? '',
         companyName: supplier?.companyName ?? '',
         phone: supplier?.phone ?? '',
         address: supplier?.address ?? '',
@@ -66,7 +64,6 @@ export class SupplierFormComponent {
 
     const value = this.form.getRawValue();
     const body: SupplierRequest = {
-      code: value.code.trim(),
       companyName: value.companyName.trim(),
       phone: orNull(value.phone),
       address: orNull(value.address),

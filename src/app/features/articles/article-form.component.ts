@@ -60,7 +60,6 @@ export class ArticleFormComponent {
   });
 
   form = this.fb.nonNullable.group({
-    code: ['', [Validators.required, Validators.maxLength(30)]],
     barcode: ['', [Validators.maxLength(50)]],
     designation: ['', [Validators.required, Validators.maxLength(200)]],
     alertThreshold: [0, [Validators.required, Validators.min(0)]],
@@ -85,7 +84,6 @@ export class ArticleFormComponent {
       this.fieldErrors.set({});
       this.isScanning.set(false); // <-- Arrêter le scan si on change d'article
       this.form.reset({
-        code: article?.code ?? '',
         barcode: article?.barcode ?? '',
         designation: article?.designation ?? '',
         alertThreshold: article?.alertThreshold ?? 0,

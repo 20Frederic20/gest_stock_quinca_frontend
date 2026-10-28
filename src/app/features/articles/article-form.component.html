@@ -4,12 +4,6 @@
   }
 
   <div class="field">
-    <label for="code">Code</label>
-    <input id="code" formControlName="code" maxlength="30" autocomplete="off" />
-    <app-field-error [control]="form.controls.code" [serverError]="fieldErrors()['code']" />
-  </div>
-
-  <div class="field">
     <label for="designation">Désignation</label>
     <input id="designation" formControlName="designation" maxlength="200" autocomplete="off" />
     <app-field-error [control]="form.controls.designation" [serverError]="fieldErrors()['designation']" />

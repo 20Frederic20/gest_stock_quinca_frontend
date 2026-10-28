@@ -3,23 +3,15 @@
     <p class="form-error">{{ formError() }}</p>
   }
 
-  <div class="row">
-    <div class="field">
-      <label for="customerCode">Code</label>
-      <input id="customerCode" formControlName="code" maxlength="30" autocomplete="off" />
-      <app-field-error [control]="form.controls.code" [serverError]="fieldErrors()['code']" />
-    </div>
-
-    <div class="field">
-      <label>Type</label>
-      <app-select-search
-        [options]="typeOptions()"
-        [value]="form.controls.type.value"
-        [label]="typeLabel()"
-        placeholder="Choisir un type"
-        (selected)="onTypeSelected($event)" />
-      <app-field-error [control]="form.controls.type" [serverError]="fieldErrors()['type']" />
-    </div>
+  <div class="field">
+    <label>Type</label>
+    <app-select-search
+      [options]="typeOptions()"
+      [value]="form.controls.type.value"
+      [label]="typeLabel()"
+      placeholder="Choisir un type"
+      (selected)="onTypeSelected($event)" />
+    <app-field-error [control]="form.controls.type" [serverError]="fieldErrors()['type']" />
   </div>
 
   <div class="field">

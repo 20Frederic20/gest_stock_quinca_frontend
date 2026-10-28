@@ -31,7 +31,6 @@ export interface Customer {
 }
 
 export interface CustomerRequest {
-  code: string;
   name: string;
   type: CustomerType;
   phone: string | null;

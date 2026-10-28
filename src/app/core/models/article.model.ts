@@ -15,7 +15,6 @@ export interface Article {
 }
 
 export interface ArticleRequest {
-  code: string;
   barcode: string | null;
   designation: string;
   alertThreshold: number;

@@ -16,7 +16,6 @@ export interface Supplier {
 }
 
 export interface SupplierRequest {
-  code: string;
   companyName: string;
   address: string | null;
   phone: string | null;

@@ -43,7 +43,6 @@ export class CustomerFormComponent {
 
   // Same rules as CustomerRequest on the backend.
   form = this.fb.nonNullable.group({
-    code: ['', [Validators.required, Validators.maxLength(30)]],
     name: ['', [Validators.required, Validators.maxLength(200)]],
     type: [DEFAULT_TYPE, [Validators.required]],
     phone: ['', [Validators.maxLength(30)]],
@@ -70,7 +69,6 @@ export class CustomerFormComponent {
       this.formError.set(null);
       this.fieldErrors.set({});
       this.form.reset({
-        code: customer?.code ?? '',
         name: customer?.name ?? '',
         type: customer?.type ?? DEFAULT_TYPE,
         phone: customer?.phone ?? '',
@@ -116,7 +114,6 @@ export class CustomerFormComponent {
 
     const value = this.form.getRawValue();
     const body: CustomerRequest = {
-      code: value.code.trim(),
       name: value.name.trim(),
       type: value.type,
       phone: orNull(value.phone),
