@@ -22,8 +22,9 @@
 		try_files {path} /index.html
 		file_server
 
-		# Angular nomme ses fichiers chunk-2E52FCFY.js, styles-XXXXXXXX.css, media/…-HASH.woff2
-		@hashed path_regexp [-.][0-9A-Z]{8,}\.(js|css|woff2?|ttf|png|jpe?g|svg|webp|gif)$
+		# Seuls les fichiers générés par Angular portent un hash (chunk-6OLSQIRr.js, styles-….css,
+		# et tout le dossier media/) : les fichiers de public/ gardent leur nom, donc pas de cache long.
+		@hashed path_regexp ^/((chunk|main|polyfills|styles)-[0-9A-Za-z_-]{8,}\.(js|css)|media/.+)$
 		header @hashed Cache-Control "public, max-age=31536000, immutable"
 
 		@index path / /index.html

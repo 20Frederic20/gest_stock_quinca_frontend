@@ -7,7 +7,7 @@ import { CustomersService } from './customers.service';
 const URL = '/api/v1/customers';
 
 const body: CustomerRequest = {
-  code: 'CLI-001', name: 'Bâtiments Houngbo', type: 'COMPANY', phone: null, address: null, taxId: null,
+  name: 'Bâtiments Houngbo', type: 'COMPANY', phone: null, address: null, taxId: null,
   creditLimit: 500000, paymentTermDays: 30, comment: null, privilegeId: 'p1',
 };
 

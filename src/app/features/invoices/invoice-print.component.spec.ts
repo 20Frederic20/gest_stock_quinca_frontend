@@ -45,6 +45,8 @@ describe('InvoicePrintComponent', () => {
     const { element } = setup();
 
     expect(element.textContent).toContain('Génération du PDF');
+    // Still pending on purpose: matching it keeps verify() from failing the cleanup.
+    httpTesting.expectOne('/api/v1/invoices/i1/pdf');
   });
 
   it('shows the real backend PDF in an embedded viewer once it arrives', () => {
@@ -57,7 +59,7 @@ describe('InvoicePrintComponent', () => {
     expect(frame?.getAttribute('src')).toBe('blob:mock-url');
   });
 
-  it('shows the error when the PDF cannot be generated', () => {
+  it('shows the error when the PDF cannot be generated', async () => {
     const { component } = setup();
 
     httpTesting.expectOne('/api/v1/invoices/i1/pdf').flush(
@@ -65,7 +67,8 @@ describe('InvoicePrintComponent', () => {
       { status: 404, statusText: 'Not Found' },
     );
 
-    expect(component.error()).toBe('Document introuvable');
+    // The interceptor reads the JSON back out of the Blob asynchronously
+    await vi.waitFor(() => expect(component.error()).toBe('Document introuvable'));
     expect(component.pdfUrl()).toBeNull();
   });
 

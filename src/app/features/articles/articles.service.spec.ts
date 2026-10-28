@@ -12,7 +12,7 @@ const emptyPage = (number = 0): PageResponse<never> => ({
 });
 
 const body: ArticleRequest = {
-  code: 'CIM-32R', barcode: null, designation: 'Ciment CIM II 32.5R', alertThreshold: 2000,
+  barcode: null, designation: 'Ciment CIM II 32.5R', alertThreshold: 2000,
   vatRate: 18, familyId: 'f1', stockUnitId: 'u1',
 };
 

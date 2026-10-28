@@ -21,7 +21,7 @@ const reseller: Customer = {
 };
 
 const valid: CustomerRequest = {
-  code: 'CLI-002', name: 'Awa Dossou', type: 'INDIVIDUAL', phone: null, address: null, taxId: null,
+  name: 'Awa Dossou', type: 'INDIVIDUAL', phone: null, address: null, taxId: null,
   creditLimit: 0, paymentTermDays: 0, comment: null, privilegeId: 'p1',
 };
 
@@ -52,7 +52,7 @@ describe('CustomerFormComponent', () => {
   it('starts as an individual paying cash, on the default grid, when creating', () => {
     const { component } = setup(null);
 
-    expect(component.form.getRawValue()).toEqual({ ...formValue, code: '', name: '' });
+    expect(component.form.getRawValue()).toEqual({ ...formValue, name: '' });
     expect(component.typeLabel()).toBe('Particulier');
     expect(component.privilegeLabel()).toBe('Standard');
   });
@@ -94,9 +94,8 @@ describe('CustomerFormComponent', () => {
     const { controls } = component.form;
 
     component.form.setValue({
-      ...formValue, code: '', name: 'x'.repeat(201), taxId: 'x'.repeat(31), creditLimit: -1, paymentTermDays: 366, privilegeId: '',
+      ...formValue, name: 'x'.repeat(201), taxId: 'x'.repeat(31), creditLimit: -1, paymentTermDays: 366, privilegeId: '',
     });
-    expect(controls.code.hasError('required')).toBe(true);
     expect(controls.name.hasError('maxlength')).toBe(true);
     expect(controls.taxId.hasError('maxlength')).toBe(true);
     expect(controls.creditLimit.hasError('min')).toBe(true);
@@ -128,13 +127,13 @@ describe('CustomerFormComponent', () => {
     component.submit();
 
     httpTesting.expectNone(URL);
-    expect(component.form.controls.code.touched).toBe(true);
+    expect(component.form.controls.name.touched).toBe(true);
     expect(saved).not.toHaveBeenCalled();
   });
 
   it('creates a customer with trimmed texts and blanks sent as null', () => {
     const { component, saved } = setup(null);
-    component.form.setValue({ ...formValue, code: ' CLI-002 ', name: '  Awa Dossou ', phone: '   ' });
+    component.form.setValue({ ...formValue, name: '  Awa Dossou ', phone: '   ' });
 
     component.submit();
 
@@ -154,7 +153,7 @@ describe('CustomerFormComponent', () => {
     const req = httpTesting.expectOne(`${URL}/c1`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({
-      code: 'CLI-001', name: 'Quincaillerie du Port', type: 'RESELLER', phone: '+229 97 00 00 01', address: null,
+      name: 'Quincaillerie du Port', type: 'RESELLER', phone: '+229 97 00 00 01', address: null,
       taxId: null, creditLimit: 500000, paymentTermDays: 45, comment: null, privilegeId: 'p2',
     });
     req.flush(reseller);

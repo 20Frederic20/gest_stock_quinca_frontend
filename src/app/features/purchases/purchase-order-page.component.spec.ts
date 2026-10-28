@@ -155,10 +155,13 @@ describe('PurchaseOrderPageComponent', () => {
     expect(component.order()?.status).toBe('PARTIALLY_RECEIVED');
   });
 
-  it('offers the printable bon de commande, draft or confirmed alike', () => {
+  // One test per order: the test module can only be set up once per test.
+  it('offers the printable bon de commande on a draft', () => {
     const draftLink = setup().element.querySelector<HTMLAnchorElement>('aside .actions a.btn');
     expect(draftLink?.getAttribute('href')).toBe('/purchase-orders/o1/print');
+  });
 
+  it('offers the printable bon de commande on a confirmed order too', () => {
     const confirmedLink = setup(confirmed).element.querySelector<HTMLAnchorElement>('aside .actions a.btn');
     expect(confirmedLink?.getAttribute('href')).toBe('/purchase-orders/o1/print');
   });

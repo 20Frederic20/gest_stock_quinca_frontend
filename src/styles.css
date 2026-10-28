@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
+/* Every font of the app, the public home page's included: imported in a component stylesheet, the
+   inlined font CSS (~26 kB) broke the component style budget of the production build. */
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap');
 
 :root {
   /* Empêche le navigateur/l'OS de "corriger" le blanc pur en gris quand le mode sombre système

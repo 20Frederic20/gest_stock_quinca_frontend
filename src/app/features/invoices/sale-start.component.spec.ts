@@ -125,7 +125,7 @@ describe('SaleStartComponent', () => {
 
     component.submit();
 
-    // Only the three fields the backend accepts per line: it prices the sale itself.
+    // Per line: the packaging, the quantity, the discount and the price the seller composed.
     expect(httpTesting.expectOne('/api/v1/invoices').request.body).toEqual({
       customerId: 'c1',
       walkInCustomerName: null,
@@ -133,8 +133,8 @@ describe('SaleStartComponent', () => {
       creditMode: false,
       transportAmount: 5000,
       lines: [
-        { packagingId: 'k1', quantity: 10, discountRate: 0 },
-        { packagingId: 'k2', quantity: 2, discountRate: 10 },
+        { packagingId: 'k1', quantity: 10, discountRate: 0, unitPrice: 5000 },
+        { packagingId: 'k2', quantity: 2, discountRate: 10, unitPrice: 5000 },
       ],
     });
   });
@@ -297,7 +297,7 @@ describe('SaleStartComponent', () => {
         type: 'INVOICE',
         creditMode: false,
         transportAmount: 0,
-        lines: [{ packagingId: 'k1', quantity: 10, discountRate: 0 }],
+        lines: [{ packagingId: 'k1', quantity: 10, discountRate: 0, unitPrice: 5000 }],
       });
       req.flush({ id: 'i9', customerId: null, customerName: 'Amina D.' });
       expect(navigate).toHaveBeenCalledWith(['/invoices', 'i9'], { replaceUrl: true });

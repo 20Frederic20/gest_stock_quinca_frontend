@@ -27,7 +27,7 @@ const cement: Article = {
 };
 
 const valid = {
-  code: 'FER-12', barcode: '', designation: 'Fer à béton 12 mm', alertThreshold: 50,
+  barcode: '', designation: 'Fer à béton 12 mm', alertThreshold: 50,
   vatRate: 18, familyId: 'f1', stockUnitId: 'u2', price: 5000,
 };
 
@@ -61,7 +61,7 @@ describe('ArticleFormComponent', () => {
     const { component } = setup(null);
 
     expect(component.form.getRawValue()).toEqual({
-      code: '', barcode: '', designation: '', alertThreshold: 0, vatRate: 18, familyId: '', stockUnitId: '', price: 0,
+      barcode: '', designation: '', alertThreshold: 0, vatRate: 18, familyId: '', stockUnitId: '', price: 0,
     });
     expect(component.form.valid).toBe(false);
   });
@@ -70,7 +70,7 @@ describe('ArticleFormComponent', () => {
     const { component } = setup(cement);
 
     expect(component.form.getRawValue()).toEqual({
-      code: 'CIM-32R', barcode: '6181100234567', designation: 'Ciment CIM II 32.5R',
+      barcode: '6181100234567', designation: 'Ciment CIM II 32.5R',
       alertThreshold: 2000, vatRate: 18, familyId: 'f2', stockUnitId: 'u1', price: 0,
     });
     expect(component.familyLabel()).toBe('Ciment et liants');
@@ -80,10 +80,10 @@ describe('ArticleFormComponent', () => {
   it('reloads when another article is selected without closing the panel', () => {
     const { fixture, component } = setup(cement);
 
-    fixture.componentRef.setInput('article', { ...cement, id: 'a2', code: 'CIM-42', vatRate: 0.07 });
+    fixture.componentRef.setInput('article', { ...cement, id: 'a2', designation: 'Ciment CEM I 42.5', vatRate: 0.07 });
     fixture.detectChanges();
 
-    expect(component.form.controls.code.value).toBe('CIM-42');
+    expect(component.form.controls.designation.value).toBe('Ciment CEM I 42.5');
     expect(component.form.controls.vatRate.value).toBe(7);
   });
 
@@ -107,11 +107,10 @@ describe('ArticleFormComponent', () => {
     const { controls } = component.form;
 
     component.form.setValue({
-      ...valid, code: 'A'.repeat(31), barcode: '1'.repeat(51), designation: 'A'.repeat(201),
+      ...valid, barcode: '1'.repeat(51), designation: 'A'.repeat(201),
       alertThreshold: -1, vatRate: 101,
     });
 
-    expect(controls.code.hasError('maxlength')).toBe(true);
     expect(controls.barcode.hasError('maxlength')).toBe(true);
     expect(controls.designation.hasError('maxlength')).toBe(true);
     expect(controls.alertThreshold.hasError('min')).toBe(true);
@@ -174,7 +173,7 @@ describe('ArticleFormComponent', () => {
     const req = httpTesting.expectOne(`${URL}/a1`);
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).toEqual({
-      code: 'CIM-32R', barcode: '6181100234567', designation: 'Ciment CIM II 32.5R — sac 50 kg',
+      barcode: '6181100234567', designation: 'Ciment CIM II 32.5R — sac 50 kg',
       alertThreshold: 2000, vatRate: 0.18, familyId: 'f2', stockUnitId: 'u1',
     });
     req.flush(cement);

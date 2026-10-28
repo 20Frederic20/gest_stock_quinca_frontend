@@ -195,8 +195,8 @@ describe('InvoicePageComponent', () => {
     });
 
     const request = httpTesting.expectOne(r => r.method === 'POST' && r.url === '/api/v1/invoices/i1/lines');
-    // Only the three fields the backend accepts: it prices the line itself.
-    expect(request.request.body).toEqual({ packagingId: 'k1', quantity: 10, discountRate: 5 });
+    // The price composed in the form goes along: the seller may have raised it above the grid price.
+    expect(request.request.body).toEqual({ packagingId: 'k1', quantity: 10, discountRate: 5, unitPrice: 5000 });
     request.flush(withTwoLines);
     refresh();
     httpTesting.match(r => r.url.startsWith('/api/v1/agencies/g1/stock/')).forEach(r => r.flush(stock));

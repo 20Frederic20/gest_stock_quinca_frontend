@@ -5,7 +5,7 @@ import { SupplierRequest } from '../../core/models/supplier.model';
 import { SuppliersService } from './suppliers.service';
 
 const body: SupplierRequest = {
-  code: 'FOU-001', companyName: 'Ciments du Bénin', address: 'Zone industrielle, Cotonou',
+  companyName: 'Ciments du Bénin', address: 'Zone industrielle, Cotonou',
   phone: '+229 21 30 00 00', taxId: '3201900000002', paymentTerms: '30 jours fin de mois',
 };
 

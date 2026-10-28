@@ -97,7 +97,7 @@ describe('OrderReceptionsComponent', () => {
 
     const request = httpTesting.expectOne('/api/v1/receptions/r2/confirmation');
     expect(request.request.method).toBe('POST');
-    request.flush({ ...draft, status: 'CONFIRMED' } as Reception);
+    request.flush({ ...draft, status: 'CONFIRMED' } as unknown as Reception);
 
     // Reloaded: the reception list and the order both changed.
     httpTesting.expectOne(r => r.url === URL).flush(page([{ ...draft, status: 'CONFIRMED' }]));

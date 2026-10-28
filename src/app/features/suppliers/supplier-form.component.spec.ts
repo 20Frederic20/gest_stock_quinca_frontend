@@ -35,7 +35,7 @@ describe('SupplierFormComponent', () => {
     const { component } = setup();
 
     expect(component.form.getRawValue()).toEqual({
-      code: '', companyName: '', phone: '', address: '', taxId: '', paymentTerms: '',
+      companyName: '', phone: '', address: '', taxId: '', paymentTerms: '',
     });
   });
 
@@ -43,33 +43,32 @@ describe('SupplierFormComponent', () => {
     const { component } = setup(cements);
 
     expect(component.form.getRawValue()).toEqual({
-      code: 'FOU-001', companyName: 'Ciments du Bénin', phone: '+229 21 30 00 00',
+      companyName: 'Ciments du Bénin', phone: '+229 21 30 00 00',
       address: 'Zone industrielle, Cotonou', taxId: '3201900000002', paymentTerms: '30 jours fin de mois',
     });
   });
 
-  it('requires a code and a company name, within the lengths the backend accepts', () => {
+  it('requires a company name, within the lengths the backend accepts', () => {
     const { component } = setup();
-    const { code, companyName } = component.form.controls;
+    const { companyName, taxId } = component.form.controls;
 
-    expect(code.hasError('required')).toBe(true);
     expect(companyName.hasError('required')).toBe(true);
 
-    code.setValue('A'.repeat(31));
     companyName.setValue('A'.repeat(201));
-    expect(code.hasError('maxlength')).toBe(true);
+    taxId.setValue('1'.repeat(31));
     expect(companyName.hasError('maxlength')).toBe(true);
+    expect(taxId.hasError('maxlength')).toBe(true);
   });
 
   it('creates the supplier, sending nothing where nothing was typed', () => {
     const { component, saved } = setup();
-    component.form.patchValue({ code: '  FOU-002 ', companyName: '  Quincaillerie Ayi  ' });
+    component.form.patchValue({ companyName: '  Quincaillerie Ayi  ' });
 
     component.submit();
 
     const request = httpTesting.expectOne(r => r.method === 'POST' && r.url === '/api/v1/suppliers');
     expect(request.request.body).toEqual({
-      code: 'FOU-002', companyName: 'Quincaillerie Ayi', phone: null, address: null, taxId: null, paymentTerms: null,
+      companyName: 'Quincaillerie Ayi', phone: null, address: null, taxId: null, paymentTerms: null,
     });
     request.flush(cements);
 
@@ -83,19 +82,19 @@ describe('SupplierFormComponent', () => {
     component.submit();
 
     const request = httpTesting.expectOne(r => r.method === 'PUT' && r.url === '/api/v1/suppliers/f1');
-    expect(request.request.body).toMatchObject({ code: 'FOU-001', paymentTerms: 'Comptant à la livraison' });
+    expect(request.request.body).toMatchObject({ companyName: 'Ciments du Bénin', paymentTerms: 'Comptant à la livraison' });
     request.flush(cements);
 
     expect(saved).toHaveBeenCalled();
   });
 
-  it('shows why the backend refused a code already taken', () => {
+  it('shows why the backend refused an IFU already taken', () => {
     const { component, saved } = setup();
-    component.form.patchValue({ code: 'FOU-001', companyName: 'Ciments du Bénin' });
+    component.form.patchValue({ companyName: 'Ciments du Bénin', taxId: '3201900000002' });
 
     component.submit();
     httpTesting.expectOne(r => r.method === 'POST').flush(
-      { status: 400, message: 'Un fournisseur avec le code FOU-001 existe déjà', fieldErrors: null },
+      { status: 400, message: 'Un fournisseur avec l\'IFU 3201900000002 existe déjà', fieldErrors: null },
       { status: 400, statusText: 'Bad Request' },
     );
 
@@ -106,15 +105,15 @@ describe('SupplierFormComponent', () => {
 
   it('puts a field refusal on the field the backend names', () => {
     const { component } = setup();
-    component.form.patchValue({ code: 'FOU-002', companyName: 'Quincaillerie Ayi' });
+    component.form.patchValue({ companyName: 'Quincaillerie Ayi', taxId: '320' });
 
     component.submit();
     httpTesting.expectOne(r => r.method === 'POST').flush(
-      { message: 'Donnees invalides', fieldErrors: { code: 'Le code est obligatoire' } },
+      { message: 'Donnees invalides', fieldErrors: { taxId: "L'IFU est invalide" } },
       { status: 400, statusText: 'Bad Request' },
     );
 
-    expect(component.fieldErrors()['code']).toBe('Le code est obligatoire');
+    expect(component.fieldErrors()['taxId']).toBe("L'IFU est invalide");
   });
 
   it('sends nothing while the form is invalid', () => {
@@ -123,6 +122,6 @@ describe('SupplierFormComponent', () => {
     component.submit();
 
     httpTesting.expectNone(r => r.method === 'POST');
-    expect(component.form.controls.code.touched).toBe(true);
+    expect(component.form.controls.companyName.touched).toBe(true);
   });
 });

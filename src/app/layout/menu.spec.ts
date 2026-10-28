@@ -51,10 +51,12 @@ describe('visibleMenu', () => {
     expect(transferts?.permission).toBe('transfer.view');
   });
 
-  it('reserves the sales history to the administrator only', () => {
-    const historique = MENU.flatMap(g => g.items).find(i => i.route === '/sales-history');
+  it('hides the screens that are not built yet: sales history, roles, audit log', () => {
+    const routes = MENU.flatMap(g => g.items).map(i => i.route);
 
-    expect(historique?.permission).toBe('agencies.write');
+    expect(routes).not.toContain('/sales-history');
+    expect(routes).not.toContain('/roles');
+    expect(routes).not.toContain('/audit-log');
   });
 
   it('reserves administration and analyse to the administrator only, users management included', () => {
@@ -65,8 +67,6 @@ describe('visibleMenu', () => {
     expect(administration.items.map(i => i.permission)).toEqual([
       'agencies.write',
       'users.manage',
-      'agencies.write',
-      'agencies.write',
     ]);
   });
 });
@@ -80,8 +80,8 @@ describe('MENU', () => {
     expect(MENU.length).toBe(8);
   });
 
-  it('has 23 items', () => {
-    expect(allItems.length).toBe(23);
+  it('has 20 items', () => {
+    expect(allItems.length).toBe(20);
   });
 
   it('starts a sale from the invoices screen, which has its own button, not from a menu entry', () => {
@@ -94,11 +94,11 @@ describe('MENU', () => {
     }
   });
 
-  it('marks exactly the ready screens, day closing included', () => {
+  it('marks exactly the ready screens, day closing and transfers included', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/agencies', '/articles', '/customers', '/dashboard', '/day-closing', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/purchase-orders', '/receptions', '/stock', '/stock-movements', '/suppliers', '/units-of-measure', '/users'],
+      ['/agencies', '/articles', '/customers', '/dashboard', '/day-closing', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/purchase-orders', '/receptions', '/stock', '/stock-movements', '/suppliers', '/transfers', '/units-of-measure', '/users'],
     );
   });
 });

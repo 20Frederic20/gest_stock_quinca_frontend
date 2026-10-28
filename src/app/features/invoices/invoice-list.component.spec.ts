@@ -52,9 +52,9 @@ describe('InvoiceListComponent', () => {
 
     const element = fixture.nativeElement as HTMLElement;
     const refresh = () => fixture.detectChanges();
-    /** The labelled action buttons of one row, in order (the icon-only preview button is separate). */
+    /** The action buttons of one row, in order (the "Voir" preview button, on every row, is left out). */
     const rowActions = (row = 0) =>
-      [...element.querySelectorAll('tbody tr')[row].querySelectorAll('.row-actions button:not(.icon-btn)')]
+      [...element.querySelectorAll('tbody tr')[row].querySelectorAll('.row-actions button:not(.icon-view)')]
         .map(button => button.textContent?.trim());
 
     return { component: fixture.componentInstance, element, refresh, rowActions, navigate };
@@ -81,7 +81,8 @@ describe('InvoiceListComponent', () => {
   });
 
   it('switches agency and starts again from the first page', () => {
-    const { component } = setup('MANAGER');
+    // Looking at another agency's sales is reserved to the administrator (sales.viewAll)
+    const { component } = setup('ADMIN');
     httpTesting.expectOne(r => r.url === '/api/v1/agencies/g1/invoices').flush(page([draft]));
     expect(component.canChooseAgency()).toBe(true);
 
