@@ -1,0 +1,46 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# API Spring Boot : même domaine que l'app, donc cookies JWT/XSRF sans souci de CORS
+	handle /api/* {
+		request_body {
+			max_size 16MB
+		}
+		reverse_proxy api:8080 {
+			# Pendant un redéploiement de l'API, réessaie au lieu de renvoyer 502 tout de suite
+			lb_try_duration 30s
+		}
+	}
+
+	# Application Angular (SPA)
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+
+		# Angular nomme ses fichiers chunk-2E52FCFY.js, styles-XXXXXXXX.css, media/…-HASH.woff2
+		@hashed path_regexp [-.][0-9A-Z]{8,}\.(js|css|woff2?|ttf|png|jpe?g|svg|webp|gif)$
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+
+		@index path / /index.html
+		header @index Cache-Control "no-cache"
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), microphone=(), geolocation=()"
+		-Server
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}
