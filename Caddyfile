@@ -7,8 +7,11 @@
 
 	# API Spring Boot : même domaine que l'app, donc cookies JWT/XSRF sans souci de CORS
 	handle /api/* {
+		# Plus large que la limite de Spring (15 Mo par fichier, 16 Mio par requête) : c'est Spring qui
+		# refuse un fichier trop gros, avec un message clair. Ici, « 16MB » valait 16 000 000 octets,
+		# moins que les 16 Mio de Spring, et Caddy répondait un 413 vide.
 		request_body {
-			max_size 16MB
+			max_size 20MB
 		}
 		reverse_proxy api:8080 {
 			# Pendant un redéploiement de l'API, réessaie au lieu de renvoyer 502 tout de suite
