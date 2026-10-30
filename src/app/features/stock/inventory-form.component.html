@@ -33,6 +33,14 @@
     }
   </div>
 
+  @if (showUnitCost()) {
+    <div class="field">
+      <label for="unitCost">Coût unitaire des {{ addedLabel() }} ajoutés{{ unitCode() ? ' (F CFA par ' + unitCode() + ')' : ' (F CFA)' }}</label>
+      <input id="unitCost" type="number" min="0" step="any" [formControl]="unitCost" />
+      <app-field-error [control]="unitCost" [serverError]="fieldErrors()['unitCost']" />
+    </div>
+  }
+
   <div class="field">
     <label for="reason">Motif</label>
     <input id="reason" formControlName="reason" maxlength="255" autocomplete="off" placeholder="Inventaire de fin de mois, casse constatée…" />

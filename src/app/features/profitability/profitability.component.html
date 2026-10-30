@@ -1,0 +1,232 @@
+<app-page-header heading="Rentabilité" subtitle="Chiffre d’affaires, marge sur coût d’achat et bénéfice net de la période." />
+
+<div class="toolbar">
+  <div class="presets" role="group" aria-label="Période">
+    @for (p of presets; track p.id) {
+      <button type="button" class="btn preset" [class.active]="preset() === p.id" (click)="selectPreset(p.id)">
+        {{ p.label }}
+      </button>
+    }
+  </div>
+  <label class="date">
+    Du
+    <input type="date" [value]="from()" [max]="to()" (change)="onDateChange('from', $event)" />
+  </label>
+  <label class="date">
+    Au
+    <input type="date" [value]="to()" [min]="from()" (change)="onDateChange('to', $event)" />
+  </label>
+  <app-select-search
+    class="agency"
+    [options]="agencyOptions()"
+    [value]="agencyFilter()"
+    [label]="agencyLabel()"
+    placeholder="Toutes les agences"
+    [allowEmpty]="true"
+    (selected)="onAgencySelected($event)" />
+  <div class="export">
+    <button
+      type="button"
+      class="btn"
+      aria-haspopup="menu"
+      [attr.aria-expanded]="exportMenuOpen()"
+      [disabled]="exporting() || !report()"
+      (click)="toggleExportMenu()">
+      {{ exporting() ? 'Export…' : 'Exporter' }}
+    </button>
+    @if (exportMenuOpen()) {
+      <div class="menu" role="menu">
+        <button type="button" role="menuitem" (click)="exportReport('pdf')">PDF</button>
+        <button type="button" role="menuitem" (click)="exportReport('xlsx')">Excel</button>
+      </div>
+    }
+  </div>
+</div>
+
+@if (exportError()) {
+  <p class="alert" role="alert">{{ exportError() }}</p>
+}
+
+<app-state-view [loading]="loading()" [error]="error()" [empty]="false" (retry)="load()" />
+
+@if (report(); as r) {
+  @if (!loading() && !error()) {
+    @if (notStarted()) {
+      <div class="banner banner-info">
+        Le suivi des coûts n’a pas encore démarré : la marge ne peut pas être calculée.
+        <a routerLink="/initial-costs">Démarrer le suivi des coûts</a>
+      </div>
+    } @else if (startedAfterPeriod()) {
+      <div class="banner banner-info">
+        Pas de données avant le {{ formatDate(r.trackingStartedAt) }} : le suivi des coûts a démarré après cette période.
+      </div>
+    }
+
+    @if (partialStartNotice(); as notice) {
+      <div class="banner banner-info partial-start">{{ notice }}</div>
+    }
+
+    @if (r.missingCostArticles.length > 0 || r.salesWithMissingCost > 0) {
+      <div class="banner banner-warning">
+        <p>
+          Des articles n’ont pas de coût d’achat connu ({{ r.salesWithMissingCost }}
+          {{ r.salesWithMissingCost > 1 ? 'articles concernés' : 'article concerné' }}) : la marge est surévaluée.
+          <a routerLink="/initial-costs">Renseigner les coûts</a>
+        </p>
+        @if (r.missingCostArticles.length > 0) {
+          <button type="button" class="link" [attr.aria-expanded]="missingListOpen()" (click)="toggleMissingList()">
+            {{ missingListOpen() ? 'Masquer la liste' : 'Voir la liste (' + r.missingCostArticles.length + ')' }}
+          </button>
+          @if (missingListOpen()) {
+            <ul>
+              @for (a of r.missingCostArticles; track a.articleId + a.agencyId) {
+                <li>{{ a.designation }} — {{ a.agencyLabel }} ({{ formatNumber(a.quantity) }})</li>
+              }
+            </ul>
+          }
+        }
+      </div>
+    }
+
+    <section>
+      <h2>Marge sur ventes</h2>
+      <div class="table-scroll">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Famille / article</th>
+              <th class="number">Qté vendue</th>
+              <th class="number">Prix de vente moy.</th>
+              <th class="number">Prix d’achat moy.</th>
+              <th class="number">CA HT</th>
+              <th class="number">Coût d’achat</th>
+              <th class="number">Marge</th>
+              <th class="number">%</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of r.families; track f.familyId) {
+              <tr class="family-row" tabindex="0" role="button" [attr.aria-expanded]="expandedFamilies().has(f.familyId)"
+                (click)="toggleFamily(f.familyId)" (keydown.enter)="toggleFamily(f.familyId)">
+                <td><span class="chevron">{{ expandedFamilies().has(f.familyId) ? '▾' : '▸' }}</span> {{ f.label }}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="number">{{ formatMoney(f.revenue) }}</td>
+                <td class="number">{{ formatMoney(f.cost) }}</td>
+                <td class="number">{{ formatMoney(f.margin) }}</td>
+                <td class="number">{{ formatRate(f.marginRate) }}</td>
+              </tr>
+              @if (expandedFamilies().has(f.familyId)) {
+                @for (a of f.articles; track a.articleId) {
+                  <tr class="article-row">
+                    <td>
+                      {{ a.code }} — {{ a.designation }}
+                      @if (a.missingCost) {
+                        <span class="badge-missing">coût manquant</span>
+                      }
+                    </td>
+                    <td class="number">{{ formatNumber(a.quantitySold) }} {{ a.stockUnit }}</td>
+                    <td class="number">{{ a.averageSalePrice === null ? '—' : formatMoney(a.averageSalePrice) }}</td>
+                    <td class="number">{{ a.averagePurchasePrice === null ? '—' : formatMoney(a.averagePurchasePrice) }}</td>
+                    <td class="number">{{ formatMoney(a.revenue) }}</td>
+                    <td class="number">{{ formatMoney(a.cost) }}</td>
+                    <td class="number">{{ formatMoney(a.margin) }}</td>
+                    <td class="number">{{ formatRate(a.marginRate) }}</td>
+                  </tr>
+                }
+              }
+            } @empty {
+              <tr><td colspan="8" class="empty">Aucune vente sur la période.</td></tr>
+            }
+            @for (line of extraLines(); track line.label) {
+              <tr class="extra-row">
+                <td>{{ line.label }}</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td class="number">{{ line.revenue === null ? '' : formatMoney(line.revenue) }}</td>
+                <td class="number">{{ line.cost === null ? '' : formatMoney(line.cost) }}</td>
+                <td class="number">{{ formatMoney(line.margin) }}</td>
+                <td></td>
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td>TOTAL</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td class="number">{{ formatMoney(r.revenue) }}</td>
+              <td class="number">{{ formatMoney(r.cost) }}</td>
+              <td class="number">{{ formatMoney(r.margin) }}</td>
+              <td class="number">{{ formatRate(r.marginRate) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Dépenses</h2>
+      <div class="table-scroll">
+        <table class="table">
+          <tbody>
+            <tr class="block-row" tabindex="0" role="button" [attr.aria-expanded]="!collapsedExpenseBlocks().has('common')"
+              (click)="toggleExpenseBlock('common')" (keydown.enter)="toggleExpenseBlock('common')">
+              <td>
+                <span class="chevron">{{ collapsedExpenseBlocks().has('common') ? '▸' : '▾' }}</span>
+                {{ r.expenses.commonInformative ? 'Charges communes (pour information, non déduites)' : 'Charges communes' }}
+              </td>
+              <td class="number" [class.informative]="r.expenses.commonInformative">{{ formatMoney(r.expenses.commonTotal) }}</td>
+            </tr>
+            @if (!collapsedExpenseBlocks().has('common')) {
+              @for (c of r.expenses.common; track c.categoryId) {
+                <tr class="category-row">
+                  <td>{{ c.label }}</td>
+                  <td class="number">{{ formatMoney(c.amount) }}</td>
+                </tr>
+              }
+            }
+            @for (a of r.expenses.byAgency; track a.agencyId) {
+              <tr class="block-row" tabindex="0" role="button" [attr.aria-expanded]="!collapsedExpenseBlocks().has(a.agencyId)"
+                (click)="toggleExpenseBlock(a.agencyId)" (keydown.enter)="toggleExpenseBlock(a.agencyId)">
+                <td>
+                  <span class="chevron">{{ collapsedExpenseBlocks().has(a.agencyId) ? '▸' : '▾' }}</span>
+                  {{ a.label }}
+                </td>
+                <td class="number">{{ formatMoney(a.total) }}</td>
+              </tr>
+              @if (!collapsedExpenseBlocks().has(a.agencyId)) {
+                @for (c of a.categories; track c.categoryId) {
+                  <tr class="category-row">
+                    <td>{{ c.label }}</td>
+                    <td class="number">{{ formatMoney(c.amount) }}</td>
+                  </tr>
+                }
+              }
+            }
+          </tbody>
+          <tfoot>
+            <tr class="total-row">
+              <td>Total dépenses</td>
+              <td class="number">{{ formatMoney(r.expenses.total) }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="net-profit" [class.negative]="r.netProfit < 0">
+      <div class="net-detail">
+        <span>Marge {{ formatMoney(r.margin) }}</span>
+        <span>− Dépenses {{ formatMoney(r.expenses.total) }}</span>
+      </div>
+      <div class="net-total">
+        <span>BÉNÉFICE NET</span>
+        <strong>{{ formatMoney(r.netProfit) }}</strong>
+      </div>
+    </section>
+  }
+}

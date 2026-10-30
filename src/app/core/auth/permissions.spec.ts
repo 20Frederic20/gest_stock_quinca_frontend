@@ -147,4 +147,17 @@ describe('can', () => {
     expect(can(cashier, 'dayClosing.access')).toBe(true);
     expect(can(seller, 'dayClosing.access')).toBe(false);
   });
+
+  it('lets a manager enter charges but keeps the rest of the profitability module for the owner', () => {
+    expect(can(admin, 'expenses.write')).toBe(true);
+    expect(can(manager, 'expenses.write')).toBe(true);
+    expect(can(seller, 'expenses.write')).toBe(false);
+    expect(can(cashier, 'expenses.write')).toBe(false);
+
+    for (const permission of ['expenses.common', 'expenses.categories', 'costing.manage', 'profitability.view'] as const) {
+      expect(can(admin, permission)).toBe(true);
+      expect(can(manager, permission)).toBe(false);
+      expect(can(seller, permission)).toBe(false);
+    }
+  });
 });

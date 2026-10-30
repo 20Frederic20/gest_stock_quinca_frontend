@@ -1,0 +1,127 @@
+<app-page-header
+  heading="Dépenses"
+  subtitle="Les charges datées, saisies par le patron et les gérants."
+  [actionLabel]="tab() === 'expenses' ? 'Nouvelle charge' : ''"
+  (action)="openCreate()" />
+
+@if (canManageCategories()) {
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'expenses'" (click)="showTab('expenses')">Charges</button>
+    <button type="button" role="tab" class="tab" [class.active]="tab() === 'categories'" (click)="showTab('categories')">Catégories</button>
+  </div>
+}
+
+@if (tab() === 'categories' && canManageCategories()) {
+  <app-expense-categories />
+} @else {
+  <div class="toolbar">
+    <label class="toolbar-label" for="expFrom">Du</label>
+    <input id="expFrom" type="date" [value]="from()" (change)="onDateChange('from', $event)" />
+    <label class="toolbar-label" for="expTo">Au</label>
+    <input id="expTo" type="date" [value]="to()" (change)="onDateChange('to', $event)" />
+
+    @if (canChooseAgency()) {
+      <app-select-search
+        [options]="agencyOptions()"
+        [value]="agencyFilter()"
+        [label]="agencyLabel()"
+        placeholder="Agence : toutes"
+        [allowEmpty]="true"
+        (selected)="onAgencySelected($event)" />
+    }
+
+    <app-select-search
+      [options]="categoryOptions()"
+      [value]="categoryFilter()"
+      [label]="categoryLabel()"
+      placeholder="Catégorie : toutes"
+      [allowEmpty]="true"
+      (selected)="onCategorySelected($event)" />
+  </div>
+
+  @if (lookupError()) {
+    <div class="action-error" role="alert">
+      <span>{{ lookupError() }}</span>
+      <button type="button" class="btn btn-ghost" (click)="loadLookups()">Réessayer</button>
+    </div>
+  }
+
+  @if (actionError()) {
+    <div class="action-error" role="alert">
+      <span>{{ actionError() }}</span>
+      <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+    </div>
+  }
+
+  <app-state-view
+    [loading]="loading()"
+    [error]="error()"
+    [empty]="expenses().length === 0"
+    emptyMessage="Aucune charge sur cette période."
+    (retry)="load(pageInfo()?.page ?? 0)" />
+
+  @if (!loading() && !error() && expenses().length > 0) {
+    <div class="table-scroll">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Libellé</th>
+            <th>Catégorie</th>
+            <th>Agence</th>
+            <th class="number">Montant</th>
+            <th>Saisie par</th>
+            <th><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (expense of expenses(); track expense.id) {
+            <tr>
+              <td class="nowrap">{{ formatDate(expense.expenseDate) }}</td>
+              <td>{{ expense.label }}</td>
+              <td>{{ expense.categoryLabel }}</td>
+              <td>
+                @if (expense.agencyId === null) {
+                  <app-badge text="Commune" />
+                } @else {
+                  {{ expense.agencyLabel }}
+                }
+              </td>
+              <td class="number">{{ formatMoney(expense.amount) }}</td>
+              <td>{{ expense.createdByName }}</td>
+              <td class="row-actions">
+                @if (expense.editable) {
+                  <button type="button" class="btn btn-ghost icon-edit" (click)="openEdit(expense)">Modifier</button>
+                  <button type="button" class="btn btn-ghost btn-danger icon-delete" (click)="askDelete(expense)">Supprimer</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <app-pagination [info]="pageInfo()" itemsLabel="charges" (pageChange)="load($event)" />
+
+  <app-drawer
+    [open]="drawerOpen()"
+    [heading]="selected() ? 'Modifier la charge' : 'Nouvelle charge'"
+    (closed)="closeDrawer()">
+    @if (drawerOpen()) {
+      <app-expense-form
+        [expense]="selected()"
+        [agencies]="agencies()"
+        [categories]="activeCategories()"
+        (saved)="onSaved()"
+        (cancelled)="closeDrawer()" />
+    }
+  </app-drawer>
+
+  <app-confirm-dialog
+    [open]="toDelete() !== null"
+    heading="Supprimer cette charge ?"
+    [message]="deleteMessage()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()" />
+}

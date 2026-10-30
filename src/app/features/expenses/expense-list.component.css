@@ -1,0 +1,87 @@
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-divider);
+}
+
+.tab {
+  font: inherit;
+  padding: var(--space-1) var(--space-3);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+}
+
+.tab.active {
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent, currentColor);
+  font-weight: 600;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.toolbar-label {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+
+.toolbar input[type='date'] {
+  font: inherit;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+
+.toolbar app-select-search {
+  flex: 0 1 220px;
+  min-width: 0;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.row-actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.action-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  color: #a11;
+  background: #fdecec;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

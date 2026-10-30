@@ -157,6 +157,18 @@ export const routes: Routes = [
           import('./features/transfers/transfer-page.component').then(m => m.TransferPageComponent),
       },
       {
+        path: 'expenses',
+        canActivate: [permissionGuard('expenses.write')],
+        loadComponent: () =>
+          import('./features/expenses/expense-list.component').then(m => m.ExpenseListComponent),
+      },
+      {
+        path: 'initial-costs',
+        canActivate: [permissionGuard('costing.manage')],
+        loadComponent: () =>
+          import('./features/costing/initial-costs.component').then(m => m.InitialCostsComponent),
+      },
+      {
         path: 'payments',
         loadComponent: () =>
           import('./features/payments/payment-list.component').then(m => m.PaymentListComponent),
@@ -169,9 +181,9 @@ export const routes: Routes = [
       },
       {
         path: 'reports',
-        canActivate: [permissionGuard('agencies.write')],
-        component: ComingSoonComponent,
-        data: { title: 'Rapports et exports' },
+        canActivate: [permissionGuard('profitability.view')],
+        loadComponent: () =>
+          import('./features/profitability/profitability.component').then(m => m.ProfitabilityComponent),
       },
       {
         path: 'agencies',

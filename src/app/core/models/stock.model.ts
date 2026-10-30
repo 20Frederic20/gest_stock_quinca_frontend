@@ -64,6 +64,8 @@ export interface StockAdjustmentRequest {
   articleId: string;
   countedQuantity: number;
   reason: string;
+  /** Unit cost of the added stock; required by the backend for an increase once cost tracking is on. */
+  unitCost?: number | null;
 }
 
 export interface ReversalRequest {

@@ -63,7 +63,7 @@ describe('visibleMenu', () => {
     const analyse = MENU.find(g => g.title === 'Analyse')!;
     const administration = MENU.find(g => g.title === 'Administration')!;
 
-    expect(analyse.items.map(i => i.permission)).toEqual(['agencies.write']);
+    expect(analyse.items.map(i => i.permission)).toEqual(['expenses.write', 'costing.manage', 'profitability.view']);
     expect(administration.items.map(i => i.permission)).toEqual([
       'agencies.write',
       'users.manage',
@@ -80,8 +80,8 @@ describe('MENU', () => {
     expect(MENU.length).toBe(8);
   });
 
-  it('has 20 items', () => {
-    expect(allItems.length).toBe(20);
+  it('has 22 items', () => {
+    expect(allItems.length).toBe(22);
   });
 
   it('starts a sale from the invoices screen, which has its own button, not from a menu entry', () => {
@@ -98,7 +98,8 @@ describe('MENU', () => {
     const readyRoutes = allItems.filter(item => item.ready).map(item => item.route);
 
     expect(readyRoutes.sort()).toEqual(
-      ['/agencies', '/articles', '/customers', '/dashboard', '/day-closing', '/deliveries', '/families', '/invoices', '/packagings', '/payments', '/pricing', '/purchase-orders', '/receptions', '/stock', '/stock-movements', '/suppliers', '/transfers', '/units-of-measure', '/users'],
+      ['/agencies', '/articles', '/customers', '/dashboard', '/day-closing', '/deliveries', '/expenses', '/families',
+      '/initial-costs', '/invoices', '/packagings', '/payments', '/pricing', '/purchase-orders', '/receptions', '/reports', '/stock', '/stock-movements', '/suppliers', '/transfers', '/units-of-measure', '/users'],
     );
   });
 });

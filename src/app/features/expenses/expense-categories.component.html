@@ -1,0 +1,60 @@
+<form class="add-form" [formGroup]="form" (ngSubmit)="submit()">
+  <input
+    formControlName="label"
+    maxlength="100"
+    autocomplete="off"
+    aria-label="Libellé de la catégorie"
+    [placeholder]="editing() ? 'Nouveau libellé' : 'Nouvelle catégorie'" />
+  <button type="submit" class="btn btn-primary">{{ editing() ? 'Renommer' : 'Ajouter' }}</button>
+  @if (editing()) {
+    <button type="button" class="btn" (click)="cancelEdit()">Annuler</button>
+  }
+</form>
+
+@if (actionError()) {
+  <div class="action-error" role="alert">
+    <span>{{ actionError() }}</span>
+    <button type="button" class="btn btn-ghost" aria-label="Masquer le message" (click)="actionError.set(null)">✕</button>
+  </div>
+}
+
+<app-state-view
+  [loading]="loading()"
+  [error]="error()"
+  [empty]="categories().length === 0"
+  emptyMessage="Aucune catégorie."
+  (retry)="load()" />
+
+@if (!loading() && !error() && categories().length > 0) {
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Libellé</th>
+        <th>Statut</th>
+        <th class="actions-column"><span class="visually-hidden">Actions</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (category of categories(); track category.id) {
+        <tr>
+          <td>{{ category.label }}</td>
+          <td><app-badge [text]="category.active ? 'Active' : 'Inactive'" [tone]="category.active ? 'accent' : 'muted'" /></td>
+          <td class="actions-column">
+            <button type="button" class="btn btn-ghost" (click)="startEdit(category)">Renommer</button>
+            <button type="button" class="btn btn-ghost" (click)="toggleActive(category)">
+              {{ category.active ? 'Désactiver' : 'Activer' }}
+            </button>
+            <button type="button" class="btn btn-ghost btn-danger icon-delete" (click)="askDelete(category)">Supprimer</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+}
+
+<app-confirm-dialog
+  [open]="toDelete() !== null"
+  heading="Supprimer cette catégorie ?"
+  [message]="deleteMessage()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()" />

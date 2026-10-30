@@ -19,7 +19,7 @@ const plain = (text: string | null) => text?.replace(/\s/g, ' ');
 describe('InventoryFormComponent', () => {
   let httpTesting: HttpTestingController;
 
-  function setup(stock: AgencyStock | null) {
+  function setup(stock: AgencyStock | null, tracking: boolean | 'status-fails' = false) {
     TestBed.configureTestingModule({
       providers: [provideHttpClient(withInterceptors([errorInterceptor])), provideHttpClientTesting()],
     });
@@ -29,11 +29,18 @@ describe('InventoryFormComponent', () => {
     fixture.componentRef.setInput('agencyId', 'g1');
     fixture.componentRef.setInput('stock', stock);
     fixture.detectChanges();
+    const status = httpTesting.expectOne('/api/v1/costing/status');
+    if (tracking === 'status-fails') {
+      status.flush({ status: 500, message: 'Erreur', fieldErrors: null }, { status: 500, statusText: 'Server Error' });
+    } else {
+      status.flush({ started: tracking, startedAt: null, startedByName: null, missingCostCount: 0 });
+    }
+    fixture.detectChanges();
 
     const saved = vi.fn();
     fixture.componentInstance.saved.subscribe(saved);
 
-    return { fixture, component: fixture.componentInstance, saved };
+    return { fixture, component: fixture.componentInstance, saved, element: fixture.nativeElement as HTMLElement };
   }
 
   afterEach(() => httpTesting.verify());
@@ -136,5 +143,84 @@ describe('InventoryFormComponent', () => {
     expect(component.formError()).toContain('identique au stock actuel');
     expect(component.saving()).toBe(false);
     expect(saved).not.toHaveBeenCalled();
+  });
+
+  describe('unit cost of added stock', () => {
+    const LAST_COST = '/api/v1/agencies/g1/costing/articles/a1/last-cost';
+
+    it('requires a unit cost when the counted quantity is above the stock and tracking is on', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
+      httpTesting.expectOne(LAST_COST).flush({ unitCost: null });
+      fixture.detectChanges();
+
+      expect(element.querySelector('#unitCost')).not.toBeNull();
+      expect(element.textContent).toContain('Coût unitaire des 12');
+
+      component.submit();
+      httpTesting.expectNone(ADJUST);
+      expect(component.unitCost.touched).toBe(true);
+
+      component.unitCost.setValue(900);
+      component.submit();
+      const req = httpTesting.expectOne(ADJUST);
+      expect(req.request.body).toEqual({ articleId: 'a1', countedQuantity: 132, reason: 'Inventaire', unitCost: 900 });
+      req.flush({});
+    });
+
+    it('prefills the unit cost with the last known cost', () => {
+      const { component } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 130 });
+      httpTesting.expectOne(LAST_COST).flush({ unitCost: 750 });
+
+      expect(component.unitCost.value).toBe(750);
+    });
+
+    it('does not show the unit cost for a decrease', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 100, reason: 'Casse' });
+      fixture.detectChanges();
+
+      expect(element.querySelector('#unitCost')).toBeNull();
+      component.submit();
+      const req = httpTesting.expectOne(ADJUST);
+      expect(req.request.body).toEqual({ articleId: 'a1', countedQuantity: 100, reason: 'Casse' });
+      req.flush({});
+    });
+
+    it('asks for the unit cost when the status call failed and the backend requires it', () => {
+      const { component, fixture, element, saved } = setup(cement, 'status-fails');
+      component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
+      fixture.detectChanges();
+      expect(element.querySelector('#unitCost')).toBeNull();
+
+      component.submit();
+      httpTesting.expectOne(ADJUST).flush(
+        { status: 400, message: 'Le coût unitaire est obligatoire quand on ajoute du stock', fieldErrors: null },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      httpTesting.expectOne(LAST_COST).flush({ unitCost: null });
+      fixture.detectChanges();
+
+      expect(saved).not.toHaveBeenCalled();
+      expect(element.querySelector('#unitCost')).not.toBeNull();
+      component.submit();
+      httpTesting.expectNone(ADJUST);
+
+      component.unitCost.setValue(900);
+      component.submit();
+      const req = httpTesting.expectOne(ADJUST);
+      expect(req.request.body).toEqual({ articleId: 'a1', countedQuantity: 132, reason: 'Inventaire', unitCost: 900 });
+      req.flush({});
+      expect(saved).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not show the unit cost when tracking is off', () => {
+      const { component, fixture, element } = setup(cement, false);
+      component.form.patchValue({ countedQuantity: 150 });
+      fixture.detectChanges();
+
+      expect(element.querySelector('#unitCost')).toBeNull();
+    });
   });
 });

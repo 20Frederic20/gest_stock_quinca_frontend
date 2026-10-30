@@ -1,11 +1,12 @@
 import { Component, computed, effect, inject, input, linkedSignal, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable, Subscription } from 'rxjs';
 import { ApiError } from '../../core/http/api-error.model';
 import { AgencyStock, StockMovement } from '../../core/models/stock.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
+import { CostingService } from '../costing/costing.service';
 import { searchArticleOptions } from '../articles/article-options';
 import { ArticlesService } from '../articles/articles.service';
 import { formatQuantity, formatSignedQuantity } from './stock-format';
@@ -16,6 +17,9 @@ import { StockService } from './stock.service';
  * the backend records the difference with the current stock.
  * `stock` given = article already known; null = the article is searched first.
  */
+/** Backend refusal of an increase without unit cost while cost tracking is on. */
+const UNIT_COST_REQUIRED = 'Le coût unitaire est obligatoire quand on ajoute du stock';
+
 @Component({
   selector: 'app-inventory-form',
   imports: [ReactiveFormsModule, FieldErrorComponent, SelectSearchComponent],
@@ -26,6 +30,7 @@ export class InventoryFormComponent {
   private fb = inject(FormBuilder);
   private service = inject(StockService);
   private articlesService = inject(ArticlesService);
+  private costing = inject(CostingService);
 
   agencyId = input.required<string>();
   stock = input<AgencyStock | null>(null);
@@ -52,6 +57,13 @@ export class InventoryFormComponent {
     reason: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(255)]),
   });
 
+  /** Unit cost of the added stock; outside the group because it only applies to an increase. */
+  unitCost = new FormControl<number | null>(null, [Validators.required, Validators.min(0)]);
+  /** Cost tracking started: an increase must then carry its unit cost. */
+  private tracking = signal(false);
+  /** Articles whose last cost was already asked, to prefill once per article. */
+  private costRequested = new Set<string>();
+
   /** The typed count as a signal, so that the difference follows the keyboard. */
   private counted = signal<number | null>(null);
 
@@ -68,6 +80,13 @@ export class InventoryFormComponent {
     return difference === null ? null : formatSignedQuantity(difference, this.unitCode());
   });
 
+  showUnitCost = computed(() => {
+    const difference = this.difference();
+    return this.tracking() && difference !== null && difference > 0;
+  });
+
+  addedLabel = computed(() => formatQuantity(this.difference() ?? 0, this.unitCode()));
+
   currentLabel = computed(() => {
     const current = this.currentQuantity();
     return current === null ? null : formatQuantity(current, this.unitCode());
@@ -81,7 +100,19 @@ export class InventoryFormComponent {
   constructor() {
     this.form.controls.countedQuantity.valueChanges
       .pipe(takeUntilDestroyed())
-      .subscribe(value => this.counted.set(value));
+      .subscribe(value => {
+        this.counted.set(value);
+        this.prefillUnitCost();
+      });
+
+    // Status is readable by the owner and managers; when it fails, the form behaves as without tracking.
+    this.costing.status().subscribe({
+      next: status => {
+        this.tracking.set(status.started);
+        this.prefillUnitCost();
+      },
+      error: () => undefined,
+    });
 
     // Starts again whenever another line is given while the panel stays open.
     effect(() => {
@@ -89,11 +120,30 @@ export class InventoryFormComponent {
       this.formError.set(null);
       this.fieldErrors.set({});
       this.form.reset({ articleId: stock?.articleId ?? '', countedQuantity: null, reason: '' });
+      this.unitCost.reset(null);
+      this.costRequested.clear();
+    });
+  }
+
+  /** Once an increase is typed, proposes the last known cost of the article (never over what the user typed). */
+  private prefillUnitCost(): void {
+    const articleId = this.form.controls.articleId.value;
+    if (!this.showUnitCost() || !articleId || this.costRequested.has(articleId)) return;
+    this.costRequested.add(articleId);
+    this.costing.lastCost(this.agencyId(), articleId).subscribe({
+      next: ({ unitCost }) => {
+        if (unitCost !== null && this.unitCost.value === null && this.form.controls.articleId.value === articleId) {
+          this.unitCost.setValue(unitCost);
+        }
+      },
+      // Only a suggestion: the user can still type the cost.
+      error: () => undefined,
     });
   }
 
   onArticleSelected(option: SelectOption | null): void {
     if (!option) return;
+    this.unitCost.reset(null);
     this.form.controls.articleId.setValue(option.id);
     this.form.controls.articleId.markAsTouched();
     this.articleLabel.set(option.label);
@@ -124,8 +174,10 @@ export class InventoryFormComponent {
   }
 
   submit(): void {
-    if (this.form.invalid) {
+    const withCost = this.showUnitCost();
+    if (this.form.invalid || (withCost && this.unitCost.invalid)) {
       this.form.markAllAsTouched();
+      this.unitCost.markAsTouched();
       return;
     }
 
@@ -139,6 +191,7 @@ export class InventoryFormComponent {
         articleId: value.articleId,
         countedQuantity: value.countedQuantity!,
         reason: value.reason.trim(),
+        ...(withCost ? { unitCost: this.unitCost.value } : {}),
       })
       .subscribe({
         next: movement => {
@@ -149,6 +202,12 @@ export class InventoryFormComponent {
           this.saving.set(false);
           this.formError.set(error.message);
           this.fieldErrors.set(error.fieldErrors);
+          // The status call may have failed: the backend tells us tracking is on, so ask for the cost.
+          if (error.status === 400 && error.message === UNIT_COST_REQUIRED && !this.tracking()) {
+            this.tracking.set(true);
+            this.unitCost.markAsTouched();
+            this.prefillUnitCost();
+          }
         },
       });
   }
