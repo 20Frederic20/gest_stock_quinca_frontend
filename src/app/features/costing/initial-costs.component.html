@@ -59,7 +59,7 @@
               <th>Famille</th>
               <th>Agence</th>
               <th class="number">Stock à la date</th>
-              <th class="number">Coût unitaire (F CFA par unité de stock)</th>
+              <th class="number">Coût d’achat (F CFA)</th>
               <th><span class="visually-hidden">État</span></th>
             </tr>
           </thead>
@@ -78,10 +78,24 @@
                     step="any"
                     class="cost-input"
                     [attr.aria-label]="'Coût unitaire de ' + line.designation"
-                    [value]="line.unitCost ?? ''"
-                    [disabled]="saving().has(line.lotId)"
+                    [value]="inputValue(line)"
+                    [disabled]="saving().has(line.lotId) || !unitsReady(line)"
+                    (input)="onTyping(line, cost.value)"
                     (change)="saveCost(line, cost.value)"
                     (keydown.enter)="saveCost(line, cost.value)" />
+                  <select
+                    #unit
+                    class="unit-select"
+                    [attr.aria-label]="'Conditionnement du coût de ' + line.designation"
+                    [disabled]="saving().has(line.lotId) || !unitsReady(line)"
+                    (change)="onUnitChange(line, unit.value)">
+                    @for (option of unitOptions(line); track option.id) {
+                      <option [value]="option.id" [selected]="option.id === selectedUnit(line).id">{{ option.label }}</option>
+                    }
+                  </select>
+                  @if (conversion(line); as text) {
+                    <p class="conversion">{{ text }}</p>
+                  }
                   @if (rowErrors()[line.lotId]; as message) {
                     <p class="row-error" role="alert">{{ message }}</p>
                   }

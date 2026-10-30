@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { errorInterceptor } from '../../core/http/error.interceptor';
+import { Packaging } from '../../core/models/packaging.model';
 import { AgencyStock } from '../../core/models/stock.model';
 import { InventoryFormComponent } from './inventory-form.component';
 
@@ -12,6 +13,11 @@ const cement: AgencyStock = {
   id: 's1', articleId: 'a1', articleCode: 'CIM-32R', articleDesignation: 'Ciment CIM II 32.5R',
   agencyId: 'g1', agencyLabel: 'Cotonou — Siège', stockUnitCode: 'KG',
   quantity: 120, reservedQuantity: 20, availableQuantity: 100, alertThreshold: 2000, belowThreshold: true, updatedAt: at,
+};
+
+const sack: Packaging = {
+  id: 'p1', articleId: 'a1', articleDesignation: 'Ciment', unitId: 'u1', unitCode: 'SAC', unitLabel: 'Sac',
+  quantity: 50, defaultPurchase: true, defaultSale: false, createdAt: at, updatedAt: at,
 };
 
 const plain = (text: string | null) => text?.replace(/\s/g, ' ');
@@ -147,15 +153,22 @@ describe('InventoryFormComponent', () => {
 
   describe('unit cost of added stock', () => {
     const LAST_COST = '/api/v1/agencies/g1/costing/articles/a1/last-cost';
+    const PACKAGINGS = '/api/v1/articles/a1/packagings';
+
+    /** Answers the two requests made when the unit cost field first appears. */
+    function flushCostRequests(unitCost: number | null, packagings: Packaging[] = []) {
+      httpTesting.expectOne(PACKAGINGS).flush(packagings);
+      httpTesting.expectOne(LAST_COST).flush({ unitCost });
+    }
 
     it('requires a unit cost when the counted quantity is above the stock and tracking is on', () => {
       const { component, fixture, element } = setup(cement, true);
       component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
-      httpTesting.expectOne(LAST_COST).flush({ unitCost: null });
+      flushCostRequests(null);
       fixture.detectChanges();
 
       expect(element.querySelector('#unitCost')).not.toBeNull();
-      expect(element.textContent).toContain('Coût unitaire des 12');
+      expect(element.textContent).toContain('Coût d’achat des 12');
 
       component.submit();
       httpTesting.expectNone(ADJUST);
@@ -171,9 +184,106 @@ describe('InventoryFormComponent', () => {
     it('prefills the unit cost with the last known cost', () => {
       const { component } = setup(cement, true);
       component.form.patchValue({ countedQuantity: 130 });
-      httpTesting.expectOne(LAST_COST).flush({ unitCost: 750 });
+      flushCostRequests(750);
 
       expect(component.unitCost.value).toBe(750);
+    });
+
+    it('sends the price typed for the sack as a cost per stock unit', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
+      flushCostRequests(null, [sack]);
+      fixture.detectChanges();
+
+      const select = element.querySelector('select#unitCostPackaging') as HTMLSelectElement;
+      expect(select.selectedOptions[0].textContent?.replace(/\s/g, ' ').trim()).toBe('Sac de 50 KG');
+
+      component.unitCost.setValue(4000);
+      fixture.detectChanges();
+      expect(plain(element.querySelector('.conversion')?.textContent ?? null)).toContain('= 80 F CFA par KG');
+
+      component.submit();
+      const req = httpTesting.expectOne(ADJUST);
+      expect(req.request.body).toEqual({ articleId: 'a1', countedQuantity: 132, reason: 'Inventaire', unitCost: 80 });
+      req.flush({});
+    });
+
+    it('shows the last cost per sack when the sack is selected, and re-expresses it when KG is chosen', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
+      flushCostRequests(80, [sack]);
+      fixture.detectChanges();
+
+      expect(component.unitCost.value).toBe(4000);
+
+      const select = element.querySelector('select#unitCostPackaging') as HTMLSelectElement;
+      select.value = Array.from(select.options).find(o => o.textContent?.trim() === 'KG')!.value;
+      select.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+      expect(component.unitCost.value).toBe(80);
+
+      component.submit();
+      const req = httpTesting.expectOne(ADJUST);
+      expect(req.request.body.unitCost).toBe(80);
+      req.flush({});
+    });
+
+    it('keeps a cost already typed when the last cost arrives', () => {
+      const { component, fixture } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132 });
+      component.unitCost.setValue(4500);
+      flushCostRequests(80, [sack]);
+      fixture.detectChanges();
+
+      expect(component.unitCost.value).toBe(4500);
+    });
+
+    it('falls back to the base unit when the packagings cannot be loaded', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
+      httpTesting.expectOne(PACKAGINGS).flush(
+        { status: 500, message: 'Erreur', fieldErrors: null },
+        { status: 500, statusText: 'Server Error' },
+      );
+      httpTesting.expectOne(LAST_COST).flush({ unitCost: 80 });
+      fixture.detectChanges();
+
+      const select = element.querySelector('select#unitCostPackaging') as HTMLSelectElement;
+      expect(Array.from(select.options).map(o => o.textContent?.trim())).toEqual(['KG']);
+      expect(component.unitCost.value).toBe(80);
+    });
+
+    it('disables the cost field until the packagings are known, then applies the default packaging', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132, reason: 'Inventaire' });
+      fixture.detectChanges();
+
+      expect(component.unitCost.disabled).toBe(true);
+      expect((element.querySelector('select#unitCostPackaging') as HTMLSelectElement).disabled).toBe(true);
+      component.submit();
+      httpTesting.expectNone(ADJUST);
+
+      flushCostRequests(80, [sack]);
+      fixture.detectChanges();
+      const select = element.querySelector('select#unitCostPackaging') as HTMLSelectElement;
+      expect(component.unitCost.enabled).toBe(true);
+      expect(select.disabled).toBe(false);
+      expect(select.selectedOptions[0].textContent?.replace(/\s/g, ' ').trim()).toBe('Sac de 50 KG');
+      expect(component.unitCost.value).toBe(4000);
+    });
+
+    it('converts a typed price when the packaging changes', () => {
+      const { component, fixture, element } = setup(cement, true);
+      component.form.patchValue({ countedQuantity: 132 });
+      flushCostRequests(null, [sack]);
+      fixture.detectChanges();
+
+      component.unitCost.setValue(4500);
+      const select = element.querySelector('select#unitCostPackaging') as HTMLSelectElement;
+      select.value = Array.from(select.options).find(o => o.textContent?.trim() === 'KG')!.value;
+      select.dispatchEvent(new Event('change'));
+
+      expect(component.unitCost.value).toBe(90);
     });
 
     it('does not show the unit cost for a decrease', () => {
@@ -199,7 +309,7 @@ describe('InventoryFormComponent', () => {
         { status: 400, message: 'Le coût unitaire est obligatoire quand on ajoute du stock', fieldErrors: null },
         { status: 400, statusText: 'Bad Request' },
       );
-      httpTesting.expectOne(LAST_COST).flush({ unitCost: null });
+      flushCostRequests(null);
       fixture.detectChanges();
 
       expect(saved).not.toHaveBeenCalled();

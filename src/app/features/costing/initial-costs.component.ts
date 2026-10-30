@@ -10,8 +10,18 @@ import { SelectOption, SelectSearchComponent } from '../../shared/select-search/
 import { StateViewComponent } from '../../shared/state-view/state-view.component';
 import { AgenciesService } from '../agencies/agencies.service';
 import { formatDate } from '../articles/article-format';
+import { Packaging } from '../../core/models/packaging.model';
+import { PackagingsService } from '../packagings/packagings.service';
 import { formatQuantity } from '../stock/stock-format';
 import { CostingService } from './costing.service';
+import {
+  CostUnitOption,
+  conversionText,
+  costPerStockUnit,
+  costUnitOptions,
+  defaultCostUnitId,
+  priceForPackaging,
+} from './packaging-cost';
 
 /** Owner screen: starts the FIFO cost tracking, then fills in the unit cost of each opening lot. */
 @Component({
@@ -23,6 +33,7 @@ import { CostingService } from './costing.service';
 export class InitialCostsComponent implements OnInit {
   private service = inject(CostingService);
   private agenciesService = inject(AgenciesService);
+  private packagingsService = inject(PackagingsService);
 
   status = signal<CostingStatus | null>(null);
   agencies = signal<Agency[]>([]);
@@ -45,6 +56,14 @@ export class InitialCostsComponent implements OnInit {
   private justSaved = signal<ReadonlySet<string>>(new Set());
   rowErrors = signal<Record<string, string>>({});
   saving = signal<ReadonlySet<string>>(new Set());
+
+  /** Packagings per article, loaded once each; an article whose load failed keeps an empty list (base unit only). */
+  private packagings = signal<Record<string, Packaging[]>>({});
+  private packagingsRequested = new Set<string>();
+  /** Packaging picked by the user per lot; absent = the article's default. */
+  private chosenUnit = signal<Record<string, string>>({});
+  /** Text being typed per lot, to show its conversion before it is saved. */
+  private typed = signal<Record<string, string>>({});
 
   agencyOptions = computed<SelectOption[]>(() => this.agencies().map(a => ({ id: a.id, label: a.label })));
   agencyLabel = computed(() => this.agencies().find(a => a.id === this.agencyFilter())?.label ?? '');
@@ -132,15 +151,93 @@ export class InitialCostsComponent implements OnInit {
       .subscribe({
         next: lines => {
           this.allLines.set(lines);
+          this.typed.set({});
           this.justSaved.set(new Set());
           this.rowErrors.set({});
           this.loading.set(false);
+          this.ensurePackagings();
         },
         error: (error: ApiError) => {
           this.error.set(error.message);
           this.loading.set(false);
         },
       });
+  }
+
+  /** Asks the packagings of the displayed articles, once per article. */
+  private ensurePackagings(): void {
+    for (const { articleId } of this.lines()) {
+      if (this.packagingsRequested.has(articleId)) continue;
+      this.packagingsRequested.add(articleId);
+      this.packagingsService.getByArticle(articleId).subscribe({
+        next: list => this.packagings.update(m => ({ ...m, [articleId]: list })),
+        // The cost can still be typed per stock unit.
+        error: () => this.packagings.update(m => ({ ...m, [articleId]: [] })),
+      });
+    }
+  }
+
+  unitOptions(line: InitialCostLine): CostUnitOption[] {
+    return costUnitOptions(this.packagings()[line.articleId] ?? [], line.stockUnit);
+  }
+
+  selectedUnit(line: InitialCostLine): CostUnitOption {
+    const options = this.unitOptions(line);
+    const id = this.chosenUnit()[line.lotId] ?? defaultCostUnitId(this.packagings()[line.articleId] ?? []);
+    return options.find(o => o.id === id) ?? options[options.length - 1];
+  }
+
+  /** Stored cost (per stock unit) expressed in the selected packaging; '' when unknown. */
+  displayedCost(line: InitialCostLine): number | '' {
+    return line.unitCost === null ? '' : priceForPackaging(line.unitCost, this.selectedUnit(line).quantity);
+  }
+
+  /** "4 000 F CFA le sac de 50 KG = 80 F CFA par KG" for what is typed (or stored); null when there is nothing valid. */
+  conversion(line: InitialCostLine): string | null {
+    const text = this.typed()[line.lotId];
+    const price = text === undefined ? this.displayedCost(line) : this.parse(text);
+    if (price === '' || price === null || price < 0) return null;
+    return conversionText(price, this.selectedUnit(line), line.stockUnit);
+  }
+
+  /** The packagings of the article are known (loaded or failed): the default selection is then final. */
+  unitsReady(line: InitialCostLine): boolean {
+    return this.packagings()[line.articleId] !== undefined;
+  }
+
+  /** What the input shows: the unsaved text if any, else the stored cost in the selected packaging. */
+  inputValue(line: InitialCostLine): string | number {
+    return this.typed()[line.lotId] ?? this.displayedCost(line);
+  }
+
+  onUnitChange(line: InitialCostLine, unitId: string): void {
+    const before = this.selectedUnit(line).quantity;
+    this.chosenUnit.update(m => ({ ...m, [line.lotId]: unitId }));
+    const text = this.typed()[line.lotId];
+    const price = text === undefined ? null : this.parse(text);
+    if (price !== null) {
+      // An unsaved price keeps its meaning: same cost per stock unit, expressed in the new packaging.
+      this.onTyping(line, String(priceForPackaging(price / before, this.selectedUnit(line).quantity)));
+    } else if (text === undefined || text.trim() === '') {
+      // The shown value follows the stored cost again.
+      this.onTyping(line, undefined);
+    }
+  }
+
+  onTyping(line: InitialCostLine, text: string | undefined): void {
+    this.typed.update(m => {
+      const next = { ...m };
+      if (text === undefined) delete next[line.lotId];
+      else next[line.lotId] = text;
+      return next;
+    });
+  }
+
+  private parse(text: string): number | null {
+    const trimmed = text.trim();
+    if (trimmed === '') return null;
+    const value = Number(trimmed.replace(',', '.'));
+    return Number.isNaN(value) ? null : value;
   }
 
   onAgencySelected(option: SelectOption | null): void {
@@ -155,9 +252,10 @@ export class InitialCostsComponent implements OnInit {
 
   toggleMissingOnly(event: Event): void {
     this.missingOnly.set((event.target as HTMLInputElement).checked);
+    this.ensurePackagings();
   }
 
-  /** Saves the typed cost of one line; an untouched or unchanged input does nothing. */
+  /** Saves the price typed for the selected packaging, as a cost per stock unit; an untouched or unchanged input does nothing. */
   saveCost(line: InitialCostLine, raw: string): void {
     const text = raw.trim();
     if (text === '' && line.unitCost === null) return;
@@ -166,14 +264,16 @@ export class InitialCostsComponent implements OnInit {
       this.setRowError(line.lotId, 'Saisissez un coût supérieur ou égal à 0.');
       return;
     }
-    if (value === line.unitCost) return;
+    const unitCost = costPerStockUnit(value, this.selectedUnit(line).quantity);
+    if (unitCost === line.unitCost) return;
 
     this.setRowError(line.lotId, null);
     this.saving.update(s => new Set(s).add(line.lotId));
-    this.service.setInitialCost(line.lotId, value).subscribe({
+    this.service.setInitialCost(line.lotId, unitCost).subscribe({
       next: saved => {
         this.allLines.update(lines => lines.map(l => (l.lotId === saved.lotId ? saved : l)));
         this.justSaved.update(s => new Set(s).add(saved.lotId));
+        this.onTyping(line, undefined);
         this.endSaving(line.lotId);
       },
       error: (error: ApiError) => {

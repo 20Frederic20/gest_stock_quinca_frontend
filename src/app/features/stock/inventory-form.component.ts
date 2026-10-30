@@ -6,7 +6,17 @@ import { ApiError } from '../../core/http/api-error.model';
 import { AgencyStock, StockMovement } from '../../core/models/stock.model';
 import { FieldErrorComponent } from '../../shared/field-error/field-error.component';
 import { SelectOption, SelectSearchComponent } from '../../shared/select-search/select-search.component';
+import { Packaging } from '../../core/models/packaging.model';
 import { CostingService } from '../costing/costing.service';
+import {
+  CostUnitOption,
+  conversionText,
+  costPerStockUnit,
+  costUnitOptions,
+  defaultCostUnitId,
+  priceForPackaging,
+} from '../costing/packaging-cost';
+import { PackagingsService } from '../packagings/packagings.service';
 import { searchArticleOptions } from '../articles/article-options';
 import { ArticlesService } from '../articles/articles.service';
 import { formatQuantity, formatSignedQuantity } from './stock-format';
@@ -31,6 +41,7 @@ export class InventoryFormComponent {
   private service = inject(StockService);
   private articlesService = inject(ArticlesService);
   private costing = inject(CostingService);
+  private packagingsService = inject(PackagingsService);
 
   agencyId = input.required<string>();
   stock = input<AgencyStock | null>(null);
@@ -57,12 +68,38 @@ export class InventoryFormComponent {
     reason: this.fb.nonNullable.control('', [Validators.required, Validators.maxLength(255)]),
   });
 
-  /** Unit cost of the added stock; outside the group because it only applies to an increase. */
+  /** Packagings of the article the cost is asked for; empty (base unit only) until loaded or when the load fails. */
+  private packagings = signal<Packaging[]>([]);
+  /** Packaging picked by the user; null = the article's default purchase packaging. */
+  private chosenUnit = signal<string | null>(null);
+  /** The price control, as a signal, for the conversion text. */
+  private typedCost = signal<number | null>(null);
+
+  costUnitOptions = computed<CostUnitOption[]>(() => costUnitOptions(this.packagings(), this.unitCode()));
+  selectedCostUnit = computed<CostUnitOption>(() => {
+    const options = this.costUnitOptions();
+    const id = this.chosenUnit() ?? defaultCostUnitId(this.packagings());
+    return options.find(o => o.id === id) ?? options[options.length - 1];
+  });
+  /** "4 000 F CFA le sac de 50 KG = 80 F CFA par KG". */
+  costConversion = computed(() => {
+    const price = this.typedCost();
+    if (price === null || Number.isNaN(price) || price < 0) return null;
+    return conversionText(price, this.selectedCostUnit(), this.unitCode());
+  });
+
+  /** Price of the added stock, for the selected packaging; outside the group because it only applies to an increase. */
   unitCost = new FormControl<number | null>(null, [Validators.required, Validators.min(0)]);
   /** Cost tracking started: an increase must then carry its unit cost. */
   private tracking = signal(false);
   /** Articles whose last cost was already asked, to prefill once per article. */
   private costRequested = new Set<string>();
+  /** Last cost (per stock unit) waiting for the packagings, to be shown for the selected one. */
+  private pendingLastCost: number | null = null;
+  /** The cost field waits for the packagings, so that its default packaging is final before anything is typed. */
+  costLoading = signal(false);
+  private packagingsLoaded = false;
+  private lastCostLoaded = false;
 
   /** The typed count as a signal, so that the difference follows the keyboard. */
   private counted = signal<number | null>(null);
@@ -106,6 +143,8 @@ export class InventoryFormComponent {
       });
 
     // Status is readable by the owner and managers; when it fails, the form behaves as without tracking.
+    this.unitCost.valueChanges.pipe(takeUntilDestroyed()).subscribe(value => this.typedCost.set(value));
+
     this.costing.status().subscribe({
       next: status => {
         this.tracking.set(status.started);
@@ -120,8 +159,7 @@ export class InventoryFormComponent {
       this.formError.set(null);
       this.fieldErrors.set({});
       this.form.reset({ articleId: stock?.articleId ?? '', countedQuantity: null, reason: '' });
-      this.unitCost.reset(null);
-      this.costRequested.clear();
+      this.resetCost();
     });
   }
 
@@ -130,20 +168,69 @@ export class InventoryFormComponent {
     const articleId = this.form.controls.articleId.value;
     if (!this.showUnitCost() || !articleId || this.costRequested.has(articleId)) return;
     this.costRequested.add(articleId);
-    this.costing.lastCost(this.agencyId(), articleId).subscribe({
-      next: ({ unitCost }) => {
-        if (unitCost !== null && this.unitCost.value === null && this.form.controls.articleId.value === articleId) {
-          this.unitCost.setValue(unitCost);
-        }
+    this.packagingsLoaded = false;
+    this.lastCostLoaded = false;
+    this.pendingLastCost = null;
+    this.costLoading.set(true);
+    this.unitCost.disable({ emitEvent: false });
+    const current = () => this.form.controls.articleId.value === articleId;
+
+    this.packagingsService.getByArticle(articleId).subscribe({
+      next: list => {
+        if (current()) this.packagings.set(list);
       },
+      // The cost can still be typed per stock unit.
+      error: () => undefined,
+    }).add(() => {
+      this.packagingsLoaded = true;
+      if (current()) {
+        this.costLoading.set(false);
+        this.unitCost.enable({ emitEvent: false });
+        this.applyLastCost();
+      }
+    });
+    this.costing.lastCost(this.agencyId(), articleId).subscribe({
+      next: ({ unitCost }) => (this.pendingLastCost = unitCost),
       // Only a suggestion: the user can still type the cost.
       error: () => undefined,
+    }).add(() => {
+      this.lastCostLoaded = true;
+      if (current()) this.applyLastCost();
     });
+  }
+
+  /** Once both answers are in, proposes the last cost in the selected packaging (never over what the user typed). */
+  private applyLastCost(): void {
+    if (!this.packagingsLoaded || !this.lastCostLoaded) return;
+    if (this.pendingLastCost !== null && this.unitCost.value === null) {
+      this.unitCost.setValue(priceForPackaging(this.pendingLastCost, this.selectedCostUnit().quantity));
+    }
+  }
+
+  /** Re-expresses the shown price in the new packaging: the cost per stock unit stays the same. */
+  onCostUnitChange(unitId: string): void {
+    const before = this.selectedCostUnit().quantity;
+    this.chosenUnit.set(unitId);
+    const price = this.unitCost.value;
+    if (price !== null && !Number.isNaN(price)) {
+      const after = this.selectedCostUnit().quantity;
+      this.unitCost.setValue(priceForPackaging(price / before, after));
+    }
+  }
+
+  private resetCost(): void {
+    this.unitCost.enable({ emitEvent: false });
+    this.unitCost.reset(null);
+    this.costLoading.set(false);
+    this.costRequested.clear();
+    this.packagings.set([]);
+    this.chosenUnit.set(null);
+    this.pendingLastCost = null;
   }
 
   onArticleSelected(option: SelectOption | null): void {
     if (!option) return;
-    this.unitCost.reset(null);
+    this.resetCost();
     this.form.controls.articleId.setValue(option.id);
     this.form.controls.articleId.markAsTouched();
     this.articleLabel.set(option.label);
@@ -175,6 +262,7 @@ export class InventoryFormComponent {
 
   submit(): void {
     const withCost = this.showUnitCost();
+    if (withCost && this.costLoading()) return;
     if (this.form.invalid || (withCost && this.unitCost.invalid)) {
       this.form.markAllAsTouched();
       this.unitCost.markAsTouched();
@@ -191,7 +279,7 @@ export class InventoryFormComponent {
         articleId: value.articleId,
         countedQuantity: value.countedQuantity!,
         reason: value.reason.trim(),
-        ...(withCost ? { unitCost: this.unitCost.value } : {}),
+        ...(withCost ? { unitCost: costPerStockUnit(this.unitCost.value!, this.selectedCostUnit().quantity) } : {}),
       })
       .subscribe({
         next: movement => {
