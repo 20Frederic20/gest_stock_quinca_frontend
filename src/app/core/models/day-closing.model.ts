@@ -38,3 +38,15 @@ export interface DayClosingCloseRequest {
   countedTotal: number;
   comment: string | null;
 }
+
+/** Whether payments can be taken today in an agency, and what to tell the cashier first. */
+export interface CashDayStatus {
+  open: boolean;
+  dayClosingId: string | null;
+  /** Local date-time without zone, e.g. "2026-10-31T08:00:00". Null when no day is open. */
+  openedAt: string | null;
+  /** Open for more than 24 hours. */
+  stale: boolean;
+  /** Counted total of the last closed day (0 if none): the float proposed for a new day. */
+  suggestedOpeningCash: number;
+}
