@@ -33,6 +33,29 @@
     }
   </div>
 
+  @if (showUnitCost()) {
+    <div class="field">
+      <label for="unitCost">Coût d’achat des {{ addedLabel() }} ajoutés (F CFA)</label>
+      <div class="cost-row">
+        <input id="unitCost" type="number" min="0" step="any" [formControl]="unitCost" />
+        <select
+          id="unitCostPackaging"
+          aria-label="Conditionnement du coût"
+          [disabled]="costLoading()"
+          (change)="onCostUnitChange(packaging.value)"
+          #packaging>
+          @for (option of costUnitOptions(); track option.id) {
+            <option [value]="option.id" [selected]="option.id === selectedCostUnit().id">{{ option.label }}</option>
+          }
+        </select>
+      </div>
+      @if (costConversion(); as conversion) {
+        <p class="conversion">{{ conversion }}</p>
+      }
+      <app-field-error [control]="unitCost" [serverError]="fieldErrors()['unitCost']" />
+    </div>
+  }
+
   <div class="field">
     <label for="reason">Motif</label>
     <input id="reason" formControlName="reason" maxlength="255" autocomplete="off" placeholder="Inventaire de fin de mois, casse constatée…" />

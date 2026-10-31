@@ -1,0 +1,54 @@
+<nav class="help-toc" aria-label="Sommaire de l’aide">
+  <ul>
+    @for (section of sections(); track section.id) {
+      <li>
+        <button type="button" class="toc-link" (click)="jumpTo(section.id)">{{ section.title }}</button>
+        @if (section.id === currentId) {<span class="badge">Cet écran</span>}
+      </li>
+    }
+  </ul>
+</nav>
+
+@for (section of sections(); track section.id) {
+  <section class="help-section" [class.current]="section.id === currentId" [id]="'help-' + section.id">
+    <h3>{{ section.title }}@if (section.id === currentId) { <span class="badge">Cet écran</span>}</h3>
+
+    @for (block of section.blocks; track $index) {
+      @switch (block.type) {
+        @case ('paragraph') {
+          <p><ng-container *ngTemplateOutlet="rich; context: { $implicit: block.text }" /></p>
+        }
+        @case ('steps') {
+          <ol>
+            @for (item of block.items; track $index) {
+              <li><ng-container *ngTemplateOutlet="rich; context: { $implicit: item }" /></li>
+            }
+          </ol>
+        }
+        @case ('bullets') {
+          <ul>
+            @for (item of block.items; track $index) {
+              <li><ng-container *ngTemplateOutlet="rich; context: { $implicit: item }" /></li>
+            }
+          </ul>
+        }
+        @case ('warning') {
+          <p class="warning">
+            <strong>Attention :</strong>
+            <ng-container *ngTemplateOutlet="rich; context: { $implicit: block.text }" />
+          </p>
+        }
+        @case ('image') {
+          <figure>
+            <img [src]="block.src" [alt]="block.caption" [attr.width]="block.width" [attr.height]="block.height" loading="lazy" />
+            <figcaption>{{ block.caption }}</figcaption>
+          </figure>
+        }
+      }
+    }
+  </section>
+}
+
+<ng-template #rich let-text>
+  @for (segment of text; track $index) {@if (segment.bold) {<strong>{{ segment.text }}</strong>} @else {{{ segment.text }}}}
+</ng-template>

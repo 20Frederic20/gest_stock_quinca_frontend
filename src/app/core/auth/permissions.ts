@@ -66,7 +66,17 @@ export type Permission =
    * Open, count and close the till of an agency. A seller sells, but does not hold the
    * cash drawer: only the cashier, the manager and the admin see this screen at all.
    */
-  | 'dayClosing.access';
+  | 'dayClosing.access'
+  /** Enter, edit or delete charges (owner: any; manager: own agency only, enforced by the backend). */
+  | 'expenses.write'
+  /** Charges common to all agencies (no agency). */
+  | 'expenses.common'
+  /** Manage the charge categories. */
+  | 'expenses.categories'
+  /** Start cost tracking and fill the initial unit costs. */
+  | 'costing.manage'
+  /** Profitability report and its exports. */
+  | 'profitability.view';
 
 export function can(user: CurrentUser | null, permission: Permission, agencyId?: string): boolean {
   if (!user) return false;
@@ -82,6 +92,7 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'purchases.write':
     case 'sales.cancel':
     case 'transfer.view':
+    case 'expenses.write':
       return isManager;
     case 'customers.create':
     case 'sales.write':
@@ -100,6 +111,10 @@ export function can(user: CurrentUser | null, permission: Permission, agencyId?:
     case 'customers.delete':
     case 'suppliers.delete':
     case 'sales.viewAll':
+    case 'expenses.common':
+    case 'expenses.categories':
+    case 'costing.manage':
+    case 'profitability.view':
       return false;
     // Stock viewing is never agency-bound: anyone logged in can look at any agency's stock.
     case 'stock.view':

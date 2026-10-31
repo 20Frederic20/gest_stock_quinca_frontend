@@ -54,7 +54,9 @@ export const MENU: MenuGroup[] = [
     { label: 'Clôture de journée', route: '/day-closing', ready: true, permission: 'dayClosing.access' },
   ]},
   { title: 'Analyse', items: [
-    { label: 'Rapports et exports', route: '/reports', ready: false, permission: 'agencies.write' },
+    { label: 'Dépenses',           route: '/expenses',    ready: true, permission: 'expenses.write' },
+    { label: 'Reprise des coûts',  route: '/initial-costs', ready: true, permission: 'costing.manage' },
+    { label: 'Rentabilité',       route: '/reports', ready: true, permission: 'profitability.view' },
   ]},
   { title: 'Administration', items: [
     { label: 'Agences',              route: '/agencies',  ready: true,  permission: 'agencies.write' },

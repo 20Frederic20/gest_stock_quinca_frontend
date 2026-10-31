@@ -43,3 +43,34 @@
     </button>
   </div>
 </form>
+
+@if (dayPrompt(); as prompt) {
+  <div class="backdrop" (click)="cancelDayPrompt()"></div>
+
+  <div class="box" role="alertdialog" aria-label="Journée de caisse">
+    <h2>Journée de caisse</h2>
+    @if (prompt.kind === 'open') {
+      <p>
+        Aucune journée de caisse n'est ouverte. Une journée va être ouverte automatiquement avec un fond de caisse de
+        {{ formatMoney(openingCash.valid ? openingCash.value : prompt.suggestedOpeningCash) }}
+        (reste de la dernière clôture).
+      </p>
+      <div class="field">
+        <label for="openingCash">Fond de caisse</label>
+        <input id="openingCash" type="number" min="0" step="any" [formControl]="openingCash" />
+        <app-field-error [control]="openingCash" />
+      </div>
+    } @else {
+      <p>
+        La journée de caisse est ouverte depuis le {{ formatDateTime(prompt.openedAt) }} (plus de 24 h). Pensez à la
+        clôturer. Confirmer l'encaissement sur cette journée ?
+      </p>
+    }
+    <div class="actions">
+      <button type="button" class="btn icon-cancel" (click)="cancelDayPrompt()">Annuler</button>
+      <button type="button" class="btn btn-primary" (click)="confirmDayPrompt()">
+        {{ prompt.kind === 'open' ? 'Ouvrir et encaisser' : 'Confirmer' }}
+      </button>
+    </div>
+  </div>
+}

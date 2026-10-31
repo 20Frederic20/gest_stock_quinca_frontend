@@ -99,6 +99,7 @@
   @if (collecting(); as invoice) {
     <app-payment-form
       [invoiceId]="invoice.id"
+      [agencyId]="invoice.agencyId"
       [invoiceNumber]="invoice.number"
       [remainingToPay]="invoice.remainingToPay"
       (taken)="onPaymentTaken($event)"

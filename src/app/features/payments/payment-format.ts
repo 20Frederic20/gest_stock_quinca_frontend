@@ -30,3 +30,13 @@ export function referenceRequired(method: PaymentMethod): boolean {
 export function isPayable(invoice: Invoice): boolean {
   return invoice.type === 'INVOICE' && invoice.status === 'VALIDATED' && invoice.remainingToPay > 0;
 }
+
+/**
+ * "2026-10-29T08:05:00.123456" → "29/10/2026 à 08:05".
+ * Read from the text: the backend sends a local date-time, and going through Date would shift it.
+ */
+export function formatDateTime(iso: string): string {
+  const [date, time = ''] = iso.split('T');
+  const [year, month, day] = date.split('-');
+  return `${day}/${month}/${year} à ${time.slice(0, 5)}`;
+}

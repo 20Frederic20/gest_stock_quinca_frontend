@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { PageResponse } from '../../core/models/page.model';
-import { DayClosing, DayClosingCloseRequest, DayClosingOpenRequest } from '../../core/models/day-closing.model';
+import { CashDayStatus, DayClosing, DayClosingCloseRequest, DayClosingOpenRequest } from '../../core/models/day-closing.model';
 
 /** Calls to the backend DayClosingController. */
 @Injectable({ providedIn: 'root' })
@@ -19,6 +19,11 @@ export class DayClosingService {
   /** The agency's open session, if it has one. The caller treats a 404 as "none open". */
   getCurrent(agencyId: string) {
     return this.http.get<DayClosing>(`${this.url}/agencies/${agencyId}/day-closings/current`);
+  }
+
+  /** Read before taking a payment: is a day open, is it stale, and which float to propose. */
+  getCashStatus(agencyId: string) {
+    return this.http.get<CashDayStatus>(`${this.url}/agencies/${agencyId}/day-closings/cash-status`);
   }
 
   /** Refused if a session is already open for this agency. */

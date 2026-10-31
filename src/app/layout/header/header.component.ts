@@ -2,6 +2,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { HelpPanelComponent } from '../../features/help/help-panel.component';
+import { DrawerComponent } from '../../shared/drawer/drawer.component';
 import { ROLE_LABELS } from '../../core/models/user.model';
 
 /** "Awa Dossou" → "AD". One letter when there is only one word. */
@@ -16,7 +18,7 @@ function initialsOf(name: string): string {
 
 @Component({
   selector: 'app-header',
-  imports: [RouterLink],
+  imports: [RouterLink, DrawerComponent, HelpPanelComponent],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css',
   host: {
@@ -38,6 +40,9 @@ export class HeaderComponent {
   /** The user menu: who is logged in, and the way out. */
   menuOpen = signal(false);
   loggingOut = signal(false);
+
+  /** The role guide, in a side panel so the current screen stays put. */
+  helpOpen = signal(false);
 
   today = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',

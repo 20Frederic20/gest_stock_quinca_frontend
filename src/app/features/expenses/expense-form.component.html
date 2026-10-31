@@ -1,0 +1,58 @@
+<form [formGroup]="form" (ngSubmit)="submit()">
+  @if (formError()) {
+    <p class="form-error">{{ formError() }}</p>
+  }
+
+  <div class="field">
+    <label for="expenseDate">Date</label>
+    <input id="expenseDate" type="date" formControlName="expenseDate" />
+    <app-field-error [control]="form.controls.expenseDate" [serverError]="fieldErrors()['expenseDate']" />
+  </div>
+
+  <div class="field">
+    <label>Catégorie</label>
+    <app-select-search
+      [options]="categoryOptions()"
+      [value]="selectedCategory()"
+      [label]="categoryLabel()"
+      placeholder="Choisir une catégorie"
+      (selected)="onCategorySelected($event)" />
+    <app-field-error [control]="form.controls.categoryId" [serverError]="fieldErrors()['categoryId']" />
+  </div>
+
+  <div class="field">
+    <label>Agence</label>
+    <app-select-search
+      [options]="agencyOptions()"
+      [value]="selectedAgency()"
+      [label]="agencyLabel()"
+      placeholder="Choisir une agence"
+      (selected)="onAgencySelected($event)" />
+    <app-field-error [control]="form.controls.agencyId" [serverError]="fieldErrors()['agencyId']" />
+  </div>
+
+  <div class="field">
+    <label for="expenseLabel">Libellé</label>
+    <input id="expenseLabel" formControlName="label" maxlength="200" autocomplete="off" />
+    <app-field-error [control]="form.controls.label" [serverError]="fieldErrors()['label']" />
+  </div>
+
+  <div class="field">
+    <label for="expenseAmount">Montant (F CFA)</label>
+    <input id="expenseAmount" type="number" min="0.0001" step="any" formControlName="amount" />
+    <app-field-error [control]="form.controls.amount" [serverError]="fieldErrors()['amount']" />
+  </div>
+
+  <div class="field">
+    <label for="expenseNote">Note (facultatif)</label>
+    <input id="expenseNote" formControlName="note" maxlength="500" autocomplete="off" />
+    <app-field-error [control]="form.controls.note" [serverError]="fieldErrors()['note']" />
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn" (click)="cancelled.emit()">Annuler</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+    </button>
+  </div>
+</form>

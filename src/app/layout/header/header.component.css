@@ -137,3 +137,8 @@
   background: var(--color-divider);
   margin-bottom: var(--space-6);
 }
+
+.help-button {
+  font-size: 12px;
+  padding-inline: var(--space-2);
+}

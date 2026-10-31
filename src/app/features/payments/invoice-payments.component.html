@@ -65,6 +65,7 @@
   @if (formOpen()) {
     <app-payment-form
       [invoiceId]="invoice().id"
+      [agencyId]="invoice().agencyId"
       [invoiceNumber]="invoice().number"
       [remainingToPay]="invoice().remainingToPay"
       (taken)="onTaken($event)"

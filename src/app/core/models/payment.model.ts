@@ -36,4 +36,10 @@ export interface PaymentRequest {
   amount: number;
   /** Required by the backend for anything but cash. */
   externalReference: string | null;
+  /** Set after the cashier confirmed that no cash day was open: the backend opens one. */
+  openDayIfClosed?: boolean;
+  /** Float of the day opened by this payment. Only meaningful with openDayIfClosed. */
+  openingCashAmount?: number;
+  /** Set after the cashier confirmed collecting on a day open for more than 24 h. */
+  confirmStaleDay?: boolean;
 }
