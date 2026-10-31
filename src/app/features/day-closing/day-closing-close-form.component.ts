@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiError } from '../../core/http/api-error.model';
 import { DayClosing } from '../../core/models/day-closing.model';
@@ -39,7 +40,12 @@ export class DayClosingCloseFormComponent {
    * A preview only: the amount actually frozen is whatever the backend recomputes at the
    * moment it processes the request, which may differ if a payment came in meanwhile.
    */
-  previewVariance = computed(() => this.form.controls.countedTotal.value - this.dayClosing().theoreticalTotal);
+  // A form control's value is not a signal: read it through toSignal so the preview follows the typing.
+  private countedTotal = toSignal(this.form.controls.countedTotal.valueChanges, {
+    initialValue: this.form.controls.countedTotal.value,
+  });
+
+  previewVariance = computed(() => (this.countedTotal() ?? 0) - this.dayClosing().theoreticalTotal);
 
   protected formatMoney = formatMoney;
 

@@ -1,18 +1,23 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component } from '@angular/core';
 import { Router, provideRouter } from '@angular/router';
+import { Role } from '../../core/models/user.model';
 import { AuthService } from '../../core/auth/auth.service';
 import { errorInterceptor } from '../../core/http/error.interceptor';
 import { HeaderComponent } from './header.component';
 
+@Component({ template: '' })
+class BlankComponent {}
+
 describe('HeaderComponent', () => {
   let httpTesting: HttpTestingController;
 
-  function setup() {
+  function setup(role: Role = 'MANAGER') {
     TestBed.configureTestingModule({
       providers: [
-        provideRouter([]),
+        provideRouter([{ path: '**', component: BlankComponent }]),
         provideHttpClient(withInterceptors([errorInterceptor])),
         provideHttpClientTesting(),
       ],
@@ -20,7 +25,7 @@ describe('HeaderComponent', () => {
     httpTesting = TestBed.inject(HttpTestingController);
     const auth = TestBed.inject(AuthService);
     auth.setUser({
-      id: 'u1', name: 'Awa Dossou', username: 'awa.dossou', role: 'MANAGER',
+      id: 'u1', name: 'Awa Dossou', username: 'awa.dossou', role,
       agencyId: 'g1', agencyLabel: 'Cotonou — Siège',
     });
     const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
@@ -108,5 +113,59 @@ describe('HeaderComponent', () => {
 
     expect(auth.user()).toBeNull();
     expect(navigate).toHaveBeenCalledWith('/login');
+  });
+
+  describe('help', () => {
+    const helpButton = (element: HTMLElement) => element.querySelector<HTMLButtonElement>('button.help-button');
+
+    it('has an Aide button next to the user menu, and no panel until it is clicked', () => {
+      const { element } = setup();
+
+      expect(helpButton(element)?.textContent?.trim()).toBe('Aide');
+      expect(element.querySelector('aside')).toBeNull();
+    });
+
+    it('opens the guide in a side panel on the section of the current screen', () => {
+      const { element, refresh } = setup('SELLER');
+      // navigateByUrl is mocked by setup(), so the current URL is faked.
+      vi.spyOn(TestBed.inject(Router), 'url', 'get').mockReturnValue('/invoices/abc');
+
+      helpButton(element)!.click();
+      refresh();
+
+      expect(element.querySelector('aside')).not.toBeNull();
+      expect(element.querySelector('.help-section.current h3')?.textContent?.trim()).toContain('Livrer une facture');
+    });
+
+    it('lists the sections of the role in a table of contents', () => {
+      const { element, refresh } = setup('CASHIER');
+
+      helpButton(element)!.click();
+      refresh();
+
+      const toc = element.querySelector('nav.help-toc')?.textContent ?? '';
+      expect(toc).toContain('Ouvrir et clôturer la journée de caisse');
+      expect(toc).not.toContain('Faire une vente');
+    });
+
+    it('never shows profitability to a seller', () => {
+      const { element, refresh } = setup('SELLER');
+
+      helpButton(element)!.click();
+      refresh();
+
+      expect(element.querySelector('aside')?.textContent).not.toContain('Rentabilité');
+    });
+
+    it('closes the panel from its close button', () => {
+      const { element, refresh } = setup();
+
+      helpButton(element)!.click();
+      refresh();
+      element.querySelector<HTMLButtonElement>('button[aria-label="Fermer"]')!.click();
+      refresh();
+
+      expect(element.querySelector('aside')).toBeNull();
+    });
   });
 });

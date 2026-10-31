@@ -5,6 +5,8 @@
     <span class="text-muted">Agence</span>
     <span class="tag">{{ user()?.agencyLabel }}</span>
 
+    <button type="button" class="btn btn-ghost help-button" (click)="helpOpen.set(true)">Aide</button>
+
     <div class="user-wrap" (click)="$event.stopPropagation()">
       <button
         type="button"
@@ -39,6 +41,12 @@
     </div>
   </div>
 </div>
+
+<app-drawer [open]="helpOpen()" heading="Aide" width="560px" (closed)="helpOpen.set(false)">
+  @if (helpOpen()) {
+    <app-help-panel />
+  }
+</app-drawer>
 
 <div class="rule-accent"></div>
 <div class="rule-thin"></div>
